@@ -11,5 +11,11 @@ public class Team10_4ProjectTarget : TargetRules
 		DefaultBuildSettings = BuildSettingsVersion.V5;
 		IncludeOrderVersion = EngineIncludeOrderVersion.Unreal5_6;
 		ExtraModuleNames.Add("Team10_4Project");
-	}
+
+        // 서버 최적화
+        bUseLoggingInShipping = true;
+        bCompileWithPluginSupport = true;
+        bUseUnityBuild = true;
+        bUsePCHFiles = true;
+    }
 }

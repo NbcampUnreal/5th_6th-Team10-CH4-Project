@@ -9,21 +9,48 @@ public class Team10_4Project : ModuleRules
 		PCHUsage = PCHUsageMode.UseExplicitOrSharedPCHs;
 
 		PublicDependencyModuleNames.AddRange(new string[] {
-			"Core",
-			"CoreUObject",
-			"Engine",
-			"InputCore",
-			"EnhancedInput",
-			"AIModule",
-			"StateTreeModule",
-			"GameplayStateTreeModule",
-			"UMG",
-			"Slate"
-		});
+            "Core",
+            "CoreUObject",
+            "Engine",
+            "InputCore",
+            "EnhancedInput",
 
-		PrivateDependencyModuleNames.AddRange(new string[] { });
+            // GAS 모듈
+            "GameplayAbilities",
+            "GameplayTags",
+            "GameplayTasks",
 
-		PublicIncludePaths.AddRange(new string[] {
+            // State Tree (UE 5.6 정식)
+            "StateTreeModule",
+
+            // 네트워킹
+            "OnlineSubsystem",
+            "OnlineSubsystemUtils",
+            "Sockets",
+            "Networking",
+
+            // UI
+            "UMG",
+            "Slate",
+            "SlateCore",
+
+            // UE 5.6 권장
+            "CommonUI",
+            "AIModule",
+            "NavigationSystem",
+
+
+            "GameplayStateTreeModule"
+        });
+
+        PrivateDependencyModuleNames.AddRange(new string[]
+        {
+            "GameplayAbilities",
+            "GameplayTags",
+            "GameplayTasks"
+        });
+
+        PublicIncludePaths.AddRange(new string[] {
 			"Team10_4Project",
 			"Team10_4Project/Variant_Platforming",
 			"Team10_4Project/Variant_Platforming/Animation",
@@ -40,12 +67,18 @@ public class Team10_4Project : ModuleRules
 			"Team10_4Project/Variant_SideScrolling/UI"
 		});
 
-		// Uncomment if you are using Slate UI
-		// PrivateDependencyModuleNames.AddRange(new string[] { "Slate", "SlateCore" });
+        // Uncomment if you are using Slate UI
+        // PrivateDependencyModuleNames.AddRange(new string[] { "Slate", "SlateCore" });
 
-		// Uncomment if you are using online features
-		// PrivateDependencyModuleNames.Add("OnlineSubsystem");
+        // Uncomment if you are using online features
+        // PrivateDependencyModuleNames.Add("OnlineSubsystem");
 
-		// To include OnlineSubsystemSteam, add it to the plugins section in your uproject file with the Enabled attribute set to true
-	}
+        // To include OnlineSubsystemSteam, add it to the plugins section in your uproject file with the Enabled attribute set to true
+
+        if (Target.Platform == UnrealTargetPlatform.Win64)
+        {
+            PublicDependencyModuleNames.Add("EOSVoiceChat");
+        }
+
+    }
 }

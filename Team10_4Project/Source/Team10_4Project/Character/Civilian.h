@@ -4,111 +4,133 @@
 
 #include "CoreMinimal.h"
 #include "GameFramework/Character.h"
-//#include "AbilitySystemInterface.h"
-//#include "GameplayTagContainer.h"
-//#include "InputActionValue.h" // UE 5.6 Enhanced Input
+#include "AbilitySystemInterface.h"
+// #include "GameplayTagContainer.h"
+#include "GameplayEffectTypes.h"
+#include "InputActionValue.h" // UE 5.6 Enhanced Input
 #include "Civilian.generated.h"
 
-//class UAbilitySystemComponent;
-//class USurvivalAbilitySystemComponent;
-//class UCharacterAttributeSet;
-//class UInteractionComponent;
-//
-//struct FOnAttributeChangeData;
+class UAbilitySystemComponent;
+class UCivilianAttributeSet;
+class UCameraComponent;
+class USpringArmComponent;
+class UInputMappingContext;
+class UInputAction;
+class UAnimMontage;
 
 UCLASS()
-class TEAM10_4PROJECT_API ACivilian : public ACharacter
+class TEAM10_4PROJECT_API ACivilian : public ACharacter, public IAbilitySystemInterface
 {
 	GENERATED_BODY()
 
-//public:
-//	ACivilian();
-    /*
+#pragma region Civilian Override
+
+public:
+	ACivilian();
+    
 	// IAbilitySystemInterface 구현
 	virtual UAbilitySystemComponent* GetAbilitySystemComponent() const override;
+	
+	// 초기화
+	virtual void BeginPlay() override;
+	virtual void PossessedBy(AController* NewController) override;
+	virtual void SetupPlayerInputComponent(class UInputComponent* PlayerInputComponent) override;
+	virtual void OnRep_PlayerState() override;
+	
+#pragma endregion
+	
+#pragma region Civilian Components
+public:
+	FORCEINLINE USpringArmComponent* GetSpringArm() const { return SpringArm; }
 
+	FORCEINLINE UCameraComponent* GetCamera() const { return Camera; }
+
+protected:
+	UPROPERTY(EditDefaultsOnly, BlueprintReadOnly, Category = "PlayerCharacter|Components")
+	TObjectPtr<USpringArmComponent> SpringArm;
+
+	UPROPERTY(EditDefaultsOnly, BlueprintReadOnly, Category = "PlayerCharacter|Components")
+	TObjectPtr<UCameraComponent> Camera;
+
+#pragma endregion
+	
+#pragma region Civilian GAS
+	
+public:
 	// GAS 컴포넌트
 	UPROPERTY(VisibleAnywhere, BlueprintReadOnly, Category = "GAS")
-	class USurvivalAbilitySystemComponent* AbilitySystemComponent;
+	TObjectPtr<UAbilitySystemComponent> AbilitySystemComponent;
 
 	// Attribute Set
 	UPROPERTY(VisibleAnywhere, BlueprintReadOnly, Category = "GAS")
-	class UCharacterAttributeSet* AttributeSet;
+	TObjectPtr<UCivilianAttributeSet> AttributeSet;
 
-	// 상호작용 컴포넌트
-	UPROPERTY(VisibleAnywhere, BlueprintReadOnly, Category = "Interaction")
-	class UInteractionComponent* InteractionComponent;
+	// 기본 어빌리티 목록
+	UPROPERTY(EditDefaultsOnly, BlueprintReadOnly, Category = "GAS|Abilities")
+	TArray<TSubclassOf<class UGameplayAbility>> DefaultAbilities;
+
+	// 기본 효과 목록
+	UPROPERTY(EditDefaultsOnly, BlueprintReadOnly, Category = "GAS|Effects")
+	TArray<TSubclassOf<class UGameplayEffect>> DefaultEffects;
 
 protected:
-    virtual void BeginPlay() override;
-    virtual void PossessedBy(AController* NewController) override;
-    virtual void OnRep_PlayerState() override;
+	// GAS 초기화 - ASC 초기화 로직 분리
+	void InitializeAbilitySystem();
 
-    // GAS 초기화
-    void InitializeAbilitySystem();
-    void GiveDefaultAbilities();
-    void ApplyDefaultEffects();
-
-    // 기본 어빌리티 목록
-    UPROPERTY(EditDefaultsOnly, BlueprintReadOnly, Category = "GAS|Abilities")
-    TArray<TSubclassOf<class UGameplayAbility>> DefaultAbilities;
-
-    // 기본 효과 목록
-    UPROPERTY(EditDefaultsOnly, BlueprintReadOnly, Category = "GAS|Effects")
-    TArray<TSubclassOf<class UGameplayEffect>> DefaultEffects;
-
-    // Enhanced Input (UE 5.6)
-    UPROPERTY(EditAnywhere, BlueprintReadOnly, Category = "Input")
-    class UInputMappingContext* DefaultMappingContext;
-
-    UPROPERTY(EditAnywhere, BlueprintReadOnly, Category = "Input")
-    class UInputAction* MoveAction;
-
-    UPROPERTY(EditAnywhere, BlueprintReadOnly, Category = "Input")
-    class UInputAction* LookAction;
-
-    UPROPERTY(EditAnywhere, BlueprintReadOnly, Category = "Input")
-    class UInputAction* JumpAction;
-
-    UPROPERTY(EditAnywhere, BlueprintReadOnly, Category = "Input")
-    class UInputAction* InteractAction;
-
-    UPROPERTY(EditAnywhere, BlueprintReadOnly, Category = "Input")
-    class UInputAction* AttackAction;
-
+#pragma endregion
+	
+#pragma region Civilian Input
+	
 public:
-    virtual void SetupPlayerInputComponent(class UInputComponent* PlayerInputComponent) override;
+	// Enhanced Input 콜백 함수들
+	void Move(const FInputActionValue& Value);
+	void Look(const FInputActionValue& Value);
+	void StartJump();
+	void StopJump();
+	
+protected:
+	// Enhanced Input (UE 5.6)
+	UPROPERTY(EditAnywhere, BlueprintReadOnly, Category = "Input")
+	class UInputMappingContext* DefaultMappingContext;
 
-    // Enhanced Input 콜백 함수들
-    void Move(const FInputActionValue& Value);
-    void Look(const FInputActionValue& Value);
-    void StartJump();
-    void StopJump();
+	UPROPERTY(EditAnywhere, BlueprintReadOnly, Category = "Input")
+	class UInputAction* MoveAction;
 
+	UPROPERTY(EditAnywhere, BlueprintReadOnly, Category = "Input")
+	class UInputAction* LookAction;
+
+	UPROPERTY(EditAnywhere, BlueprintReadOnly, Category = "Input")
+	class UInputAction* JumpAction;
+
+	UPROPERTY(EditAnywhere, BlueprintReadOnly, Category = "Input")
+	class UInputAction* InteractAction;
+
+	UPROPERTY(EditAnywhere, BlueprintReadOnly, Category = "Input")
+	class UInputAction* AttackAction;
+	
+#pragma endregion
+	
+	// Attribute 변경 콜백
+	virtual void OnHealthChanged(const FOnAttributeChangeData& Data);
+	
+	// 공격
+	UFUNCTION(BlueprintCallable, Category = "Combat")
+	void TryAttack();
+	
+	// 사망 처리
+	UFUNCTION(BlueprintImplementableEvent, Category = "Character")
+	void OnDeath();
+
+	UFUNCTION(NetMulticast, Reliable)
+	void MulticastHandleDeath();
+	
+		/*
     // 상호작용
     UFUNCTION(BlueprintCallable, Category = "Interaction")
     void TryInteract();
 
-    // 공격
-    UFUNCTION(BlueprintCallable, Category = "Combat")
-    void TryAttack();
-
     // 아이템 사용
     UFUNCTION(BlueprintCallable, Category = "Item")
-    void TryUseItem(int32 ItemSlot);
-
-    // Attribute 변경 콜백
-    UFUNCTION()
-    void OnHealthChanged(const struct FOnAttributeChangeData& Data);
-
-    UFUNCTION()
-    void OnStaminaChanged(const struct FOnAttributeChangeData& Data);
-
-    // 사망 처리
-    UFUNCTION(BlueprintImplementableEvent, Category = "Character")
-    void OnDeath();
-
-    UFUNCTION(NetMulticast, Reliable)
-    void MulticastHandleDeath();
+    void TryUseItem(int32 ItemSlot)
     */
 };

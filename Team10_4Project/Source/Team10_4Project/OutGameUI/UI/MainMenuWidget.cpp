@@ -1,4 +1,4 @@
-#include "MainMenuWidget.h"
+ï»¿#include "MainMenuWidget.h"
 #include "Components/Button.h"
 #include "Kismet/KismetSystemLibrary.h"
 #include "Kismet/GameplayStatics.h"
@@ -34,15 +34,18 @@ void UMainMenuWidget::NativeOnDeactivated()
 
 void UMainMenuWidget::OnClick_Play()
 {
-    // TODO: ¼­¹ö ºê¶ó¿ìÀú È­¸éÀ¸·Î ÀÌµ¿ (WidgetStackPush)
+    // TODO: ì„œë²„ ë¸Œë¼ìš°ì € í™”ë©´ìœ¼ë¡œ ì´ë™ (WidgetStackPush)
+    UE_LOG(LogTemp, Warning, TEXT("Play Button"));
 }
 
 void UMainMenuWidget::OnClick_Settings()
 {
-    // TODO: ¼³Á¤ È­¸éÀ¸·Î ÀÌµ¿
+    // TODO: ì„¤ì • í™”ë©´ìœ¼ë¡œ ì´ë™
+    UE_LOG(LogTemp, Warning, TEXT("Settings Button"));
 }
 
 void UMainMenuWidget::OnClick_Quit()
 {
     UKismetSystemLibrary::QuitGame(this, nullptr, EQuitPreference::Quit, false);
+    UE_LOG(LogTemp, Warning, TEXT("Quit Button"));
 }

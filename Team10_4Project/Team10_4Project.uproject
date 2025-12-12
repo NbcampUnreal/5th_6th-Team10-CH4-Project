@@ -12,7 +12,7 @@
 				"Engine",
 				"AIModule",
 				"UMG",
-				"CommonUI"
+				"GameplayAbilities"
 			]
 		}
 	],
@@ -33,7 +33,15 @@
 			"Enabled": true
 		},
 		{
+			"Name": "GameplayAbilities",
+			"Enabled": true
+		},
+		{
 			"Name": "CommonUI",
+			"Enabled": true
+		},
+		{
+			"Name": "EOSVoiceChat",
 			"Enabled": true
 		}
 	]

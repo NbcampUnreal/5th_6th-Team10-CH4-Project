@@ -5,6 +5,7 @@
 #include "CoreMinimal.h"
 #include "GameFramework/GameStateBase.h"
 #include "GameMode/Team10GameMode.h"
+#include "GameMode/GameTypes/GameTypes.h"
 #include "Team10GameState.generated.h"
 
 class APlayerController;
@@ -23,9 +24,23 @@ public:
 	// 현재 게임 구역
 	UPROPERTY(ReplicatedUsing = OnRep_CurrentArea, BlueprintReadOnly, Category = "GameState")
 	EGameArea CurrentArea;
-
+	
 	UFUNCTION()
 	void OnRep_CurrentArea();
+
+	// 플레이어를 투표로 죽이는데 필요한 최소 투표 수    
+	UPROPERTY(ReplicatedUsing = OnRep_MinVotesCount, BlueprintReadOnly, Category = "GameState")
+	int32 MinVotesCount;
+
+	UFUNCTION()
+	void OnRep_MinVotesCount();
+
+	// 현재 투표 수    
+	UPROPERTY(ReplicatedUsing = OnRep_CurrentVotesCount, BlueprintReadOnly, Category = "GameState")
+	int32 CurrentVotesCount;
+
+	UFUNCTION()
+	void OnRep_CurrentVotesCount();
 	
 	// 현재 게임 페이즈
 	UPROPERTY(ReplicatedUsing = OnRep_CurrentPhase, BlueprintReadOnly, Category = "GameState")

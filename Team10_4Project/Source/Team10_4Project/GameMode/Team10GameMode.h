@@ -4,40 +4,8 @@
 
 #include "CoreMinimal.h"
 #include "GameFramework/GameModeBase.h"
+#include "GameTypes/GameTypes.h"
 #include "Team10GameMode.generated.h"
-
-#pragma region ENUM
-
-UENUM(BlueprintType)
-enum class EGameArea : uint8
-{
-	None,
-	Area1 UMETA(DisplayName = "Area1"),
-	Area2 UMETA(DisplayName = "Area2"),
-	Area3 UMETA(DisplayName = "Area3"),
-	
-};
-
-UENUM(BlueprintType)
-enum class EGamePhase : uint8
-{
-	None,
-	Lobby UMETA(DisplayName = "Lobby"),
-	//AssignInfectedPhase UMETA(DisplayName = "TeamSelection"),
-	DayPhase UMETA(DisplayName = "DayPhase"),
-	NightPhase UMETA(DisplayName = "NightPhase"),
-	TrapIn UMETA(DisplayName = "TrapIn"),
-	GameEnd UMETA(DisplayName = "GameEnd"),
-};
-UENUM(BlueprintType)
-enum class EGameResult : uint8
-{	
-	None,
-	CitizenWin UMETA(DisplayName = "CitizenWin"),
-	InfectedWin  UMETA(DisplayName = "InfectedWin"),
-};
-
-#pragma endregion
 
 class ATeam10GameState;
 
@@ -132,5 +100,11 @@ private:
 	int32 GetAliveCitizenCount();
 	int32 GetAliveInfectedCount();
 
+#pragma endregion
+
+
+#pragma region Vote
+
+	
 #pragma endregion
 };

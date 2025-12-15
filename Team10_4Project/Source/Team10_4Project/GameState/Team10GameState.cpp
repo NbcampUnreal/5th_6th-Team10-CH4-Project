@@ -28,6 +28,17 @@ void ATeam10GameState::GetLifetimeReplicatedProps(TArray<FLifetimeProperty>& Out
 
 void ATeam10GameState::OnRep_CurrentArea()
 {
+	
+}
+
+void ATeam10GameState::OnRep_MinVotesCount()
+{
+	// UI 설정
+}
+
+void ATeam10GameState::OnRep_CurrentVotesCount()
+{
+	
 }
 
 void ATeam10GameState::OnRep_CurrentPhase()

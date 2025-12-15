@@ -8,6 +8,7 @@
 #include "GameMode/GameTypes/GameTypes.h"
 #include "Team10GameState.generated.h"
 
+class ACivilianPlayerController;
 class APlayerController;
 
 UCLASS()
@@ -64,8 +65,8 @@ public:
 	void OnRep_GameResult();
 	
 	// 모든 플레이어
-	UPROPERTY(Replicated, BlueprintReadOnly, Category = "GameState")
-	TArray<TObjectPtr<APlayerController>> AllPlayers; // 현재는 타입이 기본 APlayerController 이지만 추후 APlayerController의 자식 클래스를 생성하면 자식 클래스로 타입을 변경할 예정
+	UPROPERTY(BlueprintReadOnly, Category = "GameState")
+	TArray<TObjectPtr<ACivilianPlayerController>> AllPlayers; 
 	
 	// 생존 플레이어 수
 	UPROPERTY(Replicated, BlueprintReadOnly, Category = "GameState")

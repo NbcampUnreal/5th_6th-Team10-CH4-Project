@@ -17,11 +17,13 @@ class TEAM10_4PROJECT_API ATeam10GameMode : public AGameModeBase
 	
 public:
 	ATeam10GameMode();
-
+	
 	virtual void BeginPlay() override;
 	virtual void Tick(float DeltaSeconds) override;
 	virtual void PostLogin(APlayerController* NewPlayer) override;
 	virtual void Logout(AController* Exiting) override;
+	//virtual void HandleSeamlessTravelPlayer(AController*& C) override; // 맵 로딩 중에 호출 
+	virtual void HandleStartingNewPlayer_Implementation(APlayerController* NewPlayer) override; // 맵 진입 완료 후 호출
 
 	// 게임 시작
 	UFUNCTION(BlueprintCallable, Category = "GameFlow")
@@ -50,16 +52,16 @@ public:
 protected:
 
 	// 현재 구역
-	UPROPERTY(BlueprintReadOnly, Category = "GameFlow")
-	EGameArea CurrentArea;
+	//UPROPERTY(BlueprintReadOnly, Category = "GameFlow")
+	//EGameArea CurrentArea;
 	
 	// 현재 페이즈
-	UPROPERTY(BlueprintReadOnly, Category = "GameFlow")
-	EGamePhase CurrentPhase;
+	//UPROPERTY(BlueprintReadOnly, Category = "GameFlow")
+	//EGamePhase CurrentPhase;
 
 	// 최소 플레이어 수
-	UPROPERTY(EditDefaultsOnly, BlueprintReadOnly, Category = "GameFlow")
-	int32 MinPlayersToStart = 6;
+	//UPROPERTY(EditDefaultsOnly, BlueprintReadOnly, Category = "GameFlow")
+	//int32 MinPlayersToStart = 6;
 	
 	// 감염자 수
 	UPROPERTY(EditDefaultsOnly, BlueprintReadOnly, Category = "GameFlow")
@@ -72,9 +74,15 @@ protected:
 	// 트랩 인 페이즈 시간
 	UPROPERTY(EditDefaultsOnly, BlueprintReadOnly, Category = "GameFlow")
 	float TrapInPhaseDuration = 60.0f;
-
+	
+	// 다음 Area로 이동하기 위해 필요한 퓨즈박스 개수
 	UPROPERTY(EditDefaultsOnly, BlueprintReadOnly, Category = "GameFlow")
 	int32 TotalFixFuseBox = 4;
+	
+	// 현재 맵 로딩을 완료한 플레이어 수
+	// 지금은 GameMode에 선언 했지만 UI가 필요할 경우 GameState에서 Replicate 예정
+	UPROPERTY(VisibleAnywhere, BlueprintReadOnly, Category = "GameFlow")
+	int32 LoadedPlayerCount  = 0; 
 
 	// GameState 레퍼런스
 	UPROPERTY()

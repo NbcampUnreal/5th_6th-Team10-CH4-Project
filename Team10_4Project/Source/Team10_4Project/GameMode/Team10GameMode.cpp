@@ -2,16 +2,19 @@
 
 
 #include "GameMode/Team10GameMode.h"
+
+#include "Character/CivilianPlayerController.h"
+#include "Character/CivilianPlayerState.h"
 #include "GameState/Team10GameState.h"
 
 ATeam10GameMode::ATeam10GameMode()
 {
 	GameStateClass = ATeam10GameState::StaticClass();
-	//PlayerControllerClass =
-	//PlayerStateClass =
+	PlayerControllerClass = ACivilianPlayerController::StaticClass();
+	PlayerStateClass = ACivilianPlayerState::StaticClass();
 
-	CurrentArea = EGameArea::None;
-	CurrentPhase = EGamePhase::None;
+	//CurrentArea = EGameArea::None;
+	//CurrentPhase = EGamePhase::None;
 }
 
 void ATeam10GameMode::BeginPlay()
@@ -21,9 +24,11 @@ void ATeam10GameMode::BeginPlay()
 	Team10GameState = Cast<ATeam10GameState>(GameState);
 	if (Team10GameState)
 	{
-		CurrentPhase = EGamePhase::Lobby;
-		Team10GameState->SetCurrentPhase(CurrentPhase);
+		//CurrentPhase = EGamePhase::Lobby;
+		Team10GameState->SetCurrentPhase(EGamePhase::DayPhase);
 	}
+	//UE_LOG(LogTemp, Log, TEXT("Ingame %d"), Team10GameState->PlayerArray.Num());
+	AssignInfectedPlayers();
 }
 
 void ATeam10GameMode::Tick(float DeltaSeconds)
@@ -35,25 +40,30 @@ void ATeam10GameMode::PostLogin(APlayerController* NewPlayer)
 {
 	Super::PostLogin(NewPlayer);
 
-	UE_LOG(LogTemp, Log, TEXT("Player Logged In: %s"), *NewPlayer->GetName());
+	// UE_LOG(LogTemp, Log, TEXT("Player Logged In InGame: %s"), *NewPlayer->GetName());
+	//
+	// if (!Team10GameState)
+	// {
+	// 	return;
+	// }
 	
-	if (Team10GameState)
-	{
-		Team10GameState->AllPlayers.Add(NewPlayer); // 이 부분 나중에 AllPlayer 타입에 맞춰 수정
-
-		if (CurrentPhase == EGamePhase::Lobby)
-		{
-			if (Team10GameState->AllPlayers.Num() >= MinPlayersToStart)
-			{
-				FTimerHandle TestTimerHandle;
-				GetWorldTimerManager().SetTimer(TestTimerHandle, this, &ThisClass::StartGame, 5.f);
-				
-				// 추후 모든 플레이어가 준비되면 게임을 시작하게 변경할 수 있음.
-				StartGame();
-			}
-		}
-	}
-	
+	// ACivilianPlayerController* CivilianPlayerController = Cast<ACivilianPlayerController>(NewPlayer);
+	// if (CivilianPlayerController)
+	// {
+	// 	Team10GameState->AllPlayers.Add(CivilianPlayerController); 
+	// 	
+	// 	if (Team10GameState->CurrentPhase == EGamePhase::Lobby)
+	// 	{
+	// 		if (Team10GameState->AllPlayers.Num() >= Team10GameState->PlayerArray.Num())
+	// 		{
+	// 			FTimerHandle TestTimerHandle;
+	// 			GetWorldTimerManager().SetTimer(TestTimerHandle, this, &ThisClass::StartGame, 5.f);
+	// 			
+	// 			// 추후 모든 플레이어가 준비되면 게임을 시작하게 변경할 수 있음.
+	// 			StartGame();
+	// 		}
+	// 	}
+	// }
 }
 
 void ATeam10GameMode::Logout(AController* Exiting)
@@ -64,56 +74,73 @@ void ATeam10GameMode::Logout(AController* Exiting)
 	
 	if (Team10GameState)
 	{
-		//APlayerController* PlayerController = Cast<APlayerController>(Exiting); 
-		//if (PlayerController)
-		//{
-		//	Team10GameState->AllPlayers.Remove(PlayerController);
-
-			// 만약 게임 중에 플레이어가 나갈 경우 플레이어가 살아있었을 경우 역할에 맞춰 AliveCount 감소
-			// Playerstate 추가 되면 다시 작성
+		ACivilianPlayerController* CivilianPlayerController = Cast<ACivilianPlayerController>(Exiting);
+		if (CivilianPlayerController)
+		{
+			Team10GameState->AllPlayers.Remove(CivilianPlayerController);
 			
-			// APlayerState* PlayerState = Cast<APlayerState>(PlayerController->PlayerState);
-			//
-			// if (PlayerState)
-			// {
-			// 	return;
-			// }
-			//
-			// if (CurrentPhase != EGamePhase::Lobby && CurrentPhase != EGamePhase::GameEnd)
-			// {
-			// 	if (PlayerState->role == Citizen && PlayerState->IsAlive)
-			// 	{
-			// 		Team10GameState->AliveCitizenCount--;
-			// 	}
-			// 	else if (PlayerState->role == Infecter && PlayerState->IsAlive)
-			// 	{
-			// 		Team10GameState->AliveInfectedCount--;
-			// 	}
-			// 	CheckWinCondition();
-			// }
-		//}
+			 if (Team10GameState->CurrentPhase != EGamePhase::Lobby && Team10GameState->CurrentPhase != EGamePhase::GameEnd)
+			 {
+			 	ACivilianPlayerState* CivilianPlayerState = Cast<ACivilianPlayerState>(CivilianPlayerController->PlayerState);
+			
+			 	if (!CivilianPlayerState)
+			 	{
+			 		return;
+			 	}
+			 	
+			 	// if (CivilianPlayerState->role == Citizen && CivilianPlayerState->IsAlive)
+			 	// {
+			 	// 	Team10GameState->AliveCitizenCount--;
+			 	// }
+			 	// else if (CivilianPlayerState->role == Infecter && CivilianPlayerState->IsAlive)
+			 	// {
+			 	// 	Team10GameState->AliveInfectedCount--;
+			 	// }
+			 	CheckWinCondition();
+			 }
+		}
 	}
+}
+
+
+void ATeam10GameMode::HandleStartingNewPlayer_Implementation(APlayerController* NewPlayer)
+{
+	Super::HandleStartingNewPlayer_Implementation(NewPlayer);
+	UE_LOG(LogTemp, Log, TEXT("Ingame HandleStartingNewPlayer_Implementation"));
+	
+	LoadedPlayerCount++;
+	
+	if (LoadedPlayerCount == Team10GameState->PlayerArray.Num())
+	{
+		// 모든 플레이어의 로딩이 끝나면 로딩 UI를 해제한다.
+		UE_LOG(LogTemp, Log, TEXT("All Player Loaded"));
+
+		StartGame();
+	}
+	
 }
 
 void ATeam10GameMode::StartGame()
 {
-	if (CurrentPhase != EGamePhase::Lobby)
+	if (Team10GameState->CurrentPhase != EGamePhase::Lobby)
+	{
 		return;
-
+	}
+	
 	UE_LOG(LogTemp, Warning, TEXT("Game Starting!"));
 
-	AssignInfectedPlayers();
-
+	
+	
 	ChangePhase(EGamePhase::DayPhase);
 	
 }
 
 void ATeam10GameMode::ChangePhase(EGamePhase NewPhase)
 {
-	CurrentPhase = NewPhase;
+	//Team10GameState->CurrentPhase = NewPhase;
 	Team10GameState->SetCurrentPhase(NewPhase);
 	
-	switch (CurrentPhase)
+	switch (Team10GameState->CurrentPhase)
 	{
 	case EGamePhase::DayPhase:
 		StartPhaseTimer(DayNightPhaseDuration);
@@ -164,7 +191,7 @@ void ATeam10GameMode::UpdatePhaseTimer()
 
 void ATeam10GameMode::AdvanceToNextPhase()
 {
-	switch (CurrentPhase)
+	switch (Team10GameState->CurrentPhase)
 	{
 	case EGamePhase::DayPhase:
 		ChangePhase(EGamePhase::NightPhase);

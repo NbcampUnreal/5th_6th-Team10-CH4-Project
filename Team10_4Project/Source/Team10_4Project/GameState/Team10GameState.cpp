@@ -21,7 +21,6 @@ void ATeam10GameState::GetLifetimeReplicatedProps(TArray<FLifetimeProperty>& Out
 	DOREPLIFETIME(ThisClass, PhaseTimeRemaining);
 	DOREPLIFETIME(ThisClass, CurrentArea);
 	DOREPLIFETIME(ThisClass, GameResult);
-	DOREPLIFETIME(ThisClass, AllPlayers);
 	DOREPLIFETIME(ThisClass, AliveCitizenCount);
 	DOREPLIFETIME(ThisClass, AliveInfectedCount);
 }

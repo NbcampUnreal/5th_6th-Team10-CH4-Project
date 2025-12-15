@@ -1,12 +1,10 @@
 ﻿#include "MainMenuWidget.h"
 #include "Components/Button.h"
 #include "Kismet/KismetSystemLibrary.h"
-#include "Kismet/GameplayStatics.h"
 
-
-void UMainMenuWidget::NativeOnActivated()
+bool UMainMenuWidget::Initialize()
 {
-    Super::NativeOnActivated();
+    bool bResult = Super::Initialize();
 
     if (PlayButton)
         PlayButton->OnClicked.AddDynamic(this, &UMainMenuWidget::OnClick_Play);
@@ -16,36 +14,21 @@ void UMainMenuWidget::NativeOnActivated()
 
     if (QuitButton)
         QuitButton->OnClicked.AddDynamic(this, &UMainMenuWidget::OnClick_Quit);
-}
 
-void UMainMenuWidget::NativeOnDeactivated()
-{
-    Super::NativeOnDeactivated();
-
-    if (PlayButton)
-        PlayButton->OnClicked.RemoveAll(this);
-
-    if (SettingsButton)
-        SettingsButton->OnClicked.RemoveAll(this);
-
-    if (QuitButton)
-        QuitButton->OnClicked.RemoveAll(this);
+    return bResult;
 }
 
 void UMainMenuWidget::OnClick_Play()
 {
-    // TODO: 서버 브라우저 화면으로 이동 (WidgetStackPush)
-    UE_LOG(LogTemp, Warning, TEXT("Play Button"));
+    UE_LOG(LogTemp, Warning, TEXT("Play Clicked"));
 }
 
 void UMainMenuWidget::OnClick_Settings()
 {
-    // TODO: 설정 화면으로 이동
-    UE_LOG(LogTemp, Warning, TEXT("Settings Button"));
+    UE_LOG(LogTemp, Warning, TEXT("Settings Clicked"));
 }
 
 void UMainMenuWidget::OnClick_Quit()
 {
     UKismetSystemLibrary::QuitGame(this, nullptr, EQuitPreference::Quit, false);
-    UE_LOG(LogTemp, Warning, TEXT("Quit Button"));
 }

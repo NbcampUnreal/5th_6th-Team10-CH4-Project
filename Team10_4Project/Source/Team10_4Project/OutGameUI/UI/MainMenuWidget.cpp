@@ -20,7 +20,17 @@ bool UMainMenuWidget::Initialize()
 
 void UMainMenuWidget::OnClick_Play()
 {
-    UE_LOG(LogTemp, Warning, TEXT("Play Clicked"));
+    if (UWorld* World = GetWorld())
+    {
+        UUserWidget* ServerBrowser =
+            CreateWidget(World, ServerBrowserWidgetClass);
+
+        if (ServerBrowser)
+        {
+            RemoveFromParent();
+            ServerBrowser->AddToViewport();
+        }
+    }
 }
 
 void UMainMenuWidget::OnClick_Settings()

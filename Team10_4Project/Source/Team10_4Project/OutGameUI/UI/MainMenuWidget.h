@@ -30,4 +30,7 @@ protected:
 
     UPROPERTY(meta = (BindWidget))
     class UButton* QuitButton;
+
+    UPROPERTY(EditAnywhere, BlueprintReadOnly, Category = "UI")
+    TSubclassOf<UUserWidget> ServerBrowserWidgetClass;
 };

@@ -11,7 +11,7 @@ UCivilianAttributeSet::UCivilianAttributeSet()
 	// 초기값 설정
 	InitHealth(100.0f);
 	InitMaxHealth(100.0f);
-	InitSanity(100.0f);
+	InitSanity(0.0f);
 	InitMoveSpeed(300.0f);
 }
 

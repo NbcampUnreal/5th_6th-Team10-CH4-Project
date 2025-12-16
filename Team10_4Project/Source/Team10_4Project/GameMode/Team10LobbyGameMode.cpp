@@ -33,23 +33,27 @@ void ATeam10LobbyGameMode::PostLogin(APlayerController* NewPlayer)
 
 	UE_LOG(LogTemp, Log, TEXT("Player Logged In Lobby: %s"), *NewPlayer->GetName());
 	ACivilianPlayerController* CivilianPlayerController = Cast<ACivilianPlayerController>(NewPlayer);
-	UTeam10GameInstance* Team10GameInstance = Cast<UTeam10GameInstance>(GetWorld()->GetGameInstance());
+	//UTeam10GameInstance* Team10GameInstance = Cast<UTeam10GameInstance>(GetWorld()->GetGameInstance());
 	ACivilianPlayerState* CivilianPlayerState = CivilianPlayerController->GetPlayerState<ACivilianPlayerState>();
 	
 	if (!Team10GameState)
 	{
+		UE_LOG(LogTemp, Log, TEXT("Team10GameState is null"));
 		return;
 	}
 	if (!CivilianPlayerController)
 	{
+		UE_LOG(LogTemp, Log, TEXT("CivilianPlayerController is null"));
 		return;
 	}
-	if (!Team10GameInstance)
-	{
-		return;
-	}
+	// if (!Team10GameInstance)
+	// {
+	// 	UE_LOG(LogTemp, Log, TEXT("Team10GameInstance is null"));
+	// 	return;
+	// }
 	if (!CivilianPlayerState)
 	{
+		UE_LOG(LogTemp, Log, TEXT("CivilianPlayerState is null"));
 		return;
 	}
 	

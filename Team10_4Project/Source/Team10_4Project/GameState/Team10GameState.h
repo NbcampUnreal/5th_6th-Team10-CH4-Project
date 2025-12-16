@@ -30,11 +30,11 @@ public:
 	void OnRep_CurrentArea();
 
 	// 플레이어를 투표로 죽이는데 필요한 최소 투표 수    
-	UPROPERTY(ReplicatedUsing = OnRep_MinVotesCount, BlueprintReadOnly, Category = "GameState")
-	int32 MinVotesCount;
+	UPROPERTY(ReplicatedUsing = OnRep_KillPlayerVotesCount, BlueprintReadOnly, Category = "GameState")
+	int32 KillPlayerVotesCount;
 
 	UFUNCTION()
-	void OnRep_MinVotesCount();
+	void OnRep_KillPlayerVotesCount();
 
 	// 현재 투표 수    
 	UPROPERTY(ReplicatedUsing = OnRep_CurrentVotesCount, BlueprintReadOnly, Category = "GameState")

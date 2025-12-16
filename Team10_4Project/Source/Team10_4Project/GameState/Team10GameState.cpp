@@ -30,7 +30,7 @@ void ATeam10GameState::OnRep_CurrentArea()
 	
 }
 
-void ATeam10GameState::OnRep_MinVotesCount()
+void ATeam10GameState::OnRep_KillPlayerVotesCount()
 {
 	// UI 설정
 }

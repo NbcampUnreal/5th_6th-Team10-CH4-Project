@@ -9,7 +9,7 @@
 #include "Character/CivilianPlayerState.h"
 #include "GameState/Team10GameState.h"
 #include "Manager/GameFlowManager.h"
-#include "GameMode/GameTypes/AreaTag.h"
+#include "GamePlayTag/GamePlayTags.h"
 
 ATeam10GameMode::ATeam10GameMode()
 {
@@ -193,7 +193,7 @@ void ATeam10GameMode::FoundPlayerSpawner()
 {
 	for (TActorIterator<APlayerSpawn> It(GetWorld()); It; ++It)
 	{
-		if(It->AreaTag == Area_Area1)
+		if(It->AreaTag == GamePlayTags::AreaTag::Area_Area1)
 		{
 			PlayerSpawners.Add(*It);
 		}

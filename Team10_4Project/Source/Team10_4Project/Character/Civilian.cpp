@@ -5,6 +5,7 @@
 
 #include "AbilitySystemComponent.h"
 #include "CivilianAttributeSet.h"
+#include "Character/CivilianPlayerState.h"
 #include "Components/CapsuleComponent.h"
 #include "GameFramework/CharacterMovementComponent.h"
 #include "GameFramework/SpringArmComponent.h"
@@ -42,12 +43,35 @@ ACivilian::ACivilian()
 
 	SpringArm = CreateDefaultSubobject<USpringArmComponent>(TEXT("SpringArm"));
 	SpringArm->SetupAttachment(GetRootComponent());
-	SpringArm->TargetArmLength = 400.f;
+	SpringArm->TargetArmLength = 300.f;
 	SpringArm->bUsePawnControlRotation = true;
 
-	Camera = CreateDefaultSubobject<UCameraComponent>(TEXT("Camera"));
+	/*Camera = CreateDefaultSubobject<UCameraComponent>(TEXT("Camera"));
 	Camera->SetupAttachment(SpringArm, USpringArmComponent::SocketName);
-	Camera->bUsePawnControlRotation = false;
+	Camera->bUsePawnControlRotation = false;*/
+
+	if (GetMesh())
+	{
+		GetMesh()->SetOwnerNoSee(true); // 로컬(나)에게는 안보이게 설정
+		GetMesh()->bCastHiddenShadow = true; // 3인칭 Mesh는 안보이지만 그림자는 보이도록 설정 
+		
+		// 3인칭 Mesh는 캡슐 안에서 위치 잡기
+		GetMesh()->SetRelativeLocation(FVector(0.0f, 0.0f, -90.0f));
+		GetMesh()->SetRelativeRotation(FRotator(0.0f, -90.0f, 0.0f));
+	}
+	
+	FirstPersonCamera = CreateDefaultSubobject<UCameraComponent>(TEXT("FirstPersonCamera"));
+	FirstPersonCamera->SetupAttachment(GetCapsuleComponent());
+	FirstPersonCamera->SetRelativeLocation(FVector(-10.0f, 0.0f, 60.0f));
+	FirstPersonCamera->bUsePawnControlRotation = true; // 마우스 회전에 따라 카메라 회전
+	
+	FirstPersonMesh = CreateDefaultSubobject<USkeletalMeshComponent>(TEXT("FirstPersonMesh"));
+	FirstPersonMesh->SetupAttachment(FirstPersonCamera);
+	FirstPersonMesh->SetOnlyOwnerSee(true); // 로컬(나)에게만 보이도록 설정
+	FirstPersonMesh->bCastDynamicShadow = false; // 1인칭 Mesh는 그림자가 안보이도록 설정
+	FirstPersonMesh->CastShadow = false;
+	FirstPersonMesh->SetRelativeLocation(FVector(-30.0f, 0.0f, -150.0f));
+	FirstPersonMesh->SetRelativeRotation(FRotator(0.0f, 90.0f, 0.0f));
 }
 
 UAbilitySystemComponent* ACivilian::GetAbilitySystemComponent() const
@@ -64,6 +88,9 @@ void ACivilian::BeginPlay()
 	{
 		AbilitySystemComponent->GetGameplayAttributeValueChangeDelegate(
 			AttributeSet->GetHealthAttribute()).AddUObject(this, &ACivilian::OnHealthChanged);
+		
+		/* AbilitySystemComponent->GetGameplayAttributeValueChangeDelegate(
+			AttributeSet->GetHealthAttribute()).AddUObject(this, &ACivilian::OnHealthChanged);*/
 	}
 }
 
@@ -130,9 +157,45 @@ void ACivilian::OnRep_PlayerState()
 
 void ACivilian::InitializeAbilitySystem()
 {
-	if (!AbilitySystemComponent)
+	if (!AbilitySystemComponent) return;
+	
+	ACivilianPlayerState* PS = GetPlayerState<ACivilianPlayerState>();
+	if (!PS) return;
+	
+	if (AbilitySystemComponent)
+	{
+		AbilitySystemComponent->InitAbilityActorInfo(PS, this);
+		
+		if (HasAuthority())
+		{
+			GiveDefaultAbilities();
+			ApplyDefaultEffects();
+		}
+	}
+}
+
+void ACivilian::GiveDefaultAbilities()
+{
+}
+
+void ACivilian::ApplyDefaultEffects()
+{
+	if (!HasAuthority() || !AbilitySystemComponent)
 		return;
 	
+	// 이펙트 컨테스트 생성
+	FGameplayEffectContextHandle EffectContext = AbilitySystemComponent->MakeEffectContext();
+	EffectContext.AddSourceObject(this);
+	
+	for (TSubclassOf<UGameplayEffect>& Effect : DefaultEffects)
+	{
+		// 이펙트 적용
+		FGameplayEffectSpecHandle SpecHandle = AbilitySystemComponent->MakeOutgoingSpec(Effect, 1, EffectContext);
+		if (SpecHandle.IsValid())
+		{
+			AbilitySystemComponent->ApplyGameplayEffectSpecToSelf(*SpecHandle.Data.Get());
+		}
+	}
 	
 }
 

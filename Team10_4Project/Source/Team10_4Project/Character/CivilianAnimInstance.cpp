@@ -6,6 +6,13 @@
 #include "Character/Civilian.h"
 #include "GameFramework/CharacterMovementComponent.h"
 
+UCivilianAnimInstance::UCivilianAnimInstance()
+{
+	GroundSpeed = 0.0f;
+	bIsFalling = false;
+	bShouldMove = false;
+}
+
 void UCivilianAnimInstance::NativeInitializeAnimation()
 {
 	Super::NativeInitializeAnimation();

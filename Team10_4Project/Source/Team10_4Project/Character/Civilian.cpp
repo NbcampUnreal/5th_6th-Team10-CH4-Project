@@ -22,6 +22,8 @@ ACivilian::ACivilian()
 	PrimaryActorTick.bCanEverTick = true;
 	bReplicates = true;
 	
+	SetNetUpdateFrequency(100.0f);
+	
 	AbilitySystemComponent = CreateDefaultSubobject<UAbilitySystemComponent>("AbilitySystemComponent");
 	AbilitySystemComponent->SetIsReplicated(true); // ASC 상태 복제
 	AbilitySystemComponent->SetReplicationMode(EGameplayEffectReplicationMode::Mixed); // ReplicationMode 설정
@@ -33,13 +35,18 @@ ACivilian::ACivilian()
 	SetReplicateMovement(true);
 	
 	bUseControllerRotationPitch = false;
-	bUseControllerRotationYaw = false;
+	bUseControllerRotationYaw = true;
 	bUseControllerRotationRoll = false;
 
 	GetCharacterMovement()->bUseControllerDesiredRotation = false;
-	GetCharacterMovement()->bOrientRotationToMovement = true;
+	GetCharacterMovement()->bOrientRotationToMovement = false;
 	GetCharacterMovement()->RotationRate = FRotator(0.0f, 500.0f, 0.0f);
 	GetCharacterMovement()->SetIsReplicated(true);
+	
+	GetCharacterMovement()->AirControl = 0.35f;
+	GetCharacterMovement()->MaxWalkSpeed = 500.f;
+	GetCharacterMovement()->MinAnalogWalkSpeed = 20.f;
+	GetCharacterMovement()->BrakingDecelerationWalking = 2000.f;
 
 	SpringArm = CreateDefaultSubobject<USpringArmComponent>(TEXT("SpringArm"));
 	SpringArm->SetupAttachment(GetRootComponent());
@@ -52,6 +59,9 @@ ACivilian::ACivilian()
 
 	if (GetMesh())
 	{
+		// 화면에 캐릭터가 보이든 안 보이든 상관없이 뼈대(애니메이션)위치를 항상 갱신
+		GetMesh()->VisibilityBasedAnimTickOption = EVisibilityBasedAnimTickOption::AlwaysTickPoseAndRefreshBones;
+		
 		GetMesh()->SetOwnerNoSee(true); // 로컬(나)에게는 안보이게 설정
 		GetMesh()->bCastHiddenShadow = true; // 3인칭 Mesh는 안보이지만 그림자는 보이도록 설정 
 		
@@ -144,6 +154,10 @@ void ACivilian::SetupPlayerInputComponent(class UInputComponent* PlayerInputComp
 		// 공격
 		EnhancedInputComponent->BindAction(AttackAction, ETriggerEvent::Started,
 			this, &ACivilian::TryAttack);
+		
+		// 변신
+		EnhancedInputComponent->BindAction(MorphAction, ETriggerEvent::Started,
+			this, &ACivilian::Morph);
 	}
 }
 
@@ -249,12 +263,21 @@ void ACivilian::OnHealthChanged(const FOnAttributeChangeData& Data)
 	}
 }
 
+void ACivilian::Morph()
+{
+	if (!AbilitySystemComponent)
+		return;
+	
+	UE_LOG(LogTemp, Warning, TEXT("Morphing!!"));
+}
+
 void ACivilian::TryAttack()
 {
 	if (!AbilitySystemComponent)
 		return;
 	
 	// 공격 어빌리티 활성화 (GameplayTag 사용하여 구현할 예정)
+	UE_LOG(LogTemp, Warning, TEXT("Attack!!"));
 }
 
 void ACivilian::MulticastHandleDeath_Implementation()

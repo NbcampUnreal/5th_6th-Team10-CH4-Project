@@ -105,6 +105,16 @@ public:
 	void StartJump();
 	void StopJump();
 	
+	// 공격
+	UFUNCTION(BlueprintCallable, Category = "Combat")
+	void Morph();
+	
+	// 공격
+	UFUNCTION(BlueprintCallable, Category = "Combat")
+	void TryAttack();
+	
+	// float GetCurrentAimPitch() const { return CurrentAimPitch; }
+	
 protected:
 	// Enhanced Input (UE 5.6)
 	UPROPERTY(EditAnywhere, BlueprintReadOnly, Category = "Input")
@@ -125,11 +135,15 @@ protected:
 	UPROPERTY(EditAnywhere, BlueprintReadOnly, Category = "Input")
 	class UInputAction* AttackAction;
 	
-#pragma endregion
+	UPROPERTY(EditAnywhere, BlueprintReadOnly, Category = "Input")
+	class UInputAction* MorphAction;
 	
-	// 공격
-	UFUNCTION(BlueprintCallable, Category = "Combat")
-	void TryAttack();
+	/*UPROPERTY(Replicated)
+	float CurrentAimPitch = 0.f;
+
+	float PreviousAimPitch = 0.f;*/
+	
+#pragma endregion
 	
 	// 사망 처리
 	UFUNCTION(BlueprintImplementableEvent, Category = "Character")

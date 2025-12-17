@@ -12,6 +12,7 @@
 
 class UAbilitySystemComponent;
 class UCivilianAttributeSet;
+class USkeletalMeshComponent;
 class UCameraComponent;
 class USpringArmComponent;
 class UInputMappingContext;
@@ -43,14 +44,24 @@ public:
 public:
 	FORCEINLINE USpringArmComponent* GetSpringArm() const { return SpringArm; }
 
-	FORCEINLINE UCameraComponent* GetCamera() const { return Camera; }
+	/*FORCEINLINE UCameraComponent* GetCamera() const { return Camera; }*/
+	
+	FORCEINLINE USkeletalMeshComponent* GetFirstPersonMesh() const { return FirstPersonMesh; }
+	
+	FORCEINLINE UCameraComponent* GetFirstPersonCameraComponent() const { return FirstPersonCamera; }
 
 protected:
-	UPROPERTY(EditDefaultsOnly, BlueprintReadOnly, Category = "PlayerCharacter|Components")
+	UPROPERTY(EditDefaultsOnly, BlueprintReadOnly, Category = "PlayerCharacter|Components", meta = (AllowPrivateAccess = "true"))
 	TObjectPtr<USpringArmComponent> SpringArm;
 
-	UPROPERTY(EditDefaultsOnly, BlueprintReadOnly, Category = "PlayerCharacter|Components")
-	TObjectPtr<UCameraComponent> Camera;
+	/*UPROPERTY(EditDefaultsOnly, BlueprintReadOnly, Category = "PlayerCharacter|Components", meta = (AllowPrivateAccess = "true"))
+	TObjectPtr<UCameraComponent> Camera;*/
+	
+	UPROPERTY(VisibleAnywhere, BlueprintReadOnly, Category = "PlayerCharacter|Components", meta = (AllowPrivateAccess = "true"))
+	TObjectPtr<UCameraComponent> FirstPersonCamera;
+	
+	UPROPERTY(VisibleAnywhere, BlueprintReadOnly, Category = "PlayerCharacter|Components", meta = (AllowPrivateAccess = "true"))
+	TObjectPtr<USkeletalMeshComponent> FirstPersonMesh;
 
 #pragma endregion
 	
@@ -76,6 +87,12 @@ public:
 protected:
 	// GAS 초기화 - ASC 초기화 로직 분리
 	void InitializeAbilitySystem();
+	void GiveDefaultAbilities();
+	void ApplyDefaultEffects();
+	
+public:
+	// Attribute 변경 콜백
+	virtual void OnHealthChanged(const FOnAttributeChangeData& Data);
 
 #pragma endregion
 	
@@ -109,9 +126,6 @@ protected:
 	class UInputAction* AttackAction;
 	
 #pragma endregion
-	
-	// Attribute 변경 콜백
-	virtual void OnHealthChanged(const FOnAttributeChangeData& Data);
 	
 	// 공격
 	UFUNCTION(BlueprintCallable, Category = "Combat")

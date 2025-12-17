@@ -70,6 +70,7 @@ public:
    UFUNCTION(BlueprintCallable, Category = "Chat")
    void ClearChatHistory();
 
+   int32 GetMaxChatHistory() const { return MaxChatHistory; };
    // UFUNCTION(Server, Reliable)
    // void APlayerController::ServerRPC_SendChatMessage(const FChatMessage& ChatMessage);
 protected:

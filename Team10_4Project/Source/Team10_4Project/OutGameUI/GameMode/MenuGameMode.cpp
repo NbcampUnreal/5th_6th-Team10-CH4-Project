@@ -1,11 +1,24 @@
 ﻿#include "MenuGameMode.h"
-#include "OutGameUI/Player/MenuPlayerController.h"
+#include "Blueprint/UserWidget.h"
+#include "Kismet/GameplayStatics.h"
 
-AMenuGameMode::AMenuGameMode()
+void AMenuGameMode::BeginPlay()
 {
-    // UI 전용 컨트롤러
-    PlayerControllerClass = AMenuPlayerController::StaticClass();
+    Super::BeginPlay();
 
-    // Pawn / Character 생성 안 함
-    DefaultPawnClass = nullptr;
+    if (!MainMenuWidgetClass)
+    {
+        UE_LOG(LogTemp, Warning, TEXT("MainMenuWidgetClass is not set"));
+        return;
+    }
+
+    UUserWidget* MainMenu = CreateWidget<UUserWidget>(
+        GetWorld(),
+        MainMenuWidgetClass
+    );
+
+    if (MainMenu)
+    {
+        MainMenu->AddToViewport();
+    }
 }

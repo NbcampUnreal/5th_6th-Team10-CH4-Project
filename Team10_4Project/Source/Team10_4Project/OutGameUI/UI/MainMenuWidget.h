@@ -1,16 +1,16 @@
 ﻿#pragma once
 
 #include "CoreMinimal.h"
-#include "Blueprint/UserWidget.h"
+#include "CommonActivatableWidget.h"
 #include "MainMenuWidget.generated.h"
 
 UCLASS()
-class TEAM10_4PROJECT_API UMainMenuWidget : public UUserWidget
+class TEAM10_4PROJECT_API UMainMenuWidget : public UCommonActivatableWidget
 {
     GENERATED_BODY()
 
 protected:
-    virtual bool Initialize() override;
+    virtual void NativeConstruct() override;
 
     UFUNCTION()
     void OnClick_Play();
@@ -34,3 +34,6 @@ protected:
     UPROPERTY(EditAnywhere, BlueprintReadOnly, Category = "UI")
     TSubclassOf<UUserWidget> ServerBrowserWidgetClass;
 };
+
+
+

@@ -1,6 +1,7 @@
 #include "ServerBrowserWidget.h"
 #include "Components/Button.h"
 #include "Components/ScrollBox.h"
+#include "OutGameUI/Player/MenuPlayerController.h"
 
 void UServerBrowserWidget::NativeConstruct()
 {
@@ -20,5 +21,23 @@ void UServerBrowserWidget::OnClick_Refresh()
 
 void UServerBrowserWidget::OnClick_Back()
 {
-    RemoveFromParent();
+    AMenuPlayerController* MenuPC =
+        Cast<AMenuPlayerController>(GetOwningPlayer());
+
+    if (MenuPC)
+    {
+        MenuPC->ShowMainMenu();
+    }
 }
+
+
+//void UServerBrowserWidget::OnClick_Back()
+//{
+//    if (APlayerController* PC = GetOwningPlayer())
+//    {
+//        if (AMenuPlayerController* MenuPC = Cast<AMenuPlayerController>(PC))
+//        {
+//            MenuPC->ShowMainMenu();
+//        }
+//    }
+//}

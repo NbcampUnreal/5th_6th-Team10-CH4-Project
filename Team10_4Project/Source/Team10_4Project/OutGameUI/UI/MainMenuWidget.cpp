@@ -1,44 +1,55 @@
 ﻿#include "MainMenuWidget.h"
+
 #include "Components/Button.h"
 #include "Kismet/KismetSystemLibrary.h"
+#include "OutGameUI/Player/MenuPlayerController.h"
 
-bool UMainMenuWidget::Initialize()
+void UMainMenuWidget::NativeConstruct()
 {
-    bool bResult = Super::Initialize();
+    Super::NativeConstruct();
+
+    UE_LOG(LogTemp, Log, TEXT("MainMenuWidget NativeConstruct"));
 
     if (PlayButton)
+    {
         PlayButton->OnClicked.AddDynamic(this, &UMainMenuWidget::OnClick_Play);
+    }
 
     if (SettingsButton)
+    {
         SettingsButton->OnClicked.AddDynamic(this, &UMainMenuWidget::OnClick_Settings);
+    }
 
     if (QuitButton)
+    {
         QuitButton->OnClicked.AddDynamic(this, &UMainMenuWidget::OnClick_Quit);
-
-    return bResult;
+    }
 }
 
 void UMainMenuWidget::OnClick_Play()
 {
-    if (UWorld* World = GetWorld())
-    {
-        UUserWidget* ServerBrowser =
-            CreateWidget(World, ServerBrowserWidgetClass);
+    UE_LOG(LogTemp, Log, TEXT("Play 버튼 클릭"));
 
-        if (ServerBrowser)
-        {
-            RemoveFromParent();
-            ServerBrowser->AddToViewport();
-        }
+    AMenuPlayerController* MenuPC =
+        Cast<AMenuPlayerController>(GetOwningPlayer());
+
+    if (MenuPC)
+    {
+        MenuPC->ShowServerBrowser();
     }
 }
 
 void UMainMenuWidget::OnClick_Settings()
 {
-    UE_LOG(LogTemp, Warning, TEXT("Settings Clicked"));
+    UE_LOG(LogTemp, Log, TEXT("Settings 버튼 클릭"));
 }
 
 void UMainMenuWidget::OnClick_Quit()
 {
-    UKismetSystemLibrary::QuitGame(this, nullptr, EQuitPreference::Quit, false);
+    UKismetSystemLibrary::QuitGame(
+        this,
+        GetOwningPlayer(),
+        EQuitPreference::Quit,
+        false
+    );
 }

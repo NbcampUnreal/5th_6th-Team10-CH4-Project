@@ -1,4 +1,4 @@
-#pragma once
+﻿#pragma once
 
 #include "CoreMinimal.h"
 #include "GameFramework/GameModeBase.h"
@@ -10,5 +10,10 @@ class TEAM10_4PROJECT_API AMenuGameMode : public AGameModeBase
     GENERATED_BODY()
 
 public:
-    AMenuGameMode();
+    virtual void BeginPlay() override;
+
+protected:
+    // 메인 메뉴 위젯 클래스
+    UPROPERTY(EditDefaultsOnly, Category = "UI")
+    TSubclassOf<class UUserWidget> MainMenuWidgetClass;
 };

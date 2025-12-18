@@ -74,13 +74,13 @@ void UCivilianAnimInstance::NativeUpdateAnimation(float DeltaSeconds)
 		Direction = 0.0f;
 	}
 	
-	if (GEngine)
+	/*if (GEngine)
 	{
 		FString DebugMsg = FString::Printf(TEXT("Speed: %.2f | Falling: %d | Move: %d | Pitch: %.2f | Dir: %.2f"), 
 			GroundSpeed, bIsFalling, bShouldMove, AimPitch, Direction);
             
 		GEngine->AddOnScreenDebugMessage(-1, 0.0f, FColor::Yellow, DebugMsg);
-	}
+	}*/
 }
 
 void UCivilianAnimInstance::AnimNotify_CheckMeleeAttackHit()

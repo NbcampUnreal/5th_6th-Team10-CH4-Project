@@ -103,11 +103,7 @@ public:
 	// 공격
 	UFUNCTION(BlueprintCallable, Category = "Combat")
 	void TryAttack();
-	
-	// 공격
-	UFUNCTION(BlueprintCallable, Category = "Combat")
-	void TryAttack();
-	
+
 protected:
 	// Enhanced Input (UE 5.6)
 	UPROPERTY(EditAnywhere, BlueprintReadOnly, Category = "Input")

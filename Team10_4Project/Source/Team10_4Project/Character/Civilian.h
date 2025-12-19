@@ -1,4 +1,4 @@
-// Fill out your copyright notice in the Description page of Project Settings.
+﻿// Fill out your copyright notice in the Description page of Project Settings.
 
 #pragma once
 
@@ -35,6 +35,7 @@ public:
 	// 초기화
 	virtual void BeginPlay() override;
 	virtual void PossessedBy(AController* NewController) override;
+	virtual void Tick(float DeltaTime) override;
 	virtual void SetupPlayerInputComponent(class UInputComponent* PlayerInputComponent) override;
 	virtual void OnRep_PlayerState() override;
 	
@@ -183,13 +184,38 @@ protected:
 	UFUNCTION(NetMulticast, Reliable)
 	void MulticastHandleDeath();
 	
-		/*
-    // 상호작용
-    UFUNCTION(BlueprintCallable, Category = "Interaction")
-    void TryInteract();
+	/*
+	// 상호작용
+	UFUNCTION(BlueprintCallable, Category = "Interaction")
+	void TryInteract();
 
-    // 아이템 사용
-    UFUNCTION(BlueprintCallable, Category = "Item")
-    void TryUseItem(int32 ItemSlot)
-    */
+	// 아이템 사용
+	UFUNCTION(BlueprintCallable, Category = "Item")
+	void TryUseItem(int32 ItemSlot)
+	*/
+
+
+#pragma region Interaction Logic - 상호작용 로직
+protected:
+	// 클라이언트에서 서버로 상호작용을 요청하는 RPC
+	UFUNCTION(Server, Reliable)
+	void ServerRPC_Interact(AActor* TargetActor);
+
+	// 클라이언트에서 주변 Gimmick을 찾는 Line Trace
+	void Client_PerformInteractTrace();
+
+	// 입력 매핑 호출 함수 (예: E키)
+	void InteractInputPressed();
+
+	// 상호작용 가능 액터가 존재하는지 확인하는 함수
+	AActor* GetInteractableActor();
+
+private:
+	// 현재 상호작용 중인 액터 (Line Trace의 결과 값)
+	TWeakObjectPtr<AActor> CurrentInteractableActor;
+
+	// 상호작용 거리
+	UPROPERTY(EditDefaultsOnly, Category = "Interaction")
+	float InteractDistance = 400.0f;
+#pragma endregion
 };

@@ -53,11 +53,6 @@ protected:
 	UPROPERTY(BlueprintReadOnly, Category = "Movement")
 	float WeaponSwayX;
 	
-	// 바라보는 방향
 	UPROPERTY(VisibleAnywhere, BlueprintReadOnly)
 	float AimPitch;
-	
-	// 이동 방향
-	UPROPERTY(VisibleAnywhere, BlueprintReadOnly, Category = "Movement")
-	float Direction;
 };

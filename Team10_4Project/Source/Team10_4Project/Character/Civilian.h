@@ -44,31 +44,38 @@ public:
 #pragma region Civilian Components
 public:
 	FORCEINLINE USpringArmComponent* GetSpringArm() const { return SpringArm; }
+
+	/*FORCEINLINE UCameraComponent* GetCamera() const { return Camera; }*/
 	
-	FORCEINLINE USkeletalMeshComponent* GetFirstPersonMesh() const { return FirstPersonMeshComponent; }
+	FORCEINLINE USkeletalMeshComponent* GetFirstPersonMesh() const { return FirstPersonMesh; }
 	
 	FORCEINLINE UCameraComponent* GetFirstPersonCameraComponent() const { return FirstPersonCamera; }
 
 protected:
 	UPROPERTY(EditDefaultsOnly, BlueprintReadOnly, Category = "PlayerCharacter|Components", meta = (AllowPrivateAccess = "true"))
 	TObjectPtr<USpringArmComponent> SpringArm;
+
+	/*UPROPERTY(EditDefaultsOnly, BlueprintReadOnly, Category = "PlayerCharacter|Components", meta = (AllowPrivateAccess = "true"))
+	TObjectPtr<UCameraComponent> Camera;*/
 	
 	UPROPERTY(VisibleAnywhere, BlueprintReadOnly, Category = "PlayerCharacter|Components", meta = (AllowPrivateAccess = "true"))
 	TObjectPtr<UCameraComponent> FirstPersonCamera;
 	
 	UPROPERTY(VisibleAnywhere, BlueprintReadOnly, Category = "PlayerCharacter|Components", meta = (AllowPrivateAccess = "true"))
-	TObjectPtr<USkeletalMeshComponent> FirstPersonMeshComponent;
+	TObjectPtr<USkeletalMeshComponent> FirstPersonMesh;
 
 #pragma endregion
 	
 #pragma region Civilian GAS
 	
 public:
-	UPROPERTY()
-	TWeakObjectPtr<UAbilitySystemComponent> AbilitySystemComponent;
+	// GAS 컴포넌트
+	UPROPERTY(VisibleAnywhere, BlueprintReadOnly, Category = "GAS")
+	TObjectPtr<UAbilitySystemComponent> AbilitySystemComponent;
 
-	UPROPERTY()
-	TWeakObjectPtr<UCivilianAttributeSet> AttributeSet;
+	// Attribute Set
+	UPROPERTY(VisibleAnywhere, BlueprintReadOnly, Category = "GAS")
+	TObjectPtr<UCivilianAttributeSet> AttributeSet;
 
 	// 기본 어빌리티 목록
 	UPROPERTY(EditDefaultsOnly, BlueprintReadOnly, Category = "GAS|Abilities")
@@ -93,15 +100,11 @@ public:
 #pragma region Civilian Input
 	
 public:
-	// 입력 바인딩 함수
+	// Enhanced Input 콜백 함수들
 	void Move(const FInputActionValue& Value);
 	void Look(const FInputActionValue& Value);
 	void StartJump();
 	void StopJump();
-	
-	// 공격
-	UFUNCTION(BlueprintCallable, Category = "Combat")
-	void TryAttack();
 	
 protected:
 	// Enhanced Input (UE 5.6)
@@ -125,50 +128,9 @@ protected:
 	
 #pragma endregion
 	
-#pragma region Civilian Morph
-	
-public:
-	// 변신
+	// 공격
 	UFUNCTION(BlueprintCallable, Category = "Combat")
-	void Morph();
-	
-	// 서버 RPC - 변신 요청 및 검증 (Sanity Check)
-	UFUNCTION(Server, Reliable)
-	void ServerTryMorph();
-
-	// 멀티캐스트 RPC - 외형 변경 (클라이언트 실행)
-	UFUNCTION(NetMulticast, Reliable)
-	void MulticastMorph();
-	
-protected:
-	UPROPERTY(EditAnywhere, BlueprintReadOnly, Category = "Input|Infected")
-	class UInputAction* MorphAction;
-	
-	UPROPERTY(EditAnywhere, BlueprintReadOnly, Category = "PlayerCharacter|Components", meta = (AllowPrivateAccess = "true"))
-	TObjectPtr<USkeletalMesh> MorphMesh;
-	
-	UPROPERTY(EditAnywhere, BlueprintReadOnly, Category = "PlayerCharacter|Components")
-	TSubclassOf<UAnimInstance> MorphAnimClass;
-	
-public:
-	// [테스트용] 콘솔 명령어 (Exec)
-	// 사용법: ~ 키 누르고 "Cheat_SetRole 1" (1=Infected, 0=Civilian)
-	UFUNCTION(Exec) 
-	void Cheat_SetRole(int32 RoleID);
-
-	// 사용법: ~ 키 누르고 "Cheat_SetSanity 100"
-	UFUNCTION(Exec)
-	void Cheat_SetSanity(float Amount);
-
-protected:
-	// 치트는 반드시 서버에서 실행
-	UFUNCTION(Server, Reliable)
-	void Server_SetRole(EPlayerRole NewRole);
-
-	UFUNCTION(Server, Reliable)
-	void Server_SetSanity(float Amount);
-	
-#pragma endregion
+	void TryAttack();
 	
 	// 사망 처리
 	UFUNCTION(BlueprintImplementableEvent, Category = "Character")
@@ -177,15 +139,15 @@ protected:
 	UFUNCTION(NetMulticast, Reliable)
 	void MulticastHandleDeath();
 	
-	/*
-	// 상호작용
-	UFUNCTION(BlueprintCallable, Category = "Interaction")
-	void TryInteract();
+		/*
+    // 상호작용
+    UFUNCTION(BlueprintCallable, Category = "Interaction")
+    void TryInteract();
 
-	// 아이템 사용
-	UFUNCTION(BlueprintCallable, Category = "Item")
-	void TryUseItem(int32 ItemSlot)
-	*/
+    // 아이템 사용
+    UFUNCTION(BlueprintCallable, Category = "Item")
+    void TryUseItem(int32 ItemSlot)
+    */
 
 
 #pragma region Interaction Logic - 상호작용 로직

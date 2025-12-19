@@ -5,7 +5,7 @@
 #include "CoreMinimal.h"
 #include "GameFramework/Character.h"
 #include "AbilitySystemInterface.h"
-// #include "GameplayTagContainer.h"
+#include "GameplayTagContainer.h"
 #include "GameplayEffectTypes.h"
 #include "InputActionValue.h" // UE 5.6 Enhanced Input
 #include "Civilian.generated.h"
@@ -29,10 +29,10 @@ class TEAM10_4PROJECT_API ACivilian : public ACharacter, public IAbilitySystemIn
 public:
 	ACivilian();
     
-	// IAbilitySystemInterface ±¸Çö
+	// IAbilitySystemInterface êµ¬í˜„
 	virtual UAbilitySystemComponent* GetAbilitySystemComponent() const override;
 	
-	// ÃÊ±âÈ­
+	// ì´ˆê¸°í™”
 	virtual void BeginPlay() override;
 	virtual void PossessedBy(AController* NewController) override;
 	virtual void SetupPlayerInputComponent(class UInputComponent* PlayerInputComponent) override;
@@ -69,22 +69,22 @@ public:
 	UPROPERTY()
 	TWeakObjectPtr<UCivilianAttributeSet> AttributeSet;
 
-	// ±âº» ¾îºô¸®Æ¼ ¸ñ·Ï
+	// ê¸°ë³¸ ì–´ë¹Œë¦¬í‹° ëª©ë¡
 	UPROPERTY(EditDefaultsOnly, BlueprintReadOnly, Category = "GAS|Abilities")
 	TArray<TSubclassOf<class UGameplayAbility>> DefaultAbilities;
 
-	// ±âº» È¿°ú ¸ñ·Ï
+	// ê¸°ë³¸ íš¨ê³¼ ëª©ë¡
 	UPROPERTY(EditDefaultsOnly, BlueprintReadOnly, Category = "GAS|Effects")
 	TArray<TSubclassOf<class UGameplayEffect>> DefaultEffects;
 
 protected:
-	// GAS ÃÊ±âÈ­ - ASC ÃÊ±âÈ­ ·ÎÁ÷ ºĞ¸®
+	// GAS ì´ˆê¸°í™” - ASC ì´ˆê¸°í™” ë¡œì§ ë¶„ë¦¬
 	void InitializeAbilitySystem();
 	void GiveDefaultAbilities();
 	void ApplyDefaultEffects();
 	
 public:
-	// Attribute º¯°æ Äİ¹é
+	// Attribute ë³€ê²½ ì½œë°±
 	virtual void OnHealthChanged(const FOnAttributeChangeData& Data);
 
 #pragma endregion
@@ -92,13 +92,18 @@ public:
 #pragma region Civilian Input
 	
 public:
-	// ÀÔ·Â ¹ÙÀÎµù ÇÔ¼ö
+	// ì…ë ¥ ë°”ì¸ë”© í•¨ìˆ˜
 	void Move(const FInputActionValue& Value);
 	void Look(const FInputActionValue& Value);
 	void StartJump();
 	void StopJump();
+	void ActivateAbility(const FGameplayTag& AbilityTag);
 	
-	// °ø°İ
+	// ê³µê²©
+	UFUNCTION(BlueprintCallable, Category = "Combat")
+	void TryAttack();
+	
+	// ê³µê²©
 	UFUNCTION(BlueprintCallable, Category = "Combat")
 	void TryAttack();
 	
@@ -127,15 +132,15 @@ protected:
 #pragma region Civilian Morph
 	
 public:
-	// º¯½Å
+	// ë³€ì‹ 
 	UFUNCTION(BlueprintCallable, Category = "Combat")
 	void Morph();
 	
-	// ¼­¹ö RPC - º¯½Å ¿äÃ» ¹× °ËÁõ (Sanity Check)
+	// ì„œë²„ RPC - ë³€ì‹  ìš”ì²­ ë° ê²€ì¦ (Sanity Check)
 	UFUNCTION(Server, Reliable)
 	void ServerTryMorph();
 
-	// ¸ÖÆ¼Ä³½ºÆ® RPC - ¿ÜÇü º¯°æ (Å¬¶óÀÌ¾ğÆ® ½ÇÇà)
+	// ë©€í‹°ìºìŠ¤íŠ¸ RPC - ì™¸í˜• ë³€ê²½ (í´ë¼ì´ì–¸íŠ¸ ì‹¤í–‰)
 	UFUNCTION(NetMulticast, Reliable)
 	void MulticastMorph();
 	
@@ -149,18 +154,24 @@ protected:
 	UPROPERTY(EditAnywhere, BlueprintReadOnly, Category = "PlayerCharacter|Components")
 	TSubclassOf<UAnimInstance> MorphAnimClass;
 	
+	UPROPERTY(EditAnywhere, BlueprintReadOnly, Category = "PlayerCharacter|Components")
+	TObjectPtr<USkeletalMesh> MorphFirstPersonMesh;
+	
+	UPROPERTY(EditAnywhere, BlueprintReadOnly, Category = "PlayerCharacter|Components")
+	TSubclassOf<UAnimInstance> MorphFirstPersonAnimClass;
+	
 public:
-	// [Å×½ºÆ®¿ë] ÄÜ¼Ö ¸í·É¾î (Exec)
-	// »ç¿ë¹ı: ~ Å° ´©¸£°í "Cheat_SetRole 1" (1=Infected, 0=Civilian)
+	// [í…ŒìŠ¤íŠ¸ìš©] ì½˜ì†” ëª…ë ¹ì–´ (Exec)
+	// ì‚¬ìš©ë²•: ~ í‚¤ ëˆ„ë¥´ê³  "Cheat_SetRole 1" (1=Infected, 0=Civilian)
 	UFUNCTION(Exec) 
 	void Cheat_SetRole(int32 RoleID);
 
-	// »ç¿ë¹ı: ~ Å° ´©¸£°í "Cheat_SetSanity 100"
+	// ì‚¬ìš©ë²•: ~ í‚¤ ëˆ„ë¥´ê³  "Cheat_SetSanity 100"
 	UFUNCTION(Exec)
 	void Cheat_SetSanity(float Amount);
 
 protected:
-	// Ä¡Æ®´Â ¹İµå½Ã ¼­¹ö¿¡¼­ ½ÇÇà
+	// ì¹˜íŠ¸ëŠ” ë°˜ë“œì‹œ ì„œë²„ì—ì„œ ì‹¤í–‰
 	UFUNCTION(Server, Reliable)
 	void Server_SetRole(EPlayerRole NewRole);
 
@@ -169,7 +180,7 @@ protected:
 	
 #pragma endregion
 	
-	// »ç¸Á Ã³¸®
+	// ì‚¬ë§ ì²˜ë¦¬
 	UFUNCTION(BlueprintImplementableEvent, Category = "Character")
 	void OnDeath();
 
@@ -177,11 +188,11 @@ protected:
 	void MulticastHandleDeath();
 	
 		/*
-    // »óÈ£ÀÛ¿ë
+    // ìƒí˜¸ì‘ìš©
     UFUNCTION(BlueprintCallable, Category = "Interaction")
     void TryInteract();
 
-    // ¾ÆÀÌÅÛ »ç¿ë
+    // ì•„ì´í…œ ì‚¬ìš©
     UFUNCTION(BlueprintCallable, Category = "Item")
     void TryUseItem(int32 ItemSlot)
     */

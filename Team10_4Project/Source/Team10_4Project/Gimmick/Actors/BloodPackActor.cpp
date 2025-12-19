@@ -65,8 +65,8 @@ void ABloodPackActor::Interact_Implementation(AActor* _Instigator)
 		return;
 	}
 
-	//UAbilitySystemComponent* _InstigatorASC = UAbilitySystemBlueprintLibrary::GetAbilitySystemComponent(_Instigator);
-	UAbilitySystemComponent* _InstigatorASC = Cast<ACivilian>(_Instigator)->AbilitySystemComponent;
+	UAbilitySystemComponent* _InstigatorASC = UAbilitySystemBlueprintLibrary::GetAbilitySystemComponent(_Instigator);
+	//UAbilitySystemComponent* _InstigatorASC = Cast<ACivilian>(_Instigator)->AbilitySystemComponent;
 	if (_InstigatorASC)
 	{
 		const UCivilianAttributeSet* CivilianAS = _InstigatorASC->GetSet<UCivilianAttributeSet>();

@@ -5,7 +5,7 @@
 #include "CoreMinimal.h"
 #include "GameFramework/Character.h"
 #include "AbilitySystemInterface.h"
-// #include "GameplayTagContainer.h"
+#include "GameplayTagContainer.h"
 #include "GameplayEffectTypes.h"
 #include "InputActionValue.h" // UE 5.6 Enhanced Input
 #include "Civilian.generated.h"
@@ -97,6 +97,7 @@ public:
 	void Look(const FInputActionValue& Value);
 	void StartJump();
 	void StopJump();
+	void ActivateAbility(const FGameplayTag& AbilityTag);
 	
 	// 공격
 	UFUNCTION(BlueprintCallable, Category = "Combat")
@@ -148,6 +149,12 @@ protected:
 	
 	UPROPERTY(EditAnywhere, BlueprintReadOnly, Category = "PlayerCharacter|Components")
 	TSubclassOf<UAnimInstance> MorphAnimClass;
+	
+	UPROPERTY(EditAnywhere, BlueprintReadOnly, Category = "PlayerCharacter|Components")
+	TObjectPtr<USkeletalMesh> MorphFirstPersonMesh;
+	
+	UPROPERTY(EditAnywhere, BlueprintReadOnly, Category = "PlayerCharacter|Components")
+	TSubclassOf<UAnimInstance> MorphFirstPersonAnimClass;
 	
 public:
 	// [테스트용] 콘솔 명령어 (Exec)

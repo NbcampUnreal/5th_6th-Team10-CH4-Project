@@ -4,6 +4,8 @@
 #include "Character/Civilian.h"
 
 #include "AbilitySystemComponent.h"
+#include "AbilitySystemBlueprintLibrary.h"
+#include "GameplayTag/GamePlayTags.h"
 #include "CivilianAttributeSet.h"
 #include "Character/CivilianPlayerState.h"
 #include "Components/CapsuleComponent.h"
@@ -179,6 +181,20 @@ void ACivilian::InitializeAbilitySystem()
 
 void ACivilian::GiveDefaultAbilities()
 {
+	ACivilianPlayerState* PS = GetPlayerState<ACivilianPlayerState>();
+	if (!PS) return;
+	
+	AbilitySystemComponent = PS->GetAbilitySystemComponent();
+	if (!AbilitySystemComponent.IsValid()) return;
+	
+	if (!HasAuthority() || !AbilitySystemComponent.IsValid()) return;
+	
+	for (TSubclassOf<UGameplayAbility>& Ability : DefaultAbilities)
+	{
+		FGameplayAbilitySpec AbilitySpec(Ability, 1, -1, this);
+		AbilitySystemComponent->GiveAbility(AbilitySpec);
+	}
+	
 }
 
 void ACivilian::ApplyDefaultEffects()
@@ -243,6 +259,17 @@ void ACivilian::StartJump()
 void ACivilian::StopJump()
 {
 	StopJumping();
+}
+
+void ACivilian::ActivateAbility(const FGameplayTag& AbilityTag)
+{
+	ACivilianPlayerState* PS = GetPlayerState<ACivilianPlayerState>();
+	if (!PS) return;
+	
+	AbilitySystemComponent = PS->GetAbilitySystemComponent();
+	if (!AbilitySystemComponent.IsValid()) return;
+	
+	AbilitySystemComponent->TryActivateAbilitiesByTag(AbilityTag.GetSingleTagContainer());
 }
 
 void ACivilian::OnHealthChanged(const FOnAttributeChangeData& Data)
@@ -342,16 +369,32 @@ void ACivilian::MulticastMorph_Implementation()
 {
 	if (MorphMesh && GetMesh())
 	{
-		// 메쉬 교체
+		// 3인칭 메쉬 교체
 		GetMesh()->SetSkeletalMesh(MorphMesh);
 
-		// ABP 교체 
+		// 3인칭 ABP 교체 
 		if (MorphAnimClass)
 		{
 			GetMesh()->SetAnimInstanceClass(MorphAnimClass);
 		}
 
 		// 이동 속도 증가 등 추가 로직
+		
+		// 1인칭 메쉬 교체
+		if (IsLocallyControlled() && FirstPersonMeshComponent)
+		{
+			if (MorphFirstPersonMesh)
+			{
+				// 1인칭 메쉬 교체
+				FirstPersonMeshComponent->SetSkeletalMesh(MorphFirstPersonMesh);
+				
+				// 1인칭 ABP 교체 
+				if (MorphFirstPersonAnimClass)
+				{
+					FirstPersonMeshComponent->SetAnimInstanceClass(MorphFirstPersonAnimClass);
+				}
+			}
+		}
 		
 		UE_LOG(LogTemp, Log, TEXT("Morph Complete!"));
 	}
@@ -366,7 +409,14 @@ void ACivilian::TryAttack()
 	if (!AbilitySystemComponent.IsValid()) return;
 	
 	// 공격 어빌리티 활성화 (GameplayTag 사용하여 구현할 예정)
-	UE_LOG(LogTemp, Warning, TEXT("Attack!!"));
+	if (PS->GetPlayerRole() != EPlayerRole::Infected)
+	{
+		UE_LOG(LogTemp, Warning, TEXT("Civilian Player Attack Activated!!"));	
+	}
+	else
+	{
+		UE_LOG(LogTemp, Warning, TEXT("Infected Player Attack Activated!!"));
+	}
 }
 
 void ACivilian::MulticastHandleDeath_Implementation()

@@ -5,8 +5,10 @@
 #include "CoreMinimal.h"
 #include "GameFramework/GameStateBase.h"
 #include "GameMode/Team10GameMode.h"
+#include "GameMode/GameTypes/GameTypes.h"
 #include "Team10GameState.generated.h"
 
+class ACivilianPlayerController;
 class APlayerController;
 
 UCLASS()
@@ -23,9 +25,23 @@ public:
 	// 현재 게임 구역
 	UPROPERTY(ReplicatedUsing = OnRep_CurrentArea, BlueprintReadOnly, Category = "GameState")
 	EGameArea CurrentArea;
-
+	
 	UFUNCTION()
 	void OnRep_CurrentArea();
+
+	// 플레이어를 투표로 죽이는데 필요한 최소 투표 수    
+	UPROPERTY(ReplicatedUsing = OnRep_KillPlayerVotesCount, BlueprintReadOnly, Category = "GameState")
+	int32 KillPlayerVotesCount;
+
+	UFUNCTION()
+	void OnRep_KillPlayerVotesCount();
+
+	// 현재 투표 수    
+	UPROPERTY(ReplicatedUsing = OnRep_CurrentVotesCount, BlueprintReadOnly, Category = "GameState")
+	int32 CurrentVotesCount;
+
+	UFUNCTION()
+	void OnRep_CurrentVotesCount();
 	
 	// 현재 게임 페이즈
 	UPROPERTY(ReplicatedUsing = OnRep_CurrentPhase, BlueprintReadOnly, Category = "GameState")
@@ -40,6 +56,13 @@ public:
 
 	UFUNCTION()
 	void OnRep_PhaseTimeRemaining();
+
+	// 다음 구역으로 이동하기 위해 활성화가 필요한 퓨즈 박스 개수
+	UPROPERTY(ReplicatedUsing = OnRep_RemainingFuseBoxCount, BlueprintReadOnly, Category = "GameState")
+	int32 RemainingFuseBoxCount;
+
+	UFUNCTION()
+	void OnRep_RemainingFuseBoxCount();
 	
 	// 게임 결과
 	UPROPERTY(ReplicatedUsing = OnRep_GameResult, BlueprintReadOnly, Category = "GameState")
@@ -49,8 +72,8 @@ public:
 	void OnRep_GameResult();
 	
 	// 모든 플레이어
-	UPROPERTY(Replicated, BlueprintReadOnly, Category = "GameState")
-	TArray<TObjectPtr<APlayerController>> AllPlayers; // 현재는 타입이 기본 APlayerController 이지만 추후 APlayerController의 자식 클래스를 생성하면 자식 클래스로 타입을 변경할 예정
+	UPROPERTY(BlueprintReadOnly, Category = "GameState")
+	TArray<TObjectPtr<ACivilianPlayerController>> AllPlayers; 
 	
 	// 생존 플레이어 수
 	UPROPERTY(Replicated, BlueprintReadOnly, Category = "GameState")

@@ -5,13 +5,14 @@
 #include "CoreMinimal.h"
 #include "GameFramework/Character.h"
 #include "AbilitySystemInterface.h"
-// #include "GameplayTagContainer.h"
+#include "GameplayTagContainer.h"
 #include "GameplayEffectTypes.h"
 #include "InputActionValue.h" // UE 5.6 Enhanced Input
 #include "Civilian.generated.h"
 
 class UAbilitySystemComponent;
 class UCivilianAttributeSet;
+class USkeletalMeshComponent;
 class UCameraComponent;
 class USpringArmComponent;
 class UInputMappingContext;
@@ -28,10 +29,10 @@ class TEAM10_4PROJECT_API ACivilian : public ACharacter, public IAbilitySystemIn
 public:
 	ACivilian();
     
-	// IAbilitySystemInterface ±¸Çö
+	// IAbilitySystemInterface êµ¬í˜„
 	virtual UAbilitySystemComponent* GetAbilitySystemComponent() const override;
 	
-	// ÃÊ±âÈ­
+	// ì´ˆê¸°í™”
 	virtual void BeginPlay() override;
 	virtual void PossessedBy(AController* NewController) override;
 	virtual void SetupPlayerInputComponent(class UInputComponent* PlayerInputComponent) override;
@@ -42,51 +43,69 @@ public:
 #pragma region Civilian Components
 public:
 	FORCEINLINE USpringArmComponent* GetSpringArm() const { return SpringArm; }
-
-	FORCEINLINE UCameraComponent* GetCamera() const { return Camera; }
+	
+	FORCEINLINE USkeletalMeshComponent* GetFirstPersonMesh() const { return FirstPersonMeshComponent; }
+	
+	FORCEINLINE UCameraComponent* GetFirstPersonCameraComponent() const { return FirstPersonCamera; }
 
 protected:
-	UPROPERTY(EditDefaultsOnly, BlueprintReadOnly, Category = "PlayerCharacter|Components")
+	UPROPERTY(EditDefaultsOnly, BlueprintReadOnly, Category = "PlayerCharacter|Components", meta = (AllowPrivateAccess = "true"))
 	TObjectPtr<USpringArmComponent> SpringArm;
-
-	UPROPERTY(EditDefaultsOnly, BlueprintReadOnly, Category = "PlayerCharacter|Components")
-	TObjectPtr<UCameraComponent> Camera;
+	
+	UPROPERTY(VisibleAnywhere, BlueprintReadOnly, Category = "PlayerCharacter|Components", meta = (AllowPrivateAccess = "true"))
+	TObjectPtr<UCameraComponent> FirstPersonCamera;
+	
+	UPROPERTY(VisibleAnywhere, BlueprintReadOnly, Category = "PlayerCharacter|Components", meta = (AllowPrivateAccess = "true"))
+	TObjectPtr<USkeletalMeshComponent> FirstPersonMeshComponent;
 
 #pragma endregion
 	
 #pragma region Civilian GAS
 	
 public:
-	// GAS ÄÄÆ÷³ÍÆ®
-	UPROPERTY(VisibleAnywhere, BlueprintReadOnly, Category = "GAS")
-	TObjectPtr<UAbilitySystemComponent> AbilitySystemComponent;
+	UPROPERTY()
+	TWeakObjectPtr<UAbilitySystemComponent> AbilitySystemComponent;
 
-	// Attribute Set
-	UPROPERTY(VisibleAnywhere, BlueprintReadOnly, Category = "GAS")
-	TObjectPtr<UCivilianAttributeSet> AttributeSet;
+	UPROPERTY()
+	TWeakObjectPtr<UCivilianAttributeSet> AttributeSet;
 
-	// ±âº» ¾îºô¸®Æ¼ ¸ñ·Ï
+	// ê¸°ë³¸ ì–´ë¹Œë¦¬í‹° ëª©ë¡
 	UPROPERTY(EditDefaultsOnly, BlueprintReadOnly, Category = "GAS|Abilities")
 	TArray<TSubclassOf<class UGameplayAbility>> DefaultAbilities;
 
-	// ±âº» È¿°ú ¸ñ·Ï
+	// ê¸°ë³¸ íš¨ê³¼ ëª©ë¡
 	UPROPERTY(EditDefaultsOnly, BlueprintReadOnly, Category = "GAS|Effects")
 	TArray<TSubclassOf<class UGameplayEffect>> DefaultEffects;
 
 protected:
-	// GAS ÃÊ±âÈ­ - ASC ÃÊ±âÈ­ ·ÎÁ÷ ºĞ¸®
+	// GAS ì´ˆê¸°í™” - ASC ì´ˆê¸°í™” ë¡œì§ ë¶„ë¦¬
 	void InitializeAbilitySystem();
+	void GiveDefaultAbilities();
+	void ApplyDefaultEffects();
+	
+public:
+	// Attribute ë³€ê²½ ì½œë°±
+	virtual void OnHealthChanged(const FOnAttributeChangeData& Data);
 
 #pragma endregion
 	
 #pragma region Civilian Input
 	
 public:
-	// Enhanced Input Äİ¹é ÇÔ¼öµé
+	// ì…ë ¥ ë°”ì¸ë”© í•¨ìˆ˜
 	void Move(const FInputActionValue& Value);
 	void Look(const FInputActionValue& Value);
 	void StartJump();
 	void StopJump();
+	void ActivateAbility(const FGameplayTag& AbilityTag);
+	
+	// ê³µê²©
+	UFUNCTION(BlueprintCallable, Category = "Combat")
+	void TryAttack();
+	
+	// ê³µê²©
+	UFUNCTION(BlueprintCallable, Category = "Combat")
+	void TryAttack();
 	
 protected:
 	// Enhanced Input (UE 5.6)
@@ -110,14 +129,58 @@ protected:
 	
 #pragma endregion
 	
-	// Attribute º¯°æ Äİ¹é
-	virtual void OnHealthChanged(const FOnAttributeChangeData& Data);
+#pragma region Civilian Morph
 	
-	// °ø°İ
+public:
+	// ë³€ì‹ 
 	UFUNCTION(BlueprintCallable, Category = "Combat")
-	void TryAttack();
+	void Morph();
 	
-	// »ç¸Á Ã³¸®
+	// ì„œë²„ RPC - ë³€ì‹  ìš”ì²­ ë° ê²€ì¦ (Sanity Check)
+	UFUNCTION(Server, Reliable)
+	void ServerTryMorph();
+
+	// ë©€í‹°ìºìŠ¤íŠ¸ RPC - ì™¸í˜• ë³€ê²½ (í´ë¼ì´ì–¸íŠ¸ ì‹¤í–‰)
+	UFUNCTION(NetMulticast, Reliable)
+	void MulticastMorph();
+	
+protected:
+	UPROPERTY(EditAnywhere, BlueprintReadOnly, Category = "Input|Infected")
+	class UInputAction* MorphAction;
+	
+	UPROPERTY(EditAnywhere, BlueprintReadOnly, Category = "PlayerCharacter|Components", meta = (AllowPrivateAccess = "true"))
+	TObjectPtr<USkeletalMesh> MorphMesh;
+	
+	UPROPERTY(EditAnywhere, BlueprintReadOnly, Category = "PlayerCharacter|Components")
+	TSubclassOf<UAnimInstance> MorphAnimClass;
+	
+	UPROPERTY(EditAnywhere, BlueprintReadOnly, Category = "PlayerCharacter|Components")
+	TObjectPtr<USkeletalMesh> MorphFirstPersonMesh;
+	
+	UPROPERTY(EditAnywhere, BlueprintReadOnly, Category = "PlayerCharacter|Components")
+	TSubclassOf<UAnimInstance> MorphFirstPersonAnimClass;
+	
+public:
+	// [í…ŒìŠ¤íŠ¸ìš©] ì½˜ì†” ëª…ë ¹ì–´ (Exec)
+	// ì‚¬ìš©ë²•: ~ í‚¤ ëˆ„ë¥´ê³  "Cheat_SetRole 1" (1=Infected, 0=Civilian)
+	UFUNCTION(Exec) 
+	void Cheat_SetRole(int32 RoleID);
+
+	// ì‚¬ìš©ë²•: ~ í‚¤ ëˆ„ë¥´ê³  "Cheat_SetSanity 100"
+	UFUNCTION(Exec)
+	void Cheat_SetSanity(float Amount);
+
+protected:
+	// ì¹˜íŠ¸ëŠ” ë°˜ë“œì‹œ ì„œë²„ì—ì„œ ì‹¤í–‰
+	UFUNCTION(Server, Reliable)
+	void Server_SetRole(EPlayerRole NewRole);
+
+	UFUNCTION(Server, Reliable)
+	void Server_SetSanity(float Amount);
+	
+#pragma endregion
+	
+	// ì‚¬ë§ ì²˜ë¦¬
 	UFUNCTION(BlueprintImplementableEvent, Category = "Character")
 	void OnDeath();
 
@@ -125,11 +188,11 @@ protected:
 	void MulticastHandleDeath();
 	
 		/*
-    // »óÈ£ÀÛ¿ë
+    // ìƒí˜¸ì‘ìš©
     UFUNCTION(BlueprintCallable, Category = "Interaction")
     void TryInteract();
 
-    // ¾ÆÀÌÅÛ »ç¿ë
+    // ì•„ì´í…œ ì‚¬ìš©
     UFUNCTION(BlueprintCallable, Category = "Item")
     void TryUseItem(int32 ItemSlot)
     */

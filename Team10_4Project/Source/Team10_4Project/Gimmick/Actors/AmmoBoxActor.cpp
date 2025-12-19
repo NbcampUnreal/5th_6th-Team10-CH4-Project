@@ -1,7 +1,7 @@
 ﻿// Fill out your copyright notice in the Description page of Project Settings.
 
 
-#include "Gimmick/Actors/BloodPackActor.h"
+#include "Gimmick/Actors/AmmoBoxActor.h"
 #include "AbilitySystemBlueprintLibrary.h"
 #include "AbilitySystemComponent.h"
 #include "GameplayEffect.h"
@@ -10,12 +10,12 @@
 #include "Character/Civilian.h"
 
 // Sets default values
-ABloodPackActor::ABloodPackActor()
+AAmmoBoxActor::AAmmoBoxActor()
 {
- 	// Set this actor to call Tick() every frame.  You can turn this off to improve performance if you don't need it.
+	// Set this actor to call Tick() every frame.  You can turn this off to improve performance if you don't need it.
 	PrimaryActorTick.bCanEverTick = false;
 	bReplicates = true;
-	
+
 	// SphereComp 생성 후 루트로 설정
 	SphereComp = CreateDefaultSubobject<USphereComponent>(TEXT("SphereComponent"));
 	RootComponent = SphereComp;
@@ -27,33 +27,33 @@ ABloodPackActor::ABloodPackActor()
 }
 
 // Called when the game starts or when spawned
-void ABloodPackActor::BeginPlay()
+void AAmmoBoxActor::BeginPlay()
 {
 	Super::BeginPlay();
-	
+
 }
 
 // Called every frame
-void ABloodPackActor::Tick(float DeltaTime)
+void AAmmoBoxActor::Tick(float DeltaTime)
 {
 	Super::Tick(DeltaTime);
 
 }
 
 // 상호작용 로직 구현 (GE 적용)
-void ABloodPackActor::Interact_Implementation(AActor* _Instigator)
+void AAmmoBoxActor::Interact_Implementation(AActor* _Instigator)
 {
 	// 이 함수는 플레이어 캐릭터가 서버에게 Server_RPC하여 서버에서 실행됩니다.
 	if (!HasAuthority())
 	{
 		return;
 	}
-	
-	UE_LOG(LogTemp, Warning, TEXT("Server: BloodPack Interact Logic Started."));
 
-	if (!_Instigator || !GEClassBloodPack)
+	UE_LOG(LogTemp, Warning, TEXT("Server: AmmoBox Interact Logic Started."));
+
+	if (!_Instigator || !GEClassAmmoBox)
 	{
-		UE_LOG(LogTemp, Error, TEXT("Server: Instigator or GEClassBloodPack is NULL!"));
+		UE_LOG(LogTemp, Error, TEXT("Server: Instigator or GEClassAmmoBox is NULL!"));
 		return;
 	}
 
@@ -83,7 +83,7 @@ void ABloodPackActor::Interact_Implementation(AActor* _Instigator)
 
 		// Gameplay Effect Spec 생성
 		FGameplayEffectSpecHandle SpecHandle = _InstigatorASC->MakeOutgoingSpec(
-			GEClassBloodPack,
+			GEClassAmmoBox,
 			1.0f,
 			EffectContext
 		);
@@ -92,21 +92,21 @@ void ABloodPackActor::Interact_Implementation(AActor* _Instigator)
 		{
 			// GE 적용
 			FActiveGameplayEffectHandle ActiveGEHandle = _InstigatorASC->ApplyGameplayEffectSpecToSelf(*SpecHandle.Data.Get());
-			float CurrentSanity = CivilianAS->GetSanity();
-			UE_LOG(LogTemp, Warning, TEXT("Server: BloodPack Consumed. [Current Sanity: %.2f]"), CurrentSanity);
+			float CurrentAmmo = CivilianAS->GetAmmo();
+			UE_LOG(LogTemp, Warning, TEXT("Server: AmmoBox Consumed. [Current Ammo: %.0f]"), CurrentAmmo);
 
 			UE_LOG(LogTemp, Warning, TEXT("Server: GE Applied Successfully. Destroying Actor."));
 			Destroy();
 		}
 		else
-		{	
-			// SpecHandle 생성 실패 (GEClassBloodPack이 널인 경우)
-			UE_LOG(LogTemp, Error, TEXT("Server: GE Spec Handle is invalid (GEClassBloodPack is likely NULL)."));
+		{
+			// SpecHandle 생성 실패 (GEClassAmmoBox이 널인 경우)
+			UE_LOG(LogTemp, Error, TEXT("Server: GE Spec Handle is invalid (GEClassAmmoBox is likely NULL)."));
 		}
 	}
 }
 
-FText ABloodPackActor::GetInteractText_Implementation() const
+FText AAmmoBoxActor::GetInteractText_Implementation() const
 {
-	return NSLOCTEXT("Gimmick", "BloodPack_Interact", "혈액팩 섭취하기");
+	return NSLOCTEXT("Gimmick", "AmmoBox_Interact", "혈액팩 섭취하기");
 }

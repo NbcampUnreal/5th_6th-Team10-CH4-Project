@@ -1,4 +1,4 @@
-// Fill out your copyright notice in the Description page of Project Settings.
+﻿// Fill out your copyright notice in the Description page of Project Settings.
 
 
 #include "Character/CivilianAttributeSet.h"
@@ -13,6 +13,8 @@ UCivilianAttributeSet::UCivilianAttributeSet()
 	InitMaxHealth(100.0f);
 	InitSanity(0.0f);
 	InitMoveSpeed(300.0f);
+	InitAmmo(15.0f);
+	InitMaxAmmo(200.0f);
 }
 
 void UCivilianAttributeSet::GetLifetimeReplicatedProps(TArray<class FLifetimeProperty>& OutLifetimeProps) const
@@ -23,6 +25,8 @@ void UCivilianAttributeSet::GetLifetimeReplicatedProps(TArray<class FLifetimePro
 	DOREPLIFETIME_CONDITION_NOTIFY(UCivilianAttributeSet, MaxHealth, COND_None, REPNOTIFY_Always);
 	DOREPLIFETIME_CONDITION_NOTIFY(UCivilianAttributeSet, Sanity, COND_None, REPNOTIFY_Always);
 	DOREPLIFETIME_CONDITION_NOTIFY(UCivilianAttributeSet, MoveSpeed, COND_None, REPNOTIFY_Always);
+	DOREPLIFETIME_CONDITION_NOTIFY(UCivilianAttributeSet, Ammo, COND_None, REPNOTIFY_Always);
+	DOREPLIFETIME_CONDITION_NOTIFY(UCivilianAttributeSet, MaxAmmo, COND_None, REPNOTIFY_Always);
 }
 
 void UCivilianAttributeSet::PreAttributeChange(const FGameplayAttribute& Attribute, float& NewValue)
@@ -33,6 +37,18 @@ void UCivilianAttributeSet::PreAttributeChange(const FGameplayAttribute& Attribu
 	if (Attribute == GetHealthAttribute())
 	{
 		NewValue = FMath::Clamp(NewValue, 0.0f, GetMaxHealth());
+	}
+
+	// 감염도(혈액팩 게이지) 0~100 범위로 제한
+	if (Attribute == GetSanityAttribute())
+	{
+		NewValue = FMath::Clamp(NewValue, 0.0f, 100.0f);
+	}
+
+	// 여분 탄약 0~100 범위로 제한
+	if (Attribute == GetAmmoAttribute())
+	{
+		NewValue = FMath::Clamp(NewValue, 0.0f, GetMaxAmmo());
 	}
 }
 
@@ -78,4 +94,14 @@ void UCivilianAttributeSet::OnRep_Sanity(const FGameplayAttributeData& OldSanity
 void UCivilianAttributeSet::OnRep_MoveSpeed(const FGameplayAttributeData& OldMoveSpeed)
 {
 	GAMEPLAYATTRIBUTE_REPNOTIFY(UCivilianAttributeSet, MoveSpeed, OldMoveSpeed);
+}
+
+void UCivilianAttributeSet::OnRep_Ammo(const FGameplayAttributeData& OldAmmo)
+{
+	GAMEPLAYATTRIBUTE_REPNOTIFY(UCivilianAttributeSet, Ammo, OldAmmo);
+}
+
+void UCivilianAttributeSet::OnRep_MaxAmmo(const FGameplayAttributeData& OldMaxAmmo)
+{
+	GAMEPLAYATTRIBUTE_REPNOTIFY(UCivilianAttributeSet, MaxAmmo, OldMaxAmmo);
 }

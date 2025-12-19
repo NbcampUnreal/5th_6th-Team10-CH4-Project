@@ -1,4 +1,4 @@
-// Fill out your copyright notice in the Description page of Project Settings.
+﻿// Fill out your copyright notice in the Description page of Project Settings.
 
 #pragma once
 
@@ -29,12 +29,13 @@ class TEAM10_4PROJECT_API ACivilian : public ACharacter, public IAbilitySystemIn
 public:
 	ACivilian();
     
-	// IAbilitySystemInterface ����
+	// IAbilitySystemInterface 구현
 	virtual UAbilitySystemComponent* GetAbilitySystemComponent() const override;
 	
-	// �ʱ�ȭ
+	// 초기화
 	virtual void BeginPlay() override;
 	virtual void PossessedBy(AController* NewController) override;
+	virtual void Tick(float DeltaTime) override;
 	virtual void SetupPlayerInputComponent(class UInputComponent* PlayerInputComponent) override;
 	virtual void OnRep_PlayerState() override;
 	
@@ -68,7 +69,7 @@ protected:
 #pragma region Civilian GAS
 	
 public:
-	// GAS ������Ʈ
+	// GAS 컴포넌트
 	UPROPERTY(VisibleAnywhere, BlueprintReadOnly, Category = "GAS")
 	TObjectPtr<UAbilitySystemComponent> AbilitySystemComponent;
 
@@ -76,22 +77,22 @@ public:
 	UPROPERTY(VisibleAnywhere, BlueprintReadOnly, Category = "GAS")
 	TObjectPtr<UCivilianAttributeSet> AttributeSet;
 
-	// �⺻ �����Ƽ ���
+	// 기본 어빌리티 목록
 	UPROPERTY(EditDefaultsOnly, BlueprintReadOnly, Category = "GAS|Abilities")
 	TArray<TSubclassOf<class UGameplayAbility>> DefaultAbilities;
 
-	// �⺻ ȿ�� ���
+	// 기본 효과 목록
 	UPROPERTY(EditDefaultsOnly, BlueprintReadOnly, Category = "GAS|Effects")
 	TArray<TSubclassOf<class UGameplayEffect>> DefaultEffects;
 
 protected:
-	// GAS �ʱ�ȭ - ASC �ʱ�ȭ ���� �и�
+	// GAS 초기화 - ASC 초기화 로직 분리
 	void InitializeAbilitySystem();
 	void GiveDefaultAbilities();
 	void ApplyDefaultEffects();
 	
 public:
-	// Attribute ���� �ݹ�
+	// Attribute 변경 콜백
 	virtual void OnHealthChanged(const FOnAttributeChangeData& Data);
 
 #pragma endregion
@@ -99,7 +100,7 @@ public:
 #pragma region Civilian Input
 	
 public:
-	// Enhanced Input �ݹ� �Լ���
+	// Enhanced Input 콜백 함수들
 	void Move(const FInputActionValue& Value);
 	void Look(const FInputActionValue& Value);
 	void StartJump();
@@ -127,11 +128,11 @@ protected:
 	
 #pragma endregion
 	
-	// ����
+	// 공격
 	UFUNCTION(BlueprintCallable, Category = "Combat")
 	void TryAttack();
 	
-	// ��� ó��
+	// 사망 처리
 	UFUNCTION(BlueprintImplementableEvent, Category = "Character")
 	void OnDeath();
 
@@ -139,12 +140,37 @@ protected:
 	void MulticastHandleDeath();
 	
 		/*
-    // ��ȣ�ۿ�
+    // 상호작용
     UFUNCTION(BlueprintCallable, Category = "Interaction")
     void TryInteract();
 
-    // ������ ���
+    // 아이템 사용
     UFUNCTION(BlueprintCallable, Category = "Item")
     void TryUseItem(int32 ItemSlot)
     */
+
+
+#pragma region Interaction Logic - 상호작용 로직
+protected:
+	// 클라이언트에서 서버로 상호작용을 요청하는 RPC
+	UFUNCTION(Server, Reliable)
+	void ServerRPC_Interact(AActor* TargetActor);
+
+	// 클라이언트에서 주변 Gimmick을 찾는 Line Trace
+	void Client_PerformInteractTrace();
+
+	// 입력 매핑 호출 함수 (예: E키)
+	void InteractInputPressed();
+
+	// 상호작용 가능 액터가 존재하는지 확인하는 함수
+	AActor* GetInteractableActor();
+
+private:
+	// 현재 상호작용 중인 액터 (Line Trace의 결과 값)
+	TWeakObjectPtr<AActor> CurrentInteractableActor;
+
+	// 상호작용 거리
+	UPROPERTY(EditDefaultsOnly, Category = "Interaction")
+	float InteractDistance = 400.0f;
+#pragma endregion
 };

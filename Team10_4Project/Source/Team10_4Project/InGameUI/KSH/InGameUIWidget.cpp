@@ -38,7 +38,7 @@ void UInGameUIWidget::InitializeUI(UAbilitySystemComponent* ASC)
 
 bool UInGameUIWidget::Initialize()
 {
-    // UMG에서 위젯이 생성될 때 호출되며, 위젯 변수(HealthBar, StaminaBar)가 유효한지 확인합니다.
+    // UMG에서 위젯이 생성될 때 호출되며, 위젯 변수(HealthBar, StaminaBar)가 유효한지 확인
     bool Success = Super::Initialize();
     if (!Success) return false;
 

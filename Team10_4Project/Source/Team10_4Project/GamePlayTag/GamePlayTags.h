@@ -10,5 +10,3 @@ namespace GamePlayTags
 		TEAM10_4PROJECT_API UE_DECLARE_GAMEPLAY_TAG_EXTERN(Area_Area3);
 	}
 }
-
-

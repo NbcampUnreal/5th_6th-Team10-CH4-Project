@@ -6,39 +6,8 @@
 #include "GameFramework/GameModeBase.h"
 #include "Team10GameMode.generated.h"
 
-#pragma region ENUM
-
-UENUM(BlueprintType)
-enum class EGameArea : uint8
-{
-	None,
-	Area1 UMETA(DisplayName = "Area1"),
-	Area2 UMETA(DisplayName = "Area2"),
-	Area3 UMETA(DisplayName = "Area3"),
-	
-};
-
-UENUM(BlueprintType)
-enum class EGamePhase : uint8
-{
-	None,
-	Lobby UMETA(DisplayName = "Lobby"),
-	//AssignInfectedPhase UMETA(DisplayName = "TeamSelection"),
-	DayPhase UMETA(DisplayName = "DayPhase"),
-	NightPhase UMETA(DisplayName = "NightPhase"),
-	TrapIn UMETA(DisplayName = "TrapIn"),
-	GameEnd UMETA(DisplayName = "GameEnd"),
-};
-UENUM(BlueprintType)
-enum class EGameResult : uint8
-{	
-	None,
-	CitizenWin UMETA(DisplayName = "CitizenWin"),
-	InfectedWin  UMETA(DisplayName = "InfectedWin"),
-};
-
-#pragma endregion
-
+class APlayerSpawn;
+class UGameFlowManager;
 class ATeam10GameState;
 
 UCLASS()
@@ -49,27 +18,17 @@ class TEAM10_4PROJECT_API ATeam10GameMode : public AGameModeBase
 	
 public:
 	ATeam10GameMode();
-
+	
 	virtual void BeginPlay() override;
 	virtual void Tick(float DeltaSeconds) override;
 	virtual void PostLogin(APlayerController* NewPlayer) override;
 	virtual void Logout(AController* Exiting) override;
-
-	// 게임 시작
-	UFUNCTION(BlueprintCallable, Category = "GameFlow")
-	void StartGame();
-	
-	// 페이즈 전환
-	UFUNCTION(BlueprintCallable, Category = "GameFlow")
-	void ChangePhase(EGamePhase NewPhase);
+	//virtual void HandleSeamlessTravelPlayer(AController*& C) override; // 맵 로딩 중에 호출 
+	virtual void HandleStartingNewPlayer_Implementation(APlayerController* NewPlayer) override; // 맵 진입 완료 후 호출
 	
 	// 승리 조건 체크
 	UFUNCTION(BlueprintCallable, Category = "GameFlow")
 	void CheckWinCondition();
-	
-	// 게임 종료
-	UFUNCTION(BlueprintCallable, Category = "GameFlow")
-	void EndGame(EGameResult Result);
 	
 	// 플레이어 사망 처리
 	UFUNCTION(BlueprintCallable, Category = "Player")
@@ -78,53 +37,28 @@ public:
 	// 감염자 결정
 	UFUNCTION(BlueprintCallable, Category = "GameFlow")
 	void AssignInfectedPlayers();
-	
+
 protected:
-
-	// 현재 구역
-	UPROPERTY(BlueprintReadOnly, Category = "GameFlow")
-	EGameArea CurrentArea;
-	
-	// 현재 페이즈
-	UPROPERTY(BlueprintReadOnly, Category = "GameFlow")
-	EGamePhase CurrentPhase;
-
-	// 최소 플레이어 수
-	UPROPERTY(EditDefaultsOnly, BlueprintReadOnly, Category = "GameFlow")
-	int32 MinPlayersToStart = 6;
 	
 	// 감염자 수
 	UPROPERTY(EditDefaultsOnly, BlueprintReadOnly, Category = "GameFlow")
 	int32 InfectedCount = 2;
 	
-	// 낮/밤 페이즈 시간
-	UPROPERTY(EditDefaultsOnly, BlueprintReadOnly, Category = "GameFlow")
-	float DayNightPhaseDuration = 90.0f;
-	
-	// 트랩 인 페이즈 시간
-	UPROPERTY(EditDefaultsOnly, BlueprintReadOnly, Category = "GameFlow")
-	float TrapInPhaseDuration = 60.0f;
-
+	// 다음 Area로 이동하기 위해 필요한 퓨즈박스 개수
 	UPROPERTY(EditDefaultsOnly, BlueprintReadOnly, Category = "GameFlow")
 	int32 TotalFixFuseBox = 4;
+	
+	// 현재 맵 로딩을 완료한 플레이어 수
+	// 지금은 GameMode에 선언 했지만 UI가 필요할 경우 GameState에서 Replicate 예정
+	UPROPERTY(VisibleAnywhere, BlueprintReadOnly, Category = "GameFlow")
+	int32 LoadedPlayerCount  = 0; 
 
 	// GameState 레퍼런스
 	UPROPERTY()
 	TObjectPtr<ATeam10GameState> Team10GameState;
-	
-	// 타이머 핸들
-	FTimerHandle PhaseTimerHandle;
-	
-private:
-	// 페이즈 타이머 시작
-	void StartPhaseTimer(float Duration);
-	
-	// 페이즈 타이머 업데이트
-	void UpdatePhaseTimer();
-	
-	// 다음 페이즈로 이동
-	void AdvanceToNextPhase();
 
+private:
+	
 	// 다음 구역 활성화
 	void OpenNextArea();
 
@@ -132,5 +66,51 @@ private:
 	int32 GetAliveCitizenCount();
 	int32 GetAliveInfectedCount();
 
+#pragma endregion
+
+#pragma region Spawn
+	
+public:
+	// 플레이어 스폰
+	UFUNCTION(BlueprintCallable, Category = "Spawn")
+	void SpawnAllPlayer(APlayerController* NewPlayer);
+
+	UFUNCTION(BlueprintCallable, Category = "Spawn")
+	void ReSpawnPlayer(APlayerController* NewPlayer);
+
+	UFUNCTION(BlueprintCallable, Category = "Spawn")
+	void FoundPlayerSpawner();
+protected:
+	UPROPERTY(VisibleAnywhere)
+	TArray<TObjectPtr<APlayerSpawn>> PlayerSpawners;
+	
+#pragma endregion
+#pragma region Vote
+
+
+public:
+	// 플레이어가 투표 상태가 되면 호출
+	UFUNCTION(BlueprintCallable, Category = "Vote")
+	void PlayerVote();
+	
+protected:
+	UPROPERTY(EditDefaultsOnly, BlueprintReadOnly, Category = "Vote")
+	int32 Area1VoteCount = 4;
+
+	UPROPERTY(EditDefaultsOnly, BlueprintReadOnly, Category = "Vote")
+	int32 Area2VoteCount = 3;
+
+	UPROPERTY(EditDefaultsOnly, BlueprintReadOnly, Category = "Vote")
+	int32 Area3VoteCount = 2;
+	
+#pragma endregion
+
+
+#pragma region Manager
+
+private:
+	UPROPERTY(VisibleAnywhere)
+	TObjectPtr<UGameFlowManager> GameFlowManager;
+	
 #pragma endregion
 };

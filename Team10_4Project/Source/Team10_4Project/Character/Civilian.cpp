@@ -25,36 +25,34 @@ ACivilian::ACivilian()
 	PrimaryActorTick.bCanEverTick = true;
 	bReplicates = true;
 	
-	AbilitySystemComponent = CreateDefaultSubobject<UAbilitySystemComponent>("AbilitySystemComponent");
-	AbilitySystemComponent->SetIsReplicated(true); // ASC 상태 복제
-	AbilitySystemComponent->SetReplicationMode(EGameplayEffectReplicationMode::Mixed); // ReplicationMode 설정
-	
-	AttributeSet = CreateDefaultSubobject<UCivilianAttributeSet>("AttributeSet");
-	
 	// 네트워크 설정
 	SetReplicates(true); 
 	SetReplicateMovement(true);
 	
 	bUseControllerRotationPitch = false;
-	bUseControllerRotationYaw = false;
+	bUseControllerRotationYaw = true;
 	bUseControllerRotationRoll = false;
 
 	GetCharacterMovement()->bUseControllerDesiredRotation = false;
-	GetCharacterMovement()->bOrientRotationToMovement = true;
+	GetCharacterMovement()->bOrientRotationToMovement = false;
 	GetCharacterMovement()->RotationRate = FRotator(0.0f, 500.0f, 0.0f);
 	GetCharacterMovement()->SetIsReplicated(true);
+	
+	GetCharacterMovement()->AirControl = 0.35f;
+	GetCharacterMovement()->MaxWalkSpeed = 500.f;
+	GetCharacterMovement()->MinAnalogWalkSpeed = 20.f;
+	GetCharacterMovement()->BrakingDecelerationWalking = 2000.f;
 
 	SpringArm = CreateDefaultSubobject<USpringArmComponent>(TEXT("SpringArm"));
 	SpringArm->SetupAttachment(GetRootComponent());
 	SpringArm->TargetArmLength = 300.f;
 	SpringArm->bUsePawnControlRotation = true;
 
-	/*Camera = CreateDefaultSubobject<UCameraComponent>(TEXT("Camera"));
-	Camera->SetupAttachment(SpringArm, USpringArmComponent::SocketName);
-	Camera->bUsePawnControlRotation = false;*/
-
 	if (GetMesh())
 	{
+		// 화면에 캐릭터가 보이든 안 보이든 상관없이 뼈대(애니메이션)위치를 항상 갱신
+		GetMesh()->VisibilityBasedAnimTickOption = EVisibilityBasedAnimTickOption::AlwaysTickPoseAndRefreshBones;
+		
 		GetMesh()->SetOwnerNoSee(true); // 로컬(나)에게는 안보이게 설정
 		GetMesh()->bCastHiddenShadow = true; // 3인칭 Mesh는 안보이지만 그림자는 보이도록 설정 
 		
@@ -68,32 +66,32 @@ ACivilian::ACivilian()
 	FirstPersonCamera->SetRelativeLocation(FVector(-10.0f, 0.0f, 60.0f));
 	FirstPersonCamera->bUsePawnControlRotation = true; // 마우스 회전에 따라 카메라 회전
 	
-	FirstPersonMesh = CreateDefaultSubobject<USkeletalMeshComponent>(TEXT("FirstPersonMesh"));
-	FirstPersonMesh->SetupAttachment(FirstPersonCamera);
-	FirstPersonMesh->SetOnlyOwnerSee(true); // 로컬(나)에게만 보이도록 설정
-	FirstPersonMesh->bCastDynamicShadow = false; // 1인칭 Mesh는 그림자가 안보이도록 설정
-	FirstPersonMesh->CastShadow = false;
-	FirstPersonMesh->SetRelativeLocation(FVector(-30.0f, 0.0f, -150.0f));
-	FirstPersonMesh->SetRelativeRotation(FRotator(0.0f, 90.0f, 0.0f));
+	FirstPersonMeshComponent = CreateDefaultSubobject<USkeletalMeshComponent>(TEXT("FirstPersonMesh"));
+	FirstPersonMeshComponent->SetupAttachment(FirstPersonCamera);
+	FirstPersonMeshComponent->SetOnlyOwnerSee(true); // 로컬(나)에게만 보이도록 설정
+	FirstPersonMeshComponent->bCastDynamicShadow = false; // 1인칭 Mesh는 그림자가 안보이도록 설정
+	FirstPersonMeshComponent->CastShadow = false;
+	FirstPersonMeshComponent->SetRelativeLocation(FVector(-30.0f, 0.0f, -150.0f));
+	FirstPersonMeshComponent->SetRelativeRotation(FRotator(0.0f, 90.0f, 0.0f));
 }
 
 UAbilitySystemComponent* ACivilian::GetAbilitySystemComponent() const
 {
-	return AbilitySystemComponent;
+	return AbilitySystemComponent.Get();
 }
 
 void ACivilian::BeginPlay()
 {
 	Super::BeginPlay();
 	
+	UAbilitySystemComponent* ASC = GetAbilitySystemComponent();
 	// Attribute 변경 델리게이트 바인딩
-	if (AbilitySystemComponent)
+	if (ASC)
 	{
-		AbilitySystemComponent->GetGameplayAttributeValueChangeDelegate(
+		ASC->GetGameplayAttributeValueChangeDelegate(
 			AttributeSet->GetHealthAttribute()).AddUObject(this, &ACivilian::OnHealthChanged);
 		
-		/* AbilitySystemComponent->GetGameplayAttributeValueChangeDelegate(
-			AttributeSet->GetHealthAttribute()).AddUObject(this, &ACivilian::OnHealthChanged);*/
+		
 	}
 }
 
@@ -164,6 +162,10 @@ void ACivilian::SetupPlayerInputComponent(class UInputComponent* PlayerInputComp
 		// 공격
 		EnhancedInputComponent->BindAction(AttackAction, ETriggerEvent::Started,
 			this, &ACivilian::TryAttack);
+		
+		// 변신
+		EnhancedInputComponent->BindAction(MorphAction, ETriggerEvent::Started,
+			this, &ACivilian::Morph);
 	}
 }
 
@@ -177,20 +179,21 @@ void ACivilian::OnRep_PlayerState()
 
 void ACivilian::InitializeAbilitySystem()
 {
-	if (!AbilitySystemComponent) return;
-	
 	ACivilianPlayerState* PS = GetPlayerState<ACivilianPlayerState>();
 	if (!PS) return;
 	
-	if (AbilitySystemComponent)
+	AbilitySystemComponent = PS->GetAbilitySystemComponent();
+	if (!AbilitySystemComponent.IsValid()) return;
+	
+	AttributeSet = PS->GetAttributeSet();
+	if (!AttributeSet.IsValid()) return;
+	
+	AbilitySystemComponent->InitAbilityActorInfo(PS, this);
+	
+	if (HasAuthority())
 	{
-		AbilitySystemComponent->InitAbilityActorInfo(PS, this);
-		
-		if (HasAuthority())
-		{
-			GiveDefaultAbilities();
-			ApplyDefaultEffects();
-		}
+		GiveDefaultAbilities();
+		ApplyDefaultEffects();
 	}
 }
 
@@ -200,8 +203,13 @@ void ACivilian::GiveDefaultAbilities()
 
 void ACivilian::ApplyDefaultEffects()
 {
-	if (!HasAuthority() || !AbilitySystemComponent)
-		return;
+	ACivilianPlayerState* PS = GetPlayerState<ACivilianPlayerState>();
+	if (!PS) return;
+	
+	AbilitySystemComponent = PS->GetAbilitySystemComponent();
+	if (!AbilitySystemComponent.IsValid()) return;
+	
+	if (!HasAuthority() || !AbilitySystemComponent.IsValid()) return;
 	
 	// 이펙트 컨테스트 생성
 	FGameplayEffectContextHandle EffectContext = AbilitySystemComponent->MakeEffectContext();
@@ -269,12 +277,116 @@ void ACivilian::OnHealthChanged(const FOnAttributeChangeData& Data)
 	}
 }
 
+void ACivilian::Morph()
+{
+	ACivilianPlayerState* PS = GetPlayerState<ACivilianPlayerState>();
+	if (!PS) return;
+	
+	AbilitySystemComponent = PS->GetAbilitySystemComponent();
+	if (!AbilitySystemComponent.IsValid()) return;
+	
+	UE_LOG(LogTemp, Warning, TEXT("Morphing!!"));
+	
+	ServerTryMorph();
+}
+
+void ACivilian::Cheat_SetRole(int32 RoleID)
+{
+	// 입력받은 정수를 Enum으로 변환 (0: Civilian, 1: Infected)
+	EPlayerRole NewRole = (RoleID == 1) ? EPlayerRole::Infected : EPlayerRole::Civilian;
+    
+	// 서버 RPC 호출
+	Server_SetRole(NewRole);
+}
+
+void ACivilian::Cheat_SetSanity(float Amount)
+{
+	Server_SetSanity(Amount);
+}
+
+void ACivilian::Server_SetRole_Implementation(EPlayerRole NewRole)
+{
+	if (ACivilianPlayerState* PS = GetPlayerState<ACivilianPlayerState>())
+	{
+		PS->SetPlayerRole(NewRole);
+        
+		// 로그 출력
+		FString RoleName = (NewRole == EPlayerRole::Infected) ? TEXT("Infected") : TEXT("Civilian");
+		UE_LOG(LogTemp, Warning, TEXT("[Cheat] Role Changed to: %s"), *RoleName);
+	}
+}
+
+void ACivilian::Server_SetSanity_Implementation(float Amount)
+{
+	ACivilianPlayerState* PS = GetPlayerState<ACivilianPlayerState>();
+	if (PS)
+	{
+		UCivilianAttributeSet* AS = PS->GetAttributeSet();
+		if (AS)
+		{
+			// AttributeSet의 Setter 매크로 사용
+			AS->SetSanity(Amount);
+            
+			UE_LOG(LogTemp, Warning, TEXT("[Cheat] Sanity Set to: %f"), Amount);
+		}
+	}
+}
+
+void ACivilian::ServerTryMorph_Implementation()
+{
+	ACivilianPlayerState* PS = GetPlayerState<ACivilianPlayerState>();
+	if (!PS) return;
+	
+	// 역할 검증
+	if (PS->GetPlayerRole() != EPlayerRole::Infected)
+	{
+		UE_LOG(LogTemp, Warning, TEXT("Morph Failed: Not Infected"));
+		return;
+	}
+	
+	if (UCivilianAttributeSet* AS = PS->GetAttributeSet())
+	{
+		float CurrentSanity = AS->GetSanity();
+		if (CurrentSanity < 100.0f)
+		{
+			UE_LOG(LogTemp, Warning, TEXT("Morph Failed: Not enough Sanity (Current: %f)"), CurrentSanity);
+			return;
+		}
+	}
+	
+	// 변신 개시
+	MulticastMorph();
+}
+
+void ACivilian::MulticastMorph_Implementation()
+{
+	if (MorphMesh && GetMesh())
+	{
+		// 메쉬 교체
+		GetMesh()->SetSkeletalMesh(MorphMesh);
+
+		// ABP 교체 
+		if (MorphAnimClass)
+		{
+			GetMesh()->SetAnimInstanceClass(MorphAnimClass);
+		}
+
+		// 이동 속도 증가 등 추가 로직
+		
+		UE_LOG(LogTemp, Log, TEXT("Morph Complete!"));
+	}
+}
+
 void ACivilian::TryAttack()
 {
-	if (!AbilitySystemComponent)
-		return;
+	ACivilianPlayerState* PS = GetPlayerState<ACivilianPlayerState>();
+	if (!PS) return;
+	
+	AbilitySystemComponent = PS->GetAbilitySystemComponent();
+	if (!AbilitySystemComponent.IsValid()) return;
 	
 	// 공격 어빌리티 활성화 (GameplayTag 사용하여 구현할 예정)
+	UE_LOG(LogTemp, Warning, TEXT("Attack!!"));
 }
 
 void ACivilian::MulticastHandleDeath_Implementation()

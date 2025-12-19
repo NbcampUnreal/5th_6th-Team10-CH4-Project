@@ -21,13 +21,23 @@ void ATeam10GameState::GetLifetimeReplicatedProps(TArray<FLifetimeProperty>& Out
 	DOREPLIFETIME(ThisClass, PhaseTimeRemaining);
 	DOREPLIFETIME(ThisClass, CurrentArea);
 	DOREPLIFETIME(ThisClass, GameResult);
-	DOREPLIFETIME(ThisClass, AllPlayers);
 	DOREPLIFETIME(ThisClass, AliveCitizenCount);
 	DOREPLIFETIME(ThisClass, AliveInfectedCount);
 }
 
 void ATeam10GameState::OnRep_CurrentArea()
 {
+	
+}
+
+void ATeam10GameState::OnRep_KillPlayerVotesCount()
+{
+	// UI 설정
+}
+
+void ATeam10GameState::OnRep_CurrentVotesCount()
+{
+	
 }
 
 void ATeam10GameState::OnRep_CurrentPhase()

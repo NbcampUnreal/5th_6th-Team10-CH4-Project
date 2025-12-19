@@ -4,8 +4,11 @@
 
 #include "CoreMinimal.h"
 #include "Components/ActorComponent.h"
-//#include "GameMode/GameTypes/GameTypes.h"
+#include "GameMode/GameTypes/GameTypes.h"
 #include "GameFlowManager.generated.h"
+
+
+DECLARE_MULTICAST_DELEGATE_OneParam(FOnCurrentAreaChangedDelegate, EGameArea)
 
 class ATeam10GameState;
 
@@ -24,10 +27,14 @@ public:
 	UFUNCTION(BlueprintCallable, Category = "GameFlow")
 	void ChangePhase(EGamePhase NewPhase);
 
+	// 다음 구역 오픈
+	UFUNCTION(BlueprintCallable, Category = "GameFlow")
+	void OpenNextArea();
+	
 	// 게임 종료
 	UFUNCTION(BlueprintCallable, Category = "GameFlow")
 	void EndGame(EGameResult Result);
-	
+
 protected:
 	// 낮/밤 페이즈 시간
 	UPROPERTY(EditDefaultsOnly, BlueprintReadOnly, Category = "GameFlow")
@@ -36,6 +43,9 @@ protected:
 	// 트랩 인 페이즈 시간
 	UPROPERTY(EditDefaultsOnly, BlueprintReadOnly, Category = "GameFlow")
 	float TrapInPhaseDuration = 60.0f;
+
+	UPROPERTY(EditDefaultsOnly, BlueprintReadOnly, Category = "GameFlow")
+	int32 TotalFuseBoxCount = 4;
 	
 	// GameState 레퍼런스
 	UPROPERTY()
@@ -45,6 +55,9 @@ protected:
 	FTimerHandle PhaseTimerHandle;
 
 private:
+	// 남은 퓨즈박스 개수 초기화
+	void InitializeRemainingFuseBoxes();
+	
 	// 페이즈 타이머 시작
 	void StartPhaseTimer(float Duration);
 
@@ -53,4 +66,13 @@ private:
 
 	// 다음 페이즈로 이동
 	void AdvanceToNextPhase();
+	
+	// 탈출구 활성화
+	void ActivateExit();
+	
+	// 현재 구역 설정
+	void SetCurrentArea(EGameArea NewArea);
+
+public:
+	FOnCurrentAreaChangedDelegate OnCurrentAreaChangedDelegate;
 };

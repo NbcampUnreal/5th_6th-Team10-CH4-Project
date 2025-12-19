@@ -3,50 +3,46 @@
 
 #include "GameMode/Team10GameMode.h"
 
-#include "EngineUtils.h"
 #include "PlayerSpawn.h"
 #include "Character/CivilianPlayerController.h"
 #include "Character/CivilianPlayerState.h"
 #include "GameState/Team10GameState.h"
 #include "Manager/GameFlowManager.h"
 #include "GamePlayTag/GamePlayTags.h"
+#include "InGameUI/JKH/ChatSubsystem.h"
+#include "Manager/PlayerSpawnManager.h"
 
 ATeam10GameMode::ATeam10GameMode()
 {
+	PrimaryActorTick.bCanEverTick = false;
+	
 	GameStateClass = ATeam10GameState::StaticClass();
 	PlayerControllerClass = ACivilianPlayerController::StaticClass();
 	PlayerStateClass = ACivilianPlayerState::StaticClass();
-
-	//CurrentArea = EGameArea::None;
-	//CurrentPhase = EGamePhase::None;
-
-	GameFlowManager = CreateDefaultSubobject<UGameFlowManager>(TEXT("GameFlowManager"));
 	
+	GameFlowManager = CreateDefaultSubobject<UGameFlowManager>(TEXT("GameFlowManager"));
+	PlayerSpawnManager = CreateDefaultSubobject<UPlayerSpawnManager>(TEXT("PlayerSpawnManager"));
 }
 
 void ATeam10GameMode::BeginPlay()
 {
 	Super::BeginPlay();
 
-	Team10GameState = Cast<ATeam10GameState>(GameState);
-	// if (Team10GameState)
-	// {
-	// 	//CurrentPhase = EGamePhase::Lobby;
-	// 	Team10GameState->SetCurrentPhase(EGamePhase::None);
-	// }
-	//UE_LOG(LogTemp, Log, TEXT("Ingame %d"), Team10GameState->PlayerArray.Num());
-	AssignInfectedPlayers();
-}
-
-void ATeam10GameMode::Tick(float DeltaSeconds)
-{
-	Super::Tick(DeltaSeconds);
-}
-
-void ATeam10GameMode::PostLogin(APlayerController* NewPlayer)
-{
-	Super::PostLogin(NewPlayer);
+	GameFlowManager->OnCurrentAreaChangedDelegate.AddUObject(this, &ThisClass::OnCurrentAreaChanged);
 	
+	Team10GameState = Cast<ATeam10GameState>(GameState);
+	
+	if (Team10GameState)
+	{
+		for (int i = 0; i < Team10GameState->PlayerArray.Num(); i++)
+		{
+			ACivilianPlayerController* CivilianPlayerController = Cast<ACivilianPlayerController>(Team10GameState->PlayerArray[i]->GetPlayerController());
+			Team10GameState->AllPlayers.Add(CivilianPlayerController);
+		}
+	}
+	
+	Team10GameState->CurrentArea = EGameArea::Area1;
+	AssignInfectedPlayers();
 }
 
 void ATeam10GameMode::Logout(AController* Exiting)
@@ -90,22 +86,23 @@ void ATeam10GameMode::HandleStartingNewPlayer_Implementation(APlayerController* 
 {
 	Super::HandleStartingNewPlayer_Implementation(NewPlayer);
 	UE_LOG(LogTemp, Log, TEXT("Ingame HandleStartingNewPlayer_Implementation"));
+
+	if (!GameFlowManager || !PlayerSpawnManager)
+	{
+		return;
+	}
 	
 	LoadedPlayerCount++;
-	
 	if (LoadedPlayerCount == Team10GameState->PlayerArray.Num())
 	{
 		// 모든 플레이어의 로딩이 끝나면 로딩 UI를 해제한다.
 		UE_LOG(LogTemp, Log, TEXT("All Player Loaded"));
-		FoundPlayerSpawner();
-		SpawnAllPlayer(NewPlayer);
+		
+		InitializeRemainingFuseBoxes();
+		PlayerSpawnManager->FoundPlayerSpawner(EGameArea::Area1);
+		PlayerSpawnManager->SpawnAllPlayer();
 		GameFlowManager->StartGame();
 	}
-}
-
-void ATeam10GameMode::OpenNextArea()
-{
-	// 퓨즈 박스를 일정개수 활성화 하면 다음 구역이 열리고 이전 구역은 자기장 
 }
 
 void ATeam10GameMode::CheckWinCondition()
@@ -124,7 +121,6 @@ void ATeam10GameMode::CheckWinCondition()
 		Team10GameState->SetGameResult(EGameResult::CitizenWin);
 	}
 }
-
 
 void ATeam10GameMode::HandlePlayerDeath(APlayerController* DeadPlayer)
 {
@@ -189,31 +185,16 @@ void ATeam10GameMode::AssignInfectedPlayers()
 	Team10GameState->AliveCitizenCount = PlayerCount - InfectedCount;
 }
 
-void ATeam10GameMode::FoundPlayerSpawner()
+
+void ATeam10GameMode::OnCurrentAreaChanged(EGameArea GameArea)
 {
-	for (TActorIterator<APlayerSpawn> It(GetWorld()); It; ++It)
+	if (PlayerSpawnManager)
 	{
-		if(It->AreaTag == GamePlayTags::AreaTag::Area_Area1)
-		{
-			PlayerSpawners.Add(*It);
-		}
-		
+		PlayerSpawnManager->FoundPlayerSpawner(GameArea);
 	}
 }
 
-void ATeam10GameMode::SpawnAllPlayer(APlayerController* NewPlayer)
-{
-	UE_LOG(LogTemp, Warning, TEXT("PlayerSpawners Count Area1: %d"), PlayerSpawners.Num());
-}
-
-void ATeam10GameMode::ReSpawnPlayer(APlayerController* NewPlayer)
-{
-	//RestartPlayerAtPlayerStart();
-}
-
-
-
-void ATeam10GameMode::PlayerVote()
+void ATeam10GameMode::UpdateKillPlayerVotesCount()
 {
 	if (!Team10GameState)
 	{
@@ -244,6 +225,28 @@ void ATeam10GameMode::PlayerVote()
 	Team10GameState->KillPlayerVotesCount = AlivePlayerCount > AreaVoteCount ? AreaVoteCount : AlivePlayerCount;
 }
 
+void ATeam10GameMode::OnFuseBoxActivated()
+{
+	if (Team10GameState)
+	{
+		Team10GameState->RemainingFuseBoxCount--;
+
+		if (Team10GameState->RemainingFuseBoxCount <= 0)
+		{
+			GameFlowManager->OpenNextArea();
+		}
+	}
+	
+}
+
+void ATeam10GameMode::InitializeRemainingFuseBoxes()
+{
+	if (Team10GameState)
+	{
+		Team10GameState->RemainingFuseBoxCount = TotalFuseBoxCount;
+	}
+}
+
 int32 ATeam10GameMode::GetAliveCitizenCount()
 {
 	return Team10GameState->AliveCitizenCount;
@@ -254,4 +257,35 @@ int32 ATeam10GameMode::GetAliveInfectedCount()
 	return Team10GameState->AliveInfectedCount;
 }
 
-// 플레이어 스폰 설정
+
+// void ATeam10GameMode::ProcessChatMessage(APlayerController* InPlayerController, const FChatMessage& ChatMessage)
+// {
+// 	//TArray<TObjectPtr<APlayerController>> PlayerList;
+// 	TArray<TWeakObjectPtr<APlayerController>> ValidPlayerList;
+// 	FChatMessage RefinedChatMessage = ChatMessage;
+//
+// 	APlayerState* InPlayerState = InPlayerController->PlayerState;
+// 	if (IsValid(InPlayerState) == false) return;
+// 	FString SenderName = InPlayerState->GetPlayerName();
+//
+// 	for (APlayerController* ClientPlayer : PlayerList)
+// 	{
+// 		if (IsValid(ClientPlayer) == false) continue;
+// 		if (ClientPlayer == InPlayerController)
+// 		{
+// 			if (RefinedChatMessage.PlayerName != SenderName)	// hacking ?
+// 			{
+// 				RefinedChatMessage.PlayerName = SenderName;
+// 			}
+// 			continue;
+// 		}
+// 		ValidPlayerList.Push(ClientPlayer);
+// 	}
+// 	
+// 	if (ValidPlayerList.Num() <= 0) return;
+//
+// 	for (APlayerController* ValidPlayer : ValidPlayerList)
+// 	{
+// 		ValidPlayer->ClientRPC_ReceiveMessage(RefinedChatMessage);
+// 	}
+// }

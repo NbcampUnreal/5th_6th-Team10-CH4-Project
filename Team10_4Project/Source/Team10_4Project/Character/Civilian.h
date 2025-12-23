@@ -39,6 +39,8 @@ public:
 	virtual void SetupPlayerInputComponent(class UInputComponent* PlayerInputComponent) override;
 	virtual void OnRep_PlayerState() override;
 	
+	virtual float PlayAnimMontage(UAnimMontage* AnimMontage, float InPlayRate = 1.f, FName StartSectionName = NAME_None) override;
+	
 #pragma endregion
 	
 #pragma region Civilian Components
@@ -157,6 +159,9 @@ protected:
 	UPROPERTY(EditAnywhere, BlueprintReadOnly, Category = "PlayerCharacter|Components")
 	TSubclassOf<UAnimInstance> MorphFirstPersonAnimClass;
 	
+	UPROPERTY(EditDefaultsOnly, BlueprintReadOnly, Category = "PlayerCharacter|Components|MorphSettings")
+	TArray<FName> MorphFirstPersonBonesToHide;
+	
 public:
 	// [테스트용] 콘솔 명령어 (Exec)
 	// 사용법: ~ 키 누르고 "Cheat_SetRole 1" (1=Infected, 0=Civilian)
@@ -183,17 +188,6 @@ protected:
 
 	UFUNCTION(NetMulticast, Reliable)
 	void MulticastHandleDeath();
-	
-	/*
-	// 상호작용
-	UFUNCTION(BlueprintCallable, Category = "Interaction")
-	void TryInteract();
-
-	// 아이템 사용
-	UFUNCTION(BlueprintCallable, Category = "Item")
-	void TryUseItem(int32 ItemSlot)
-	*/
-
 
 #pragma region Interaction Logic - 상호작용 로직
 protected:

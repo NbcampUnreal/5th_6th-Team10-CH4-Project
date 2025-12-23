@@ -223,14 +223,14 @@ void ATeam10GameMode::AssignInfectedPlayers()
 	for (int i = 0; i < InfectedCount; i++)
 	{
 		ACivilianPlayerState* CivilianPlayerState = Cast<ACivilianPlayerState>(Team10GameState->PlayerArray[RandomInfectedArray[i]]);
-		CivilianPlayerState->SetPlayerRole(EPlayerRole::Infected);
+		CivilianPlayerState->SetPlayerRoleTag(GamePlayTags::PlayerRole::Infected);
 		UE_LOG(LogTemp, Warning, TEXT("You're Infected"));
 	}
 	
 	for (int i = InfectedCount; i < PlayerCount; i++)
 	{
 		ACivilianPlayerState* CivilianPlayerState = Cast<ACivilianPlayerState>(Team10GameState->PlayerArray[RandomInfectedArray[i]]);
-		CivilianPlayerState->SetPlayerRole(EPlayerRole::Civilian);
+		CivilianPlayerState->SetPlayerRoleTag(GamePlayTags::PlayerRole::Civilian);
 	}
 
 	Team10GameState->AliveInfectedCount = InfectedCount;

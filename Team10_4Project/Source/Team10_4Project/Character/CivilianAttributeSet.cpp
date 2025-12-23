@@ -57,22 +57,22 @@ void UCivilianAttributeSet::PostGameplayEffectExecute(const FGameplayEffectModCa
 	Super::PostGameplayEffectExecute(Data);
 	
 	// 데미지 처리
-	/*if (Data.EvaluatedData.Attribute == GetDamageAttribute())
+	if (Data.EvaluatedData.Attribute == GetDamageAttribute())
 	{
 		const float LocalDamage = GetDamage();
-		SetDamage(0.0f); // 데미지는 Meta Attribute이므로 즉시 리셋
+		SetDamage(0.0f); // 데미지 처리 후, 0으로 즉시 리셋
 
 		if (LocalDamage > 0.0f)
 		{
-			const float NewHealth = GetHealth() - LocalDamage;
+			const float NewHealth = GetHealth() - LocalDamage; // 현재 체력에서 차감
 			SetHealth(FMath::Clamp(NewHealth, 0.0f, GetMaxHealth()));
 		}
 	}
-	// 체력 변경
+	// 체력 변경 시, 적용 사항(아이템 등 상호작용으로 인한 즉시 변경)
 	else if (Data.EvaluatedData.Attribute == GetHealthAttribute())
 	{
 		SetHealth(FMath::Clamp(GetHealth(), 0.0f, GetMaxHealth()));
-	}*/
+	}
 }
 
 void UCivilianAttributeSet::OnRep_Health(const FGameplayAttributeData& OldHealth)

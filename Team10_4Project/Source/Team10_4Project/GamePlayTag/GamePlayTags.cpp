@@ -50,6 +50,11 @@ namespace GamePlayTags
 		UE_DEFINE_GAMEPLAY_TAG_COMMENT(Damage, "Data.Damage", "Tag for Data Format");
 		UE_DEFINE_GAMEPLAY_TAG_COMMENT(HealAmount, "Data.HealAmount", "Tag for Data Format");
 	}
+	
+	namespace Effect
+	{
+		UE_DEFINE_GAMEPLAY_TAG_COMMENT(Role, "Effect.Type.Role", "Tag for Effect Type");
+	}
 }
 
 

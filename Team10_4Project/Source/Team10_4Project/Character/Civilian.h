@@ -39,7 +39,7 @@ public:
 	virtual void SetupPlayerInputComponent(class UInputComponent* PlayerInputComponent) override;
 	virtual void OnRep_PlayerState() override;
 	
-	virtual float PlayAnimMontage(UAnimMontage* AnimMontage, float InPlayRate = 1.f, FName StartSectionName = NAME_None) override;
+	virtual float PlayAnimMontage(class UAnimMontage* AnimMontage, float InPlayRate = 1.f, FName StartSectionName = NAME_None) override;
 	
 #pragma endregion
 	
@@ -175,7 +175,7 @@ public:
 protected:
 	// 치트는 반드시 서버에서 실행
 	UFUNCTION(Server, Reliable)
-	void Server_SetRole(EPlayerRole NewRole);
+	void Server_SetRole(int32 RoleID);
 
 	UFUNCTION(Server, Reliable)
 	void Server_SetSanity(float Amount);

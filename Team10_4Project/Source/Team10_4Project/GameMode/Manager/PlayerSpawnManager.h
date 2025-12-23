@@ -22,7 +22,7 @@ public:
 	
 	void FoundPlayerSpawner(EGameArea GameArea);
 	void SpawnAllPlayer();
-	void ReSpawnPlayer(APlayerController* NewPlayer);
+	APlayerSpawn* GetPlayerSpawner();
 
 protected:
 	UPROPERTY()
@@ -30,4 +30,9 @@ protected:
 
 	UPROPERTY(VisibleAnywhere)
 	TArray<TObjectPtr<APlayerSpawn>> PlayerSpawners;
+
+	int32 BeforeSpawnIndex = 0;
+
+private:
+	
 };

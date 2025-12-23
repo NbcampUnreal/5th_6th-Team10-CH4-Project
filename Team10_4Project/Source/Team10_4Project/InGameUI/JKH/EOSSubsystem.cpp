@@ -1,4 +1,4 @@
-#include "EOSSubsystem.h"
+#include "InGameUI/JKH/EOSSubsystem.h"
 #include "OnlineSubsystem.h"
 #include "OnlineSessionSettings.h"
 #include "Online/OnlineSessionNames.h"
@@ -25,7 +25,6 @@ void UEOSSubsystem::Initialize(FSubsystemCollectionBase& Collection)
 	{
 		SessionInterface = Subsystem->GetSessionInterface();
 		IdentityInterface = Subsystem->GetIdentityInterface();
-		VoiceInterface = Subsystem->GetVoiceInterface();
 
 		if (SessionInterface.IsValid() && IdentityInterface.IsValid())
 		{
@@ -36,13 +35,6 @@ void UEOSSubsystem::Initialize(FSubsystemCollectionBase& Collection)
 	{
 		// EOS 로드 실패
 		UE_LOG(LogTemp, Error, TEXT("[EOSSubsystem] Failed to get EOS Subsystem! Check Plugins/Artifact settings."));
-	}
-
-	if (VoiceInterface.IsValid())
-	{
-		// 누가 말하는지 감지하는 델리게이트 등록
-		PlayerTalkingDelegateHandle = VoiceInterface->AddOnPlayerTalkingStateChangedDelegate_Handle(
-			FOnPlayerTalkingStateChangedDelegate::CreateUObject(this, &UEOSSubsystem::OnPlayerTalkingStateChanged));
 	}
 }
 
@@ -347,32 +339,5 @@ void UEOSSubsystem::OnJoinSessionComplete(FName SessionName, EOnJoinSessionCompl
 	else
 	{
 		UE_LOG(LogTemp, Error, TEXT("[EOSSubsystem] Join session failed. Result Code: %d"), (int32)Result);
-	}
-}
-
-void UEOSSubsystem::StartSpeaking()
-{
-	if (!VoiceInterface.IsValid()) return;
-	// 로컬 유저(0번)의 마이크 입력 전송 시작
-	UE_LOG(LogTemp, Log, TEXT("[EOSSubsystem] Start Speaking..."));
-	VoiceInterface->StartNetworkedVoice(0);
-}
-void UEOSSubsystem::StopSpeaking()
-{
-	if (!VoiceInterface.IsValid()) return;
-	// 로컬 유저(0번)의 마이크 입력 전송 중단
-	UE_LOG(LogTemp, Log, TEXT("[EOSSubsystem] Stop Speaking."));
-	VoiceInterface->StopNetworkedVoice(0);
-}
-
-void UEOSSubsystem::OnPlayerTalkingStateChanged(TSharedRef<const FUniqueNetId> PlayerId, bool bIsTalking)
-{
-	if (bIsTalking)
-	{
-		UE_LOG(LogTemp, Log, TEXT("[Voice] Player %s began talking."), *PlayerId->ToString());
-	}
-	else
-	{
-		UE_LOG(LogTemp, Log, TEXT("[Voice] Player %s stopped talking."), *PlayerId->ToString());
 	}
 }

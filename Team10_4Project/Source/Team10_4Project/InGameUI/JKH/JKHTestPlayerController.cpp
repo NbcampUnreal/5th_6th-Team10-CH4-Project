@@ -1,5 +1,5 @@
 #include "InGameUI/JKH/JKHTestPlayerController.h"
-#include "InGameUI/JKH/VoiceChatSubsystem.h"
+#include "InGameUI/JKH/EOSSubsystem.h"
 #include "Online/OnlineSessionNames.h"
 #include "Interfaces/OnlineIdentityInterface.h"
 #include "OnlineSubsystem.h"

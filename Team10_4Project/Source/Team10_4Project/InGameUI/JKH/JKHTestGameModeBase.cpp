@@ -1,9 +1,9 @@
 #include "InGameUI/JKH/JKHTestGameModeBase.h"
-#include "InGameUI/JKH/EOSGameSession.h"
+#include "InGameUI/JKH/EOSSubsystem.h"
 
 AJKHTestGameModeBase::AJKHTestGameModeBase()
 {
-	GameSessionClass = AEOSGameSession::StaticClass();
+	GameSessionClass = UEOSSubsystem::StaticClass();
 }
 
 void AJKHTestGameModeBase::BeginPlay()
@@ -21,14 +21,14 @@ void AJKHTestGameModeBase::BeginPlay()
 			if (IsRunningDedicatedServer())
 			{
 				UE_LOG(LogTemp, Log, TEXT("[GameMode] DedicatedServer Detected."));
-				//EOSSubsystem->CreateGameSession(4, false);
-				//EOSSubsystem->LoginToEOS("localhost:8081", "test", "Developer");
+				// EOSSubsystem->CreateGameSession(4, false);
+				// EOSSubsystem->LoginToEOS("localhost:8081", "test", "Developer");
 
 			}
 			else
 			{
 				// 리슨 서버 ?
-				EOSSubsystem->LoginToEOS("localhost:8081", "test", "Developer");
+				// EOSSubsystem->LoginToEOS("localhost:8081", "test", "Developer");
 
 			}
 		}

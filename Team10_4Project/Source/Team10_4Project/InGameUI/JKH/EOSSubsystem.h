@@ -6,7 +6,7 @@
 #include "EOSSubsystem.generated.h"
 
 UCLASS()
-class EOSTEST_API UEOSSubsystem : public UGameInstanceSubsystem
+class TEAM10_4PROJECT_API UEOSSubsystem : public UGameInstanceSubsystem
 {
 	GENERATED_BODY()
 	
@@ -54,13 +54,4 @@ public:
 private:
 	void OnJoinSessionComplete(FName SessionName, EOnJoinSessionCompleteResult::Type Result);
 	FDelegateHandle JoinSessionCompleteDelegateHandle;
-
-	// 음성 채팅 ==========================================
-public:
-	void StartSpeaking();
-	void StopSpeaking();
-private:
-	void OnPlayerTalkingStateChanged(TSharedRef<const FUniqueNetId> PlayerId, bool bIsTalking);
-	FDelegateHandle PlayerTalkingDelegateHandle;
-	IOnlineVoicePtr VoiceInterface;
 };

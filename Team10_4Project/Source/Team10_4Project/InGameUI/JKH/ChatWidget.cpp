@@ -1,17 +1,17 @@
 #include "InGameUI/JKH/ChatWidget.h"
 #include "InGameUI/JKH/ChatSubsystem.h"
+#include "GameFramework/PlayerState.h"
+#include "Blueprint/UserWidget.h"
 #include "Components/TextBlock.h"
 #include "Components/EditableTextBox.h"
 #include "Components/VerticalBox.h"
 #include "Components/VerticalBoxSlot.h"
-#include "Blueprint/UserWidget.h"
-#include "GameFramework/PlayerState.h"
 
 void UChatWidget::NativeConstruct()
 {
 	Super::NativeConstruct();
 
-	if (!ChatInput->OnTextCommitted.IsAlreadyBound(this, &ThisClass::OnChatInputCommitted))
+	if (ChatInput->OnTextCommitted.IsAlreadyBound(this, &ThisClass::OnChatInputCommitted) == false)
 	{
 		ChatInput->OnTextCommitted.AddDynamic(this, &ThisClass::OnChatInputCommitted);
 	}
@@ -45,7 +45,7 @@ void UChatWidget::OnChatInputCommitted(const FText& Text, ETextCommit::Type Comm
 	if (IsValid(PlayerState) == false) return;
 	FString PlayerName = PlayerState->GetPlayerName();
 	
-	FString Message = "";
+	FString Message = TEXT("");
 	FChatMessage ChatMessage(EMessageType::Normal, PlayerName, Message);
 	OnChatMessage(ChatMessage);
 
@@ -68,9 +68,12 @@ void UChatWidget::ChatInputReady()
 void UChatWidget::OnChatMessage(const FChatMessage& ChatMessage)
 {
 	FText PrintMessage;
+	FLinearColor FontColor(1.0f, 1.0f, 1.0f, 1.0f);	// white
 	switch (ChatMessage.MessageType)
 	{
 	case EMessageType::System:
+		PrintMessage = FText::FromString(ChatMessage.Message);
+		FontColor = FLinearColor(1.0f, 0.647f, 0.0f, 1.0f);
 		break;
 	case EMessageType::Normal:
 		PrintMessage = FText::FromString(ChatMessage.PlayerName + TEXT(": ") + ChatMessage.Message);
@@ -80,5 +83,6 @@ void UChatWidget::OnChatMessage(const FChatMessage& ChatMessage)
 	if (ChatTextBlock == nullptr) return;
 
 	ChatTextBlock->SetText(PrintMessage);
+	ChatTextBlock->SetColorAndOpacity(FontColor);
 	UVerticalBoxSlot* TextSlot = ChatMessageList->AddChildToVerticalBox(ChatTextBlock);
 }

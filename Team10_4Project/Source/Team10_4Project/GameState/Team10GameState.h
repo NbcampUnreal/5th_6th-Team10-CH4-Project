@@ -56,6 +56,13 @@ public:
 
 	UFUNCTION()
 	void OnRep_PhaseTimeRemaining();
+
+	// 다음 구역으로 이동하기 위해 활성화가 필요한 퓨즈 박스 개수
+	UPROPERTY(ReplicatedUsing = OnRep_RemainingFuseBoxCount, BlueprintReadOnly, Category = "GameState")
+	int32 RemainingFuseBoxCount;
+
+	UFUNCTION()
+	void OnRep_RemainingFuseBoxCount();
 	
 	// 게임 결과
 	UPROPERTY(ReplicatedUsing = OnRep_GameResult, BlueprintReadOnly, Category = "GameState")

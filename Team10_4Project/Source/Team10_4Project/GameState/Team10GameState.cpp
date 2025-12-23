@@ -52,6 +52,11 @@ void ATeam10GameState::OnRep_PhaseTimeRemaining()
 	UE_LOG(LogTemp, Log, TEXT("Current Phase Timer: %d"), PhaseTimeRemaining);
 }
 
+void ATeam10GameState::OnRep_RemainingFuseBoxCount()
+{
+	
+}
+
 void ATeam10GameState::OnRep_GameResult()
 {
 	// UI 설정

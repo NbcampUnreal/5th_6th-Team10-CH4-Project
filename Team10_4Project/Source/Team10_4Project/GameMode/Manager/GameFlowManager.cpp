@@ -8,6 +8,14 @@ void UGameFlowManager::BeginPlay()
 	
 }
 
+void UGameFlowManager::InitializeRemainingFuseBoxes()
+{
+	if (Team10GameState)
+	{
+		Team10GameState->RemainingFuseBoxCount = TotalFuseBoxCount;
+	}
+}
+
 void UGameFlowManager::StartGame()
 {
 	Team10GameState = GetWorld()->GetGameState<ATeam10GameState>();
@@ -18,8 +26,7 @@ void UGameFlowManager::StartGame()
 	}
 	
 	UE_LOG(LogTemp, Warning, TEXT("Game Starting!"));
-	
-	ChangePhase(EGamePhase::DayPhase);
+	SetCurrentArea(EGameArea::Area1);
 }
 
 void UGameFlowManager::ChangePhase(EGamePhase NewPhase)
@@ -47,6 +54,48 @@ void UGameFlowManager::ChangePhase(EGamePhase NewPhase)
 		break;
 	}
 }
+
+void UGameFlowManager::AdvanceToNextPhase()
+{
+	switch (Team10GameState->CurrentPhase)
+	{
+	case EGamePhase::DayPhase:
+		ChangePhase(EGamePhase::NightPhase);
+		break;
+	case EGamePhase::NightPhase:
+		ChangePhase(EGamePhase::TrapIn);
+		break;
+	case EGamePhase::TrapIn:
+		// Trap In Phase에서 타이머가 끝나면 강제로 감염자 팀 승리
+		EndGame(EGameResult::InfectedWin);
+		break;
+	default:
+		break;
+	}
+}
+void UGameFlowManager::OpenNextArea()
+{
+	switch (Team10GameState->CurrentArea)
+	{
+	case EGameArea::Area1:
+		SetCurrentArea(EGameArea::Area2);
+		break;
+	case EGameArea::Area2:
+		SetCurrentArea(EGameArea::Area3);
+		break;
+	case EGameArea::Area3:
+		ActivateExit();
+		break;
+	default:
+		break;
+	}
+}
+
+void UGameFlowManager::ActivateExit()
+{
+	// 탈출구 활성화 
+}
+
 void UGameFlowManager::EndGame(EGameResult Result)
 {
 	if (!Team10GameState)
@@ -76,9 +125,6 @@ void UGameFlowManager::StartPhaseTimer(float Duration)
 	GetWorld()->GetTimerManager().ClearTimer(PhaseTimerHandle);
 	GetWorld()->GetTimerManager().SetTimer(PhaseTimerHandle, this, &UGameFlowManager::UpdatePhaseTimer, 1.f, true, 1.f);
 	
-	//GetWorldTimerManager().ClearTimer(PhaseTimerHandle);
-	//GetWorldTimerManager().SetTimer(PhaseTimerHandle, this, &ATeam10GameMode::UpdatePhaseTimer, 1.f, true, 1.f);
-
 	if (Team10GameState)
 	{
 		Team10GameState->SetPhaseTimeRemaining(Duration);
@@ -100,21 +146,14 @@ void UGameFlowManager::UpdatePhaseTimer()
 	}
 }
 
-void UGameFlowManager::AdvanceToNextPhase()
+void UGameFlowManager::SetCurrentArea(EGameArea NewArea)
 {
-	switch (Team10GameState->CurrentPhase)
+	if (Team10GameState)
 	{
-	case EGamePhase::DayPhase:
-		ChangePhase(EGamePhase::NightPhase);
-		break;
-	case EGamePhase::NightPhase:
-		ChangePhase(EGamePhase::TrapIn);
-		break;
-	case EGamePhase::TrapIn:
-		// Trap In Phase에서 타이머가 끝나면 강제로 감염자 팀 승리
-		EndGame(EGameResult::InfectedWin);
-		break;
-	default:
-		break;
+		Team10GameState->CurrentArea = NewArea;
+		OnCurrentAreaChangedDelegate.Broadcast(NewArea);
+		InitializeRemainingFuseBoxes();
+		ChangePhase(EGamePhase::DayPhase);
 	}
 }
+

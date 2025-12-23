@@ -1,4 +1,4 @@
-﻿{
+{
 	"FileVersion": 3,
 	"EngineAssociation": "5.6",
 	"Category": "",
@@ -42,6 +42,10 @@
 		},
 		{
 			"Name": "EOSVoiceChat",
+			"Enabled": true
+		},
+		{
+			"Name": "OnlineSubsystemEOS",
 			"Enabled": true
 		}
 	]

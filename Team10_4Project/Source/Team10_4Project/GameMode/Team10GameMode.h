@@ -74,6 +74,8 @@ private:
 	int32 GetAliveCitizenCount();
 	int32 GetAliveInfectedCount();
 
+	void ReSpawnPlayer(APlayerController* Controller);
+
 #pragma endregion
 
 

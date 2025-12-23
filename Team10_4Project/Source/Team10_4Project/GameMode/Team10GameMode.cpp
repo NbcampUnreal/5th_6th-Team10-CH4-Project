@@ -42,7 +42,7 @@ void ATeam10GameMode::BeginPlay()
 	}
 	
 	Team10GameState->CurrentArea = EGameArea::Area1;
-	AssignInfectedPlayers();
+	
 }
 
 void ATeam10GameMode::Logout(AController* Exiting)
@@ -99,9 +99,19 @@ void ATeam10GameMode::HandleStartingNewPlayer_Implementation(APlayerController* 
 		UE_LOG(LogTemp, Log, TEXT("All Player Loaded"));
 		
 		InitializeRemainingFuseBoxes();
+		AssignInfectedPlayers();
 		PlayerSpawnManager->FoundPlayerSpawner(EGameArea::Area1);
 		PlayerSpawnManager->SpawnAllPlayer();
 		GameFlowManager->StartGame();
+	}
+}
+
+void ATeam10GameMode::ReSpawnPlayer(APlayerController* Controller)
+{
+	// 사망한 플레이어 랜덤 스폰 지점으로 리스폰
+	if (PlayerSpawnManager)
+	{
+		RestartPlayerAtPlayerStart(Controller, PlayerSpawnManager->GetPlayerSpawner());
 	}
 }
 
@@ -111,39 +121,78 @@ void ATeam10GameMode::CheckWinCondition()
 	{
 		return;
 	}
+
+	if (!GameFlowManager)
+	{
+		return;
+	}
 	
 	if (GetAliveCitizenCount()== 0)
 	{
-		Team10GameState->SetGameResult(EGameResult::InfectedWin);
+		GameFlowManager->EndGame(EGameResult::InfectedWin);
 	}
 	else if (GetAliveInfectedCount() == 0)
 	{
-		Team10GameState->SetGameResult(EGameResult::CitizenWin);
+		GameFlowManager->EndGame(EGameResult::CitizenWin);
 	}
 }
 
 void ATeam10GameMode::HandlePlayerDeath(APlayerController* DeadPlayer)
 {
-	// DeadPlayer의 역할에 맞춰 AliveCount감소
+	if (!DeadPlayer)
+	{
+		return;
+	}
 
-	// if (!DeadPlayer)
+	if(!Team10GameState)
+	{
+		return;
+	}
+	
+	APawn* Pawn = DeadPlayer->GetPawn();
+
+	if (Pawn)
+	{
+		Pawn->Destroy();
+	}
+
+	// // 플레이어가 다시 스폰이 가능한 사망인지 영구적 사망인지 체크
+	//
+	// // 영구 사망 DeadPlayer의 역할에 맞춰 AliveCount감소
+	//
+	// ACivilianPlayerState* CivilianPlayerState = Pawn->GetController()->GetPlayerState<ACivilianPlayerState>();
+	//
+	// if (CivilianPlayerState)
 	// {
-	// 	return;
+	// 	if (CivilianPlayerState->GetPlayerRole() == EPlayerRole::Civilian)
+	// 	{
+	// 		Team10GameState->AliveCitizenCount--;
+	// 	}
+	// 	else if(CivilianPlayerState->GetPlayerRole() == EPlayerRole::Infected)
+	// 	{
+	// 		Team10GameState->AliveInfectedCount--;
+	// 	}
+	//
+	// 	CheckWinCondition();
 	// }
 	//
-	// if(!Team10GameState)
-	// {
-	// 	return;
-	// }
-	// Team10GameState->AliveCitizenCount--;
-	// Team10GameState->AliveInfectedCount--;
+	// // 사망한 플레이어 관전상태로 변경
 	//
-	// APawn* Pawn = DeadPlayer->GetPawn();
-	// if (Pawn)
+	// for (ACivilianPlayerController* CivilianPlayerController : Team10GameState->AllPlayers)
 	// {
-	// 	Pawn->Destroy();
+	// 	APawn* TargetPawn = CivilianPlayerController->GetPawn();
+	// 	if (TargetPawn)
+	// 	{
+	// 		DeadPlayer->SetViewTargetWithBlend(TargetPawn);
+	// 		return;
+	// 	}
+	// 	
 	// }
-	// CheckWinCondition();
+	//
+	// // 리스폰 가능한 사망
+	//
+	// ReSpawnPlayer(DeadPlayer);
+	//
 }
 
 void ATeam10GameMode::AssignInfectedPlayers()
@@ -153,7 +202,7 @@ void ATeam10GameMode::AssignInfectedPlayers()
 		return;
 	}
 	
-	int32 PlayerCount = Team10GameState->AllPlayers.Num();
+	int32 PlayerCount = Team10GameState->PlayerArray.Num();
 	
 	TArray<int32> RandomInfectedArray;
 	
@@ -171,15 +220,18 @@ void ATeam10GameMode::AssignInfectedPlayers()
 
 	// 인덱스를 랜덤으로 섞고 랜덤한 인덱스 값에 해당하는 플레이어를 찾아 감염자로 설정한다.
 	
-	// for (int i = 0; i < InfectedCount; i++)
-	// {
-	// 	Team10GameState->AllPlayers[RandomInfectedArray[i]];
-	// }
+	for (int i = 0; i < InfectedCount; i++)
+	{
+		ACivilianPlayerState* CivilianPlayerState = Cast<ACivilianPlayerState>(Team10GameState->PlayerArray[RandomInfectedArray[i]]);
+		CivilianPlayerState->SetPlayerRole(EPlayerRole::Infected);
+		UE_LOG(LogTemp, Warning, TEXT("You're Infected"));
+	}
 	
-	// for (int i = InfectedCount; i < PlayerCount; i++)
-	// {
-	// 	Team10GameState->AllPlayers[RandomInfectedArray[i]];
-	// }
+	for (int i = InfectedCount; i < PlayerCount; i++)
+	{
+		ACivilianPlayerState* CivilianPlayerState = Cast<ACivilianPlayerState>(Team10GameState->PlayerArray[RandomInfectedArray[i]]);
+		CivilianPlayerState->SetPlayerRole(EPlayerRole::Civilian);
+	}
 
 	Team10GameState->AliveInfectedCount = InfectedCount;
 	Team10GameState->AliveCitizenCount = PlayerCount - InfectedCount;
@@ -222,7 +274,7 @@ void ATeam10GameMode::UpdateKillPlayerVotesCount()
 	// 생존자 과반수, 구역별 투표수 둘 중 적은 쪽을 플레이어 사망에 필요한 최소 투표수로 설정한다.
 	int32 AlivePlayerCount = (Team10GameState->AliveInfectedCount + Team10GameState->AliveCitizenCount) / 2 + 1;
 	
-	Team10GameState->KillPlayerVotesCount = AlivePlayerCount > AreaVoteCount ? AreaVoteCount : AlivePlayerCount;
+	Team10GameState->KillPlayerVotesCount = AlivePlayerCount >= AreaVoteCount ? AreaVoteCount : AlivePlayerCount;
 }
 
 void ATeam10GameMode::OnFuseBoxActivated()
@@ -247,6 +299,8 @@ void ATeam10GameMode::InitializeRemainingFuseBoxes()
 	}
 }
 
+
+
 int32 ATeam10GameMode::GetAliveCitizenCount()
 {
 	return Team10GameState->AliveCitizenCount;
@@ -256,6 +310,8 @@ int32 ATeam10GameMode::GetAliveInfectedCount()
 {
 	return Team10GameState->AliveInfectedCount;
 }
+
+
 
 
 // void ATeam10GameMode::ProcessChatMessage(APlayerController* InPlayerController, const FChatMessage& ChatMessage)

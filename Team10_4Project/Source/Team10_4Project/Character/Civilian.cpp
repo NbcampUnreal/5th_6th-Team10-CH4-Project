@@ -1,4 +1,4 @@
-// Fill out your copyright notice in the Description page of Project Settings.
+﻿// Fill out your copyright notice in the Description page of Project Settings.
 
 
 #include "Character/Civilian.h"
@@ -18,6 +18,9 @@
 #include "EnhancedInputSubsystems.h"
 #include "InputMappingContext.h"
 #include "Net/UnrealNetwork.h"
+#include "Gimmick/Interfaces/Interactable.h"
+#include "Kismet/KismetSystemLibrary.h"
+
 
 ACivilian::ACivilian()
 {
@@ -105,6 +108,23 @@ void ACivilian::PossessedBy(AController* NewController)
 	}
 }
 
+void ACivilian::Tick(float DeltaTime)
+{
+	Super::Tick(DeltaTime);
+
+	//// 로컬 플레이어인 경우에만 상호작용 문구 UI 띄우기용 트레이스 실행
+	//if (IsLocallyControlled())
+	//{
+	//	CurrentInteractableActor = GetInteractableActor();
+
+	//	// 여기서 UI 업데이트 로직 실행 (예: CurrentInteractableActor가 있으면 텍스트 표시)
+	//	if (CurrentInteractableActor.IsValid())
+	//	{
+	//		// IInteractable::Execute_GetInteractText(CurrentInteractableActor.Get()) 호출 가능
+	//	}
+	//}
+}
+
 void ACivilian::SetupPlayerInputComponent(class UInputComponent* PlayerInputComponent)
 {
 	Super::SetupPlayerInputComponent(PlayerInputComponent);
@@ -137,9 +157,9 @@ void ACivilian::SetupPlayerInputComponent(class UInputComponent* PlayerInputComp
 		EnhancedInputComponent->BindAction(JumpAction, ETriggerEvent::Completed,
 			this, &ACivilian::StopJump);
 
-		/*// 상호작용
+		// 상호작용
 		EnhancedInputComponent->BindAction(InteractAction, ETriggerEvent::Started,
-			this, &ACivilian::TryInteract);*/
+			this, &ACivilian::InteractInputPressed);
 
 		// 공격
 		EnhancedInputComponent->BindAction(AttackAction, ETriggerEvent::Started,
@@ -428,3 +448,92 @@ void ACivilian::MulticastHandleDeath_Implementation()
 	// 사망 애니메이션/이펙트
 	OnDeath();
 }
+
+#pragma region Interaction Logics - 상호작용 로직 구현
+// E 키 입력 처리
+void ACivilian::InteractInputPressed()
+{
+	if (!HasAuthority() && !IsLocallyControlled()) return;
+
+	// 소유권 확인 로그
+	UE_LOG(LogTemp, Warning, TEXT("Local Owner: %s"), GetOwner() ? *GetOwner()->GetName() : TEXT("No Owner"));
+
+	UE_LOG(LogTemp, Warning, TEXT("Interact Key Pressed!"));
+	AActor* TargetActor = GetInteractableActor(); // 이 줄은 E 키 눌렀을 때 실행이 아니라, Tick() 에서 상시 실행 가능성도 있음.
+
+	if (TargetActor)
+	{
+		//if (HasAuthority())
+		//{
+		//	UE_LOG(LogTemp, Warning, TEXT("I am Server, Executing Directly"));
+		//	IInteractable::Execute_Interact(TargetActor, this);
+		//}
+		//else
+		//{
+		//	// 내가 클라이언트라면 서버에 요청
+		//	UE_LOG(LogTemp, Warning, TEXT("I am Client, Sending RPC"));
+		//	ServerRPC_Interact(TargetActor);
+		//}
+		UE_LOG(LogTemp, Warning, TEXT("Target Found: %s. Calling ServerRPC_Interact"), *TargetActor->GetName());
+		ServerRPC_Interact(TargetActor);
+	}
+}
+
+// RPC 구현 (클라이언트 -> 서버)
+void ACivilian::ServerRPC_Interact_Implementation(AActor* TargetActor)
+{
+	UE_LOG(LogTemp, Warning, TEXT("Server: received interact request for Target: %s"), *TargetActor->GetName());
+
+	if (!TargetActor)
+	{
+		return;
+	}
+
+	float Distance = FVector::Dist(GetActorLocation(), TargetActor->GetActorLocation());	// 거리가 너무 멀지는 않은지 서버에서도 한 번 더 체크 (핵 방지용)
+	{
+		if (Distance > InteractDistance + 100.0f) return;
+	}
+
+	if (TargetActor->Implements<UInteractable>())
+	{
+		IInteractable::Execute_Interact(TargetActor, this);
+	}
+}
+
+// 상호작용 가능한 액터를 찾는 Line Trace (클라이언트 전용)
+AActor* ACivilian::GetInteractableActor()
+{
+	UE_LOG(LogTemp, Warning, TEXT("Perform Trace"));
+
+	// 1인칭 카메라 컴포넌트 사용
+	if (!FirstPersonCamera)
+	{
+		UE_LOG(LogTemp, Error, TEXT("Camera is Null!"));
+		return nullptr;
+	}
+	FVector StartLocation = FirstPersonCamera->GetComponentLocation();
+	FVector EndLocation = StartLocation + (FirstPersonCamera->GetForwardVector() * InteractDistance);
+
+	FHitResult HitResult;
+	FCollisionQueryParams Params;
+	Params.AddIgnoredActor(this); // 나 자신은 무시
+
+	bool bHit = GetWorld()->LineTraceSingleByChannel(	// LineTraceSingleByChannel 사용 (성능상 더 가벼움)
+		HitResult,
+		StartLocation,
+		EndLocation,
+		ECC_Visibility, // 상호작용용 채널 (보통 Visibility 사용)
+		Params
+	);
+
+	if (bHit)
+	{
+		AActor* HitActor = HitResult.GetActor();
+		if (HitActor && HitActor->Implements<UInteractable>())
+		{
+			return HitActor;
+		}
+	}
+	return nullptr;
+}
+#pragma endregion

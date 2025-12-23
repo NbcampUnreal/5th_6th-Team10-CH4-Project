@@ -26,6 +26,7 @@ public class Team10_4Project : ModuleRules
             // 네트워킹
             "OnlineSubsystem",
             "OnlineSubsystemUtils",
+            "OnlineSubsystemEOS",
             "Sockets",
             "Networking",
 
@@ -40,7 +41,10 @@ public class Team10_4Project : ModuleRules
             "NavigationSystem",
 
 
-            "GameplayStateTreeModule"
+            "GameplayStateTreeModule",
+
+            // Voice Chat
+            "VoiceChat",
         });
 
         PrivateDependencyModuleNames.AddRange(new string[]

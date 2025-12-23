@@ -31,6 +31,8 @@ ACivilian::ACivilian()
 	SetReplicates(true); 
 	SetReplicateMovement(true);
 	
+	GetMesh()->VisibilityBasedAnimTickOption = EVisibilityBasedAnimTickOption::AlwaysTickPoseAndRefreshBones;
+	
 	bUseControllerRotationPitch = false;
 	bUseControllerRotationYaw = true;
 	bUseControllerRotationRoll = false;
@@ -75,6 +77,12 @@ ACivilian::ACivilian()
 	FirstPersonMeshComponent->CastShadow = false;
 	FirstPersonMeshComponent->SetRelativeLocation(FVector(-30.0f, 0.0f, -150.0f));
 	FirstPersonMeshComponent->SetRelativeRotation(FRotator(0.0f, 90.0f, 0.0f));
+	
+	// 변신 시, 1인칭 메쉬 본 숨기기 목록
+	MorphFirstPersonBonesToHide = {
+		FName("neck_01"),
+		FName("head")
+	};
 }
 
 UAbilitySystemComponent* ACivilian::GetAbilitySystemComponent() const
@@ -177,6 +185,30 @@ void ACivilian::OnRep_PlayerState()
 	
 	// 클라이언트에서 실행
 	InitializeAbilitySystem();
+}
+
+float ACivilian::PlayAnimMontage(UAnimMontage* AnimMontage, float InPlayRate, FName StartSectionName)
+{
+	// 3인칭 메쉬(Body) 애니메이션 재생 및 서버 동기화 처리
+	float Duration = Super::PlayAnimMontage(AnimMontage, InPlayRate, StartSectionName);
+
+	// 2. [로컬 플레이어 전용] 1인칭 메쉬에도 애니메이션 재생
+	if (IsLocallyControlled() && FirstPersonMeshComponent)
+	{
+		UAnimInstance* AnimInstance = FirstPersonMeshComponent->GetAnimInstance();
+		if (AnimInstance && AnimMontage)
+		{
+			AnimInstance->Montage_Play(AnimMontage, InPlayRate);
+            
+			// 섹션 점프가 필요하다면
+			if (StartSectionName != NAME_None)
+			{
+				AnimInstance->Montage_JumpToSection(StartSectionName, AnimMontage);
+			}
+		}
+	}
+
+	return Duration;
 }
 
 void ACivilian::InitializeAbilitySystem()
@@ -319,11 +351,8 @@ void ACivilian::Morph()
 
 void ACivilian::Cheat_SetRole(int32 RoleID)
 {
-	// 입력받은 정수를 Enum으로 변환 (0: Civilian, 1: Infected)
-	EPlayerRole NewRole = (RoleID == 1) ? EPlayerRole::Infected : EPlayerRole::Civilian;
-    
 	// 서버 RPC 호출
-	Server_SetRole(NewRole);
+	Server_SetRole(RoleID);
 }
 
 void ACivilian::Cheat_SetSanity(float Amount)
@@ -331,15 +360,16 @@ void ACivilian::Cheat_SetSanity(float Amount)
 	Server_SetSanity(Amount);
 }
 
-void ACivilian::Server_SetRole_Implementation(EPlayerRole NewRole)
+void ACivilian::Server_SetRole_Implementation(int32 RoleID)
 {
 	if (ACivilianPlayerState* PS = GetPlayerState<ACivilianPlayerState>())
 	{
-		PS->SetPlayerRole(NewRole);
-        
-		// 로그 출력
-		FString RoleName = (NewRole == EPlayerRole::Infected) ? TEXT("Infected") : TEXT("Civilian");
-		UE_LOG(LogTemp, Warning, TEXT("[Cheat] Role Changed to: %s"), *RoleName);
+		// 0: Civilian, 1: Infected
+		FGameplayTag NewTag = (RoleID == 1) ? 
+			GamePlayTags::PlayerRole::Infected : 
+			GamePlayTags::PlayerRole::Civilian;
+            
+		PS->SetPlayerRoleTag(NewTag);
 	}
 }
 
@@ -365,9 +395,11 @@ void ACivilian::ServerTryMorph_Implementation()
 	if (!PS) return;
 	
 	// 역할 검증
-	if (PS->GetPlayerRole() != EPlayerRole::Infected)
+	bool bIsInfected = PS->IsPlayerRole(GamePlayTags::PlayerRole::Infected);
+    
+	if (!bIsInfected)
 	{
-		UE_LOG(LogTemp, Warning, TEXT("Morph Failed: Not Infected"));
+		UE_LOG(LogTemp, Warning, TEXT("Morph Failed: Not Infected Tag"));
 		return;
 	}
 	
@@ -397,8 +429,6 @@ void ACivilian::MulticastMorph_Implementation()
 		{
 			GetMesh()->SetAnimInstanceClass(MorphAnimClass);
 		}
-
-		// 이동 속도 증가 등 추가 로직
 		
 		// 1인칭 메쉬 교체
 		if (IsLocallyControlled() && FirstPersonMeshComponent)
@@ -413,6 +443,16 @@ void ACivilian::MulticastMorph_Implementation()
 				{
 					FirstPersonMeshComponent->SetAnimInstanceClass(MorphFirstPersonAnimClass);
 				}
+				
+				// 필요없는 본 숨기기
+				for (const FName& BoneName : MorphFirstPersonBonesToHide)
+				{
+					// PBO_None: 물리에는 영향을 주지 않고 렌더링만 숨김
+					FirstPersonMeshComponent->HideBoneByName(BoneName, EPhysBodyOp::PBO_None);
+				}
+            
+				// 변경 사항 즉시 반영을 위해 렌더 상태 갱신
+				FirstPersonMeshComponent->MarkRenderStateDirty();
 			}
 		}
 		
@@ -429,14 +469,18 @@ void ACivilian::TryAttack()
 	if (!AbilitySystemComponent.IsValid()) return;
 	
 	// 공격 어빌리티 활성화 (GameplayTag 사용하여 구현할 예정)
-	if (PS->GetPlayerRole() != EPlayerRole::Infected)
+	/*if (PS->GetPlayerRole() != EPlayerRole::Infected)
 	{
-		UE_LOG(LogTemp, Warning, TEXT("Civilian Player Attack Activated!!"));	
+		UE_LOG(LogTemp, Warning, TEXT("Civilian Player Attack Activated!!"));
+		FGameplayTag AttackTag = FGameplayTag::RequestGameplayTag(FName("CivilianAbility.Primary"));
+		ActivateAbility(AttackTag);
 	}
 	else
 	{
 		UE_LOG(LogTemp, Warning, TEXT("Infected Player Attack Activated!!"));
-	}
+		FGameplayTag AttackTag = FGameplayTag::RequestGameplayTag(FName("CivilianAbility.Primary"));
+		ActivateAbility(AttackTag);
+	}*/
 }
 
 void ACivilian::MulticastHandleDeath_Implementation()

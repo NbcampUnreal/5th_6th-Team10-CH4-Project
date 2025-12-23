@@ -39,6 +39,8 @@ public:
 	virtual void SetupPlayerInputComponent(class UInputComponent* PlayerInputComponent) override;
 	virtual void OnRep_PlayerState() override;
 	
+	virtual float PlayAnimMontage(class UAnimMontage* AnimMontage, float InPlayRate = 1.f, FName StartSectionName = NAME_None) override;
+	
 #pragma endregion
 	
 #pragma region Civilian Components
@@ -103,7 +105,7 @@ public:
 	// 공격
 	UFUNCTION(BlueprintCallable, Category = "Combat")
 	void TryAttack();
-
+	
 protected:
 	// Enhanced Input (UE 5.6)
 	UPROPERTY(EditAnywhere, BlueprintReadOnly, Category = "Input")
@@ -157,6 +159,9 @@ protected:
 	UPROPERTY(EditAnywhere, BlueprintReadOnly, Category = "PlayerCharacter|Components")
 	TSubclassOf<UAnimInstance> MorphFirstPersonAnimClass;
 	
+	UPROPERTY(EditDefaultsOnly, BlueprintReadOnly, Category = "PlayerCharacter|Components|MorphSettings")
+	TArray<FName> MorphFirstPersonBonesToHide;
+	
 public:
 	// [테스트용] 콘솔 명령어 (Exec)
 	// 사용법: ~ 키 누르고 "Cheat_SetRole 1" (1=Infected, 0=Civilian)
@@ -170,7 +175,7 @@ public:
 protected:
 	// 치트는 반드시 서버에서 실행
 	UFUNCTION(Server, Reliable)
-	void Server_SetRole(EPlayerRole NewRole);
+	void Server_SetRole(int32 RoleID);
 
 	UFUNCTION(Server, Reliable)
 	void Server_SetSanity(float Amount);
@@ -183,17 +188,6 @@ protected:
 
 	UFUNCTION(NetMulticast, Reliable)
 	void MulticastHandleDeath();
-	
-	/*
-	// 상호작용
-	UFUNCTION(BlueprintCallable, Category = "Interaction")
-	void TryInteract();
-
-	// 아이템 사용
-	UFUNCTION(BlueprintCallable, Category = "Item")
-	void TryUseItem(int32 ItemSlot)
-	*/
-
 
 #pragma region Interaction Logic - 상호작용 로직
 protected:

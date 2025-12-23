@@ -23,12 +23,18 @@ public:
     UFUNCTION()
     void ShowServerBrowser();
 
+    UFUNCTION()
+    void ShowLobby();
+
 protected:
     UPROPERTY(EditDefaultsOnly, Category = "UI")
     TSubclassOf<UMainMenuWidget> MainMenuWidgetClass;
 
     UPROPERTY(EditDefaultsOnly, Category = "UI")
     TSubclassOf<UServerBrowserWidget> ServerBrowserWidgetClass;
+
+    UPROPERTY(EditAnywhere, BlueprintReadOnly, Category = "UI")
+    TSubclassOf<UUserWidget> LobbyWidgetClass;
 
 private:
     UPROPERTY()

@@ -2,6 +2,7 @@
 
 #include "Components/TextBlock.h"
 #include "Components/Button.h"
+#include "OutGameUI/Player/MenuPlayerController.h"
 
 void UServerSlotWidget::NativeOnInitialized()
 {
@@ -40,6 +41,11 @@ void UServerSlotWidget::SetServerInfo(
 
 void UServerSlotWidget::OnClick_Join()
 {
-    UE_LOG(LogTemp, Log, TEXT("Join 버튼 클릭"));
-    // TODO: 세션 Join 로직 (다음 단계)
+    AMenuPlayerController* MenuPC =
+        Cast<AMenuPlayerController>(GetOwningPlayer());
+
+    if (MenuPC)
+    {
+        MenuPC->ShowLobby();
+    }
 }

@@ -3,6 +3,7 @@
 #include "Blueprint/UserWidget.h"
 #include "OutGameUI/UI/MainMenuWidget.h"
 #include "OutGameUI/UI/ServerBrowserWidget.h"
+
 void AMenuPlayerController::BeginPlay()
 {
     Super::BeginPlay();
@@ -67,5 +68,22 @@ void AMenuPlayerController::ShowServerBrowser()
         bShowMouseCursor = true;
 
         UE_LOG(LogTemp, Log, TEXT("ServerBrowserWidget shown"));
+    }
+}
+
+void AMenuPlayerController::ShowLobby()
+{
+    if (!LobbyWidgetClass)
+    {
+        UE_LOG(LogTemp, Error, TEXT("LobbyWidgetClass is NULL"));
+        return;
+    }
+
+    UUserWidget* LobbyWidget =
+        CreateWidget<UUserWidget>(this, LobbyWidgetClass);
+
+    if (LobbyWidget)
+    {
+        LobbyWidget->AddToViewport();
     }
 }

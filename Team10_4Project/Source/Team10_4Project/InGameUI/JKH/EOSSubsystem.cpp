@@ -68,18 +68,18 @@ void UEOSSubsystem::LoginToEOS(FString ID, FString Token, FString LoginType)
 
 	FOnlineAccountCredentials Credentials;
 	Credentials.Id = ID;					// 예: DevAuthTool의 주소 (localhost:8081)
-	Credentials.Token = Token;			// 예: DevAuthTool의 Credential Name (User1)
+	Credentials.Token = "WeslySloan";			// 예: DevAuthTool의 Credential Name (User1)
 	Credentials.Type = LoginType;		// 예: "Developer" 혹은 "AccountPortal"
 
 	UGameInstance* GI = GetGameInstance();
 	FWorldContext* WorldContext = GI->GetWorldContext();
 	int32 PIEIndex = WorldContext->PIEInstance;
 
-	if (PIEIndex == 0)
-	{
-		UE_LOG(LogTemp, Log, TEXT("[EOSSubsystem] UserClient try loggin"));
-		Credentials.Token = TEXT("test2"); // 미리 만들어둔 Credential Name
-	}
+	//if (PIEIndex == 0)
+	//{
+	//	UE_LOG(LogTemp, Log, TEXT("[EOSSubsystem] UserClient try loggin"));
+	//	Credentials.Token = TEXT("test2"); // 미리 만들어둔 Credential Name
+	//}
 
 	LoginCompleteDelegateHandle = IdentityInterface->AddOnLoginCompleteDelegate_Handle(
 		0, FOnLoginCompleteDelegate::CreateUObject(this, &UEOSSubsystem::OnLoginComplete));

@@ -3,6 +3,7 @@
 
 #include "GameState/Team10GameState.h"
 
+#include "Character/CivilianPlayerController.h"
 #include "Net/UnrealNetwork.h"
 
 ATeam10GameState::ATeam10GameState()
@@ -42,14 +43,19 @@ void ATeam10GameState::OnRep_CurrentVotesCount()
 
 void ATeam10GameState::OnRep_CurrentPhase()
 {
-	// UI 설정 
+	// UI 설정
+
+	// for (ACivilianPlayerController* CivilianPlayerController : AllPlayers)
+	// {
+	// 	CivilianPlayerController->
+	// }
 }
 
 void ATeam10GameState::OnRep_PhaseTimeRemaining()
 {
 	// UI 설정 
 
-	UE_LOG(LogTemp, Log, TEXT("Current Phase Timer: %d"), PhaseTimeRemaining);
+	//UE_LOG(LogTemp, Log, TEXT("Current Phase Timer: %d"), PhaseTimeRemaining);
 }
 
 void ATeam10GameState::OnRep_RemainingFuseBoxCount()

@@ -37,23 +37,18 @@ void UPlayerSpawnManager::FoundPlayerSpawner(EGameArea GameArea)
 			PlayerSpawners.Add(*It);
 		}
 	}
-}
-
-void UPlayerSpawnManager::SpawnAllPlayer()
-{
-	UE_LOG(LogTemp, Warning, TEXT("PlayerSpawners Count Area1: %d"), PlayerSpawners.Num());
 
 	for (int32 i = PlayerSpawners.Num() - 1; i > 0; i--)
 	{
 		int32 j = FMath::RandRange(0, i);
 		PlayerSpawners.Swap(i, j);
 	}
-	
+}
+
+void UPlayerSpawnManager::SpawnAllPlayer()
+{
 	for (int i = 0; i < Team10GameState->PlayerArray.Num() && i < PlayerSpawners.Num(); i++)
 	{
-		UE_LOG(LogTemp, Warning, TEXT("X:%f , Y:%f Z: %f"),PlayerSpawners[i]->GetActorLocation().X, PlayerSpawners[i]->GetActorLocation().Y, PlayerSpawners[i]->GetActorLocation().Z);
-		// 폰 캐릭터의 위치 회전 값 playerspawner의 위치 회전 값으로 설정
-
 		APawn* Pawn = Team10GameState->PlayerArray[i]->GetPawn();
 
 		Pawn->SetActorLocationAndRotation(PlayerSpawners[i]->GetActorLocation(), PlayerSpawners[i]->GetActorRotation());
@@ -61,7 +56,15 @@ void UPlayerSpawnManager::SpawnAllPlayer()
 	
 }
 
-void UPlayerSpawnManager::ReSpawnPlayer(APlayerController* NewPlayer)
+APlayerSpawn* UPlayerSpawnManager::GetPlayerSpawner()
 {
-	//RestartPlayerAtPlayerStart();
+	if (BeforeSpawnIndex >= PlayerSpawners.Num())
+	{
+		BeforeSpawnIndex = 0;
+	}
+
+	return PlayerSpawners[BeforeSpawnIndex++];
 }
+
+
+

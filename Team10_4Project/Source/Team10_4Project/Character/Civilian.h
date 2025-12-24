@@ -208,8 +208,11 @@ private:
 	// 현재 상호작용 중인 액터 (Line Trace의 결과 값)
 	TWeakObjectPtr<AActor> CurrentInteractableActor;
 
+	UPROPERTY()
+	TObjectPtr<AActor> LastLookedInteractable;
+
 	// 상호작용 거리
 	UPROPERTY(EditDefaultsOnly, Category = "Interaction")
-	float InteractDistance = 400.0f;
+	float InteractDistance = 200.0f;
 #pragma endregion
 };

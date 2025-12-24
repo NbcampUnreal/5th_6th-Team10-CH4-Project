@@ -93,7 +93,9 @@ void ATeam10GameMode::HandleStartingNewPlayer_Implementation(APlayerController* 
 	}
 	
 	LoadedPlayerCount++;
-	if (LoadedPlayerCount == Team10GameState->PlayerArray.Num())
+	const int32 ExpectedPlayers = 2; // 크래시 나길래 추가한 크래시 방지용 임시 추가코드. - 금성
+	if (LoadedPlayerCount >= ExpectedPlayers)	// 크래시 나길래 추가한 크래시 방지용 임시 추가 코드. - 금성
+	//if (LoadedPlayerCount == Team10GameState->PlayerArray.Num())
 	{
 		// 모든 플레이어의 로딩이 끝나면 로딩 UI를 해제한다.
 		UE_LOG(LogTemp, Log, TEXT("All Player Loaded"));
@@ -201,9 +203,10 @@ void ATeam10GameMode::AssignInfectedPlayers()
 	{
 		return;
 	}
-	
+
 	int32 PlayerCount = Team10GameState->PlayerArray.Num();
-	
+	int32 ActualInfectedCount = FMath::Clamp(InfectedCount, 0, PlayerCount);	// 크래시 나길래 추가한 크래시 방지용 임시 추가 코드. - 금성	
+
 	TArray<int32> RandomInfectedArray;
 	
 	for (int i = 0; i < PlayerCount ; i++)
@@ -220,7 +223,8 @@ void ATeam10GameMode::AssignInfectedPlayers()
 
 	// 인덱스를 랜덤으로 섞고 랜덤한 인덱스 값에 해당하는 플레이어를 찾아 감염자로 설정한다.
 	
-	for (int i = 0; i < InfectedCount; i++)
+	for (int i = 0; i < ActualInfectedCount; i++)	// 크래시 나길래 추가한 크래시 방지용 임시 추가 코드. - 금성
+	//for (int i = 0; i < InfectedCount; i++)
 	{
 		ACivilianPlayerState* CivilianPlayerState = Cast<ACivilianPlayerState>(Team10GameState->PlayerArray[RandomInfectedArray[i]]);
 		CivilianPlayerState->SetPlayerRoleTag(GamePlayTags::PlayerRole::Infected);

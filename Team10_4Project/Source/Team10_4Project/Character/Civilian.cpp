@@ -120,17 +120,34 @@ void ACivilian::Tick(float DeltaTime)
 {
 	Super::Tick(DeltaTime);
 
-	//// 로컬 플레이어인 경우에만 상호작용 문구 UI 띄우기용 트레이스 실행
-	//if (IsLocallyControlled())
-	//{
-	//	CurrentInteractableActor = GetInteractableActor();
+	// 로컬 플레이어인 경우에만 상호작용 문구 UI 제어
+	if (IsLocallyControlled())
+	{
+		//현재 조준 중인 액터 찾기
+		AActor* HitActor = GetInteractableActor();
 
-	//	// 여기서 UI 업데이트 로직 실행 (예: CurrentInteractableActor가 있으면 텍스트 표시)
-	//	if (CurrentInteractableActor.IsValid())
-	//	{
-	//		// IInteractable::Execute_GetInteractText(CurrentInteractableActor.Get()) 호출 가능
-	//	}
-	//}
+		// 바라보는 대상이 바뀌었을 때만 실행
+		if (LastLookedInteractable != HitActor)
+		{
+			// 이전에 보던 액터가 있고, 인터페이스를 구현했다면 UI 끄기
+			if (LastLookedInteractable && LastLookedInteractable->Implements<UInteractable>())
+			{
+				IInteractable::Execute_SetInteractionUI(LastLookedInteractable, false, this);
+			}
+
+			// 새로 보는 액터가 있고, 인터페이스를 구현했다면 UI 켜기
+			if (HitActor && HitActor->Implements<UInteractable>())
+			{
+				IInteractable::Execute_SetInteractionUI(HitActor, true, this);
+			}
+
+			// 상태 갱신
+			LastLookedInteractable = HitActor;
+		}
+
+		// 기존 CurrentInteractableActor 변수 업데이트 (필요 시)
+		CurrentInteractableActor = HitActor;
+	}
 }
 
 void ACivilian::SetupPlayerInputComponent(class UInputComponent* PlayerInputComponent)

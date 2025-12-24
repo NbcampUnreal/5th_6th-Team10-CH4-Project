@@ -53,8 +53,11 @@ void ATeam10GameState::OnRep_CurrentPhase()
 
 void ATeam10GameState::OnRep_PhaseTimeRemaining()
 {
-	// UI 설정 
-
+	// Widget에 델리게이트 신호 보내기
+	if (OnPhaseTimeChanged.IsBound())
+	{
+		OnPhaseTimeChanged.Broadcast(PhaseTimeRemaining);
+	}
 	//UE_LOG(LogTemp, Log, TEXT("Current Phase Timer: %d"), PhaseTimeRemaining);
 }
 

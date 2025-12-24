@@ -257,35 +257,40 @@ int32 ATeam10GameMode::GetAliveInfectedCount()
 	return Team10GameState->AliveInfectedCount;
 }
 
+void ATeam10GameMode::ProcessChatMessage(APlayerController* InPlayerController, const FChatMessage& ChatMessage)
+{
+	if (GameState->PlayerArray.Num() <= 0) return;
+	
+	TArray<TObjectPtr<APlayerState>> PlayerList = GameState->PlayerArray;
+	FChatMessage RefinedChatMessage = ChatMessage;
 
-// void ATeam10GameMode::ProcessChatMessage(APlayerController* InPlayerController, const FChatMessage& ChatMessage)
-// {
-// 	//TArray<TObjectPtr<APlayerController>> PlayerList;
-// 	TArray<TWeakObjectPtr<APlayerController>> ValidPlayerList;
-// 	FChatMessage RefinedChatMessage = ChatMessage;
-//
-// 	APlayerState* InPlayerState = InPlayerController->PlayerState;
-// 	if (IsValid(InPlayerState) == false) return;
-// 	FString SenderName = InPlayerState->GetPlayerName();
-//
-// 	for (APlayerController* ClientPlayer : PlayerList)
-// 	{
-// 		if (IsValid(ClientPlayer) == false) continue;
-// 		if (ClientPlayer == InPlayerController)
-// 		{
-// 			if (RefinedChatMessage.PlayerName != SenderName)	// hacking ?
-// 			{
-// 				RefinedChatMessage.PlayerName = SenderName;
-// 			}
-// 			continue;
-// 		}
-// 		ValidPlayerList.Push(ClientPlayer);
-// 	}
-// 	
-// 	if (ValidPlayerList.Num() <= 0) return;
-//
-// 	for (APlayerController* ValidPlayer : ValidPlayerList)
-// 	{
-// 		ValidPlayer->ClientRPC_ReceiveMessage(RefinedChatMessage);
-// 	}
-// }
+	APlayerState* InPlayerState = InPlayerController->PlayerState;
+	if (!IsValid(InPlayerState)) return;
+
+	int32 SenderIndex = GameState->PlayerArray.Find(InPlayerState);
+	if (SenderIndex == -1) return;
+
+	RefinedChatMessage.PlayerName = GameState->PlayerArray[SenderIndex]->GetPlayerName();
+	
+	TArray<TObjectPtr<APlayerController>> ValidPlayerList;
+	for (TObjectPtr<APlayerState> ClientPlayer : PlayerList)	// 필터. 팀채팅, 일반채팅을 필터하기 위함
+	{
+		if (!IsValid(ClientPlayer)) continue;	// 받을사람이 도중에 게임을 나간 경우 ?
+
+		APlayerController* ClientController =  ClientPlayer->GetPlayerController();
+		if (!IsValid(ClientController)) continue;
+
+		ValidPlayerList.Push(ClientController);
+	}
+
+	if (ValidPlayerList.Num() <= 0) return;	// 채팅을 수신할 대상이 없는 경우.
+
+	for (TObjectPtr<APlayerController> ValidPlayer : ValidPlayerList)
+	{
+		if (!IsValid(ValidPlayer)) continue;
+
+		ACivilianPlayerController* CastPlayerController = Cast<ACivilianPlayerController>(ValidPlayer);
+		if (!IsValid(CastPlayerController)) continue;
+		CastPlayerController->ClientRPC_ReceiveMessage(RefinedChatMessage);
+	}
+}

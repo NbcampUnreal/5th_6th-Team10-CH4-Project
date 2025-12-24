@@ -35,6 +35,7 @@ namespace GamePlayTags
 	{
 		UE_DEFINE_GAMEPLAY_TAG_COMMENT(Idle, "InfectedState.Idle", "Tag for Character InfectedState Info");
 		UE_DEFINE_GAMEPLAY_TAG_COMMENT(Morphing, "InfectedState.Morphing", "Tag for Character InfectedState Info");
+		UE_DEFINE_GAMEPLAY_TAG_COMMENT(Transformed, "InfectedState.Transformed", "Tag for Character InfectedState Info");
 		UE_DEFINE_GAMEPLAY_TAG_COMMENT(Stun, "InfectedState.Stun", "Tag for Character InfectedState Info");
 		UE_DEFINE_GAMEPLAY_TAG_COMMENT(Dead, "InfectedState.Dead", "Tag for Character InfectedState Info");
 	}
@@ -54,6 +55,18 @@ namespace GamePlayTags
 	namespace Effect
 	{
 		UE_DEFINE_GAMEPLAY_TAG_COMMENT(Role, "Effect.Type.Role", "Tag for Effect Type");
+	}
+	
+	namespace Ability
+	{
+		namespace Civilian
+		{
+			
+		}
+		namespace Infected
+		{
+			UE_DEFINE_GAMEPLAY_TAG_COMMENT(Morph, "Ability.Infected.Morph", "Ability for Infected Player");
+		}
 	}
 }
 

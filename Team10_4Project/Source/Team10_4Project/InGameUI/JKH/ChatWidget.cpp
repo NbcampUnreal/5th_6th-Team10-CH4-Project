@@ -45,9 +45,8 @@ void UChatWidget::OnChatInputCommitted(const FText& Text, ETextCommit::Type Comm
 	if (IsValid(PlayerState) == false) return;
 	FString PlayerName = PlayerState->GetPlayerName();
 	
-	FString Message = TEXT("");
+	FString Message = Text.ToString();
 	FChatMessage ChatMessage(EMessageType::Normal, PlayerName, Message);
-	OnChatMessage(ChatMessage);
 
 	UChatSubsystem* ChatSubsystem = GetGameInstance()->GetSubsystem<UChatSubsystem>();
 	if (IsValid(ChatSubsystem) == false) return;

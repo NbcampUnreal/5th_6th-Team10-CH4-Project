@@ -89,6 +89,8 @@ protected:
 public:
 	// Attribute 변경 콜백
 	virtual void OnHealthChanged(const FOnAttributeChangeData& Data);
+	
+	virtual void OnMoveSpeedChanged(const FOnAttributeChangeData& Data);
 
 #pragma endregion
 	
@@ -132,35 +134,50 @@ protected:
 	
 public:
 	// 변신
-	UFUNCTION(BlueprintCallable, Category = "Combat")
+	UFUNCTION(BlueprintCallable, Category = "GAS|Morph")
 	void Morph();
-	
-	// 서버 RPC - 변신 요청 및 검증 (Sanity Check)
-	UFUNCTION(Server, Reliable)
-	void ServerTryMorph();
 
-	// 멀티캐스트 RPC - 외형 변경 (클라이언트 실행)
+	// 멀티캐스트 RPC - 비쥬얼 변경 및 동기화
 	UFUNCTION(NetMulticast, Reliable)
-	void MulticastMorph();
+	void MulticastMorph(bool bToInfected);
 	
 protected:
+	// 변신 Input Action
 	UPROPERTY(EditAnywhere, BlueprintReadOnly, Category = "Input|Infected")
 	class UInputAction* MorphAction;
 	
+	// 감염자 변신 시, 3인칭 Mesh
 	UPROPERTY(EditAnywhere, BlueprintReadOnly, Category = "PlayerCharacter|Components", meta = (AllowPrivateAccess = "true"))
 	TObjectPtr<USkeletalMesh> MorphMesh;
 	
+	// 감염자 변신 시, 3인칭 ABP
 	UPROPERTY(EditAnywhere, BlueprintReadOnly, Category = "PlayerCharacter|Components")
 	TSubclassOf<UAnimInstance> MorphAnimClass;
 	
+	// 감염자 변신 시, 1인칭 Mesh
 	UPROPERTY(EditAnywhere, BlueprintReadOnly, Category = "PlayerCharacter|Components")
 	TObjectPtr<USkeletalMesh> MorphFirstPersonMesh;
 	
+	// 감염자 변신 시, 1인칭 ABP
 	UPROPERTY(EditAnywhere, BlueprintReadOnly, Category = "PlayerCharacter|Components")
 	TSubclassOf<UAnimInstance> MorphFirstPersonAnimClass;
 	
+	// 감염자 변신 시, 가릴 Mesh Bones
 	UPROPERTY(EditDefaultsOnly, BlueprintReadOnly, Category = "PlayerCharacter|Components|MorphSettings")
 	TArray<FName> MorphFirstPersonBonesToHide;
+	
+	// 변신 전, 상태 백업
+	UPROPERTY()
+	TObjectPtr<USkeletalMesh> DefaultThirdPersonMesh;
+    
+	UPROPERTY()
+	TObjectPtr<USkeletalMesh> DefaultFirstPersonMesh;
+	
+	UPROPERTY()
+	TSubclassOf<UAnimInstance> DefaultThirdPersonAnimClass;
+	
+	UPROPERTY()
+	TSubclassOf<UAnimInstance> DefaultFirstPersonAnimClass;
 	
 public:
 	// [테스트용] 콘솔 명령어 (Exec)
@@ -208,8 +225,11 @@ private:
 	// 현재 상호작용 중인 액터 (Line Trace의 결과 값)
 	TWeakObjectPtr<AActor> CurrentInteractableActor;
 
+	UPROPERTY()
+	TObjectPtr<AActor> LastLookedInteractable;
+
 	// 상호작용 거리
 	UPROPERTY(EditDefaultsOnly, Category = "Interaction")
-	float InteractDistance = 400.0f;
+	float InteractDistance = 200.0f;
 #pragma endregion
 };

@@ -102,7 +102,7 @@ protected:
 #pragma region Chat
 
 public:
-	//void ProcessChatMessage(APlayerController* InPlayerController, const FChatMessage& ChatMessage);
+	void ProcessChatMessage(APlayerController* InPlayerController, const struct FChatMessage& ChatMessage);
 	
 #pragma endregion
 

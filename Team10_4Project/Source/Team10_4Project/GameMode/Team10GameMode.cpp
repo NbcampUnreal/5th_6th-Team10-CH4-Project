@@ -93,7 +93,9 @@ void ATeam10GameMode::HandleStartingNewPlayer_Implementation(APlayerController* 
 	}
 	
 	LoadedPlayerCount++;
-	if (LoadedPlayerCount == Team10GameState->PlayerArray.Num())
+	const int32 ExpectedPlayers = 2; // 크래시 나길래 추가한 크래시 방지용 임시 추가코드. - 금성
+	if (LoadedPlayerCount >= ExpectedPlayers)	// 크래시 나길래 추가한 크래시 방지용 임시 추가 코드. - 금성
+	//if (LoadedPlayerCount == Team10GameState->PlayerArray.Num())
 	{
 		// 모든 플레이어의 로딩이 끝나면 로딩 UI를 해제한다.
 		UE_LOG(LogTemp, Log, TEXT("All Player Loaded"));
@@ -201,9 +203,10 @@ void ATeam10GameMode::AssignInfectedPlayers()
 	{
 		return;
 	}
-	
+
 	int32 PlayerCount = Team10GameState->PlayerArray.Num();
-	
+	int32 ActualInfectedCount = FMath::Clamp(InfectedCount, 0, PlayerCount);	// 크래시 나길래 추가한 크래시 방지용 임시 추가 코드. - 금성	
+
 	TArray<int32> RandomInfectedArray;
 	
 	for (int i = 0; i < PlayerCount ; i++)
@@ -220,7 +223,8 @@ void ATeam10GameMode::AssignInfectedPlayers()
 
 	// 인덱스를 랜덤으로 섞고 랜덤한 인덱스 값에 해당하는 플레이어를 찾아 감염자로 설정한다.
 	
-	for (int i = 0; i < InfectedCount; i++)
+	for (int i = 0; i < ActualInfectedCount; i++)	// 크래시 나길래 추가한 크래시 방지용 임시 추가 코드. - 금성
+	//for (int i = 0; i < InfectedCount; i++)
 	{
 		ACivilianPlayerState* CivilianPlayerState = Cast<ACivilianPlayerState>(Team10GameState->PlayerArray[RandomInfectedArray[i]]);
 		CivilianPlayerState->SetPlayerRoleTag(GamePlayTags::PlayerRole::Infected);
@@ -311,37 +315,39 @@ int32 ATeam10GameMode::GetAliveInfectedCount()
 	return Team10GameState->AliveInfectedCount;
 }
 
+void ATeam10GameMode::ProcessChatMessage(APlayerController* InPlayerController, const FChatMessage& ChatMessage)
+{
+	if (GameState->PlayerArray.Num() <= 0) return;
+	
+	TArray<TObjectPtr<APlayerState>> PlayerList = GameState->PlayerArray;
+	FChatMessage RefinedChatMessage = ChatMessage;
+	APlayerState* InPlayerState = InPlayerController->PlayerState;
+	if (!IsValid(InPlayerState)) return;
 
+	int32 SenderIndex = GameState->PlayerArray.Find(InPlayerState);
+	if (SenderIndex == -1) return;
 
+	RefinedChatMessage.PlayerName = GameState->PlayerArray[SenderIndex]->GetPlayerName();
+	
+	TArray<TObjectPtr<APlayerController>> ValidPlayerList;
+	for (TObjectPtr<APlayerState> ClientPlayer : PlayerList)	// 필터. 팀채팅, 일반채팅을 필터하기 위함
+	{
+		if (!IsValid(ClientPlayer)) continue;	// 받을사람이 도중에 게임을 나간 경우 ?
 
-// void ATeam10GameMode::ProcessChatMessage(APlayerController* InPlayerController, const FChatMessage& ChatMessage)
-// {
-// 	//TArray<TObjectPtr<APlayerController>> PlayerList;
-// 	TArray<TWeakObjectPtr<APlayerController>> ValidPlayerList;
-// 	FChatMessage RefinedChatMessage = ChatMessage;
-//
-// 	APlayerState* InPlayerState = InPlayerController->PlayerState;
-// 	if (IsValid(InPlayerState) == false) return;
-// 	FString SenderName = InPlayerState->GetPlayerName();
-//
-// 	for (APlayerController* ClientPlayer : PlayerList)
-// 	{
-// 		if (IsValid(ClientPlayer) == false) continue;
-// 		if (ClientPlayer == InPlayerController)
-// 		{
-// 			if (RefinedChatMessage.PlayerName != SenderName)	// hacking ?
-// 			{
-// 				RefinedChatMessage.PlayerName = SenderName;
-// 			}
-// 			continue;
-// 		}
-// 		ValidPlayerList.Push(ClientPlayer);
-// 	}
-// 	
-// 	if (ValidPlayerList.Num() <= 0) return;
-//
-// 	for (APlayerController* ValidPlayer : ValidPlayerList)
-// 	{
-// 		ValidPlayer->ClientRPC_ReceiveMessage(RefinedChatMessage);
-// 	}
-// }
+		APlayerController* ClientController =  ClientPlayer->GetPlayerController();
+		if (!IsValid(ClientController)) continue;
+
+		ValidPlayerList.Push(ClientController);
+	}
+
+	if (ValidPlayerList.Num() <= 0) return;	// 채팅을 수신할 대상이 없는 경우.
+
+	for (TObjectPtr<APlayerController> ValidPlayer : ValidPlayerList)
+	{
+		if (!IsValid(ValidPlayer)) continue;
+
+		ACivilianPlayerController* CastPlayerController = Cast<ACivilianPlayerController>(ValidPlayer);
+		if (!IsValid(CastPlayerController)) continue;
+		CastPlayerController->ClientRPC_ReceiveMessage(RefinedChatMessage);
+	}
+}

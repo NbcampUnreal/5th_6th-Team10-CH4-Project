@@ -3,6 +3,7 @@
 #pragma once
 
 #include "CoreMinimal.h"
+#include "GameplayTagContainer.h"
 #include "Components/ActorComponent.h"
 #include "GameMode/GameTypes/GameTypes.h"
 #include "PlayerSpawnManager.generated.h"
@@ -20,7 +21,7 @@ public:
 
 	virtual void BeginPlay() override;
 	
-	void FoundPlayerSpawner(EGameArea GameArea);
+	void FoundPlayerSpawner(FGameplayTag AreaTag);
 	void SpawnAllPlayer();
 	APlayerSpawn* GetPlayerSpawner();
 

@@ -9,6 +9,7 @@
 #include "Team10GameMode.generated.h"
 
 
+class ACivilianPlayerState;
 class ACivilian;
 class ACivilianPlayerController;
 struct FGameplayTag;
@@ -38,15 +39,15 @@ public:
 	void CheckWinCondition();
 	
 	// 플레이어 사망 처리
-	UFUNCTION(BlueprintCallable, Category = "Player")
+	UFUNCTION(BlueprintCallable, Category = "Dead")
 	void HandlePlayerDeath(APlayerController* DeadPlayer, APlayerController* AttackPlayer);
 
 	// 부활이 가능한 사망
-	//UFUNCTION(BlueprintCallable, Category = "Player")
-	//void HandlePlayerDeath(APlayerController* DeadPlayer);
+	UFUNCTION(BlueprintCallable, Category = "Dead")
+	void RespawnDeath(APlayerController* DeadPlayer);
 	
 	// 부활이 불가능한 사망
-	UFUNCTION(BlueprintCallable, Category = "Player")
+	UFUNCTION(BlueprintCallable, Category = "Dead")
 	void EternalDeath(APlayerController* DeadPlayer);
 	
 	// 감염자 결정
@@ -56,11 +57,7 @@ public:
 	// 퓨즈 활성화 하면 호출
 	UFUNCTION(BlueprintCallable, Category = "GameFlow")
 	void OnFuseBoxActivated();
-
-	//다음 구역 이동에 필요한 퓨즈 개수 초기화
-	UFUNCTION(BlueprintCallable, Category = "GameFlow")
-	void InitializeRemainingFuseBoxes();
-
+	
 	// 감염자가 변신이 가능한 상태인지 체크
 	bool CanInfectedTransform(APlayerState* PlayerState);
 protected:
@@ -108,7 +105,7 @@ public:
 	void UpdateKillPlayerVotesCount();
 
 	UFUNCTION(BlueprintCallable, Category = "Vote")
-	void StartVote(ACivilianPlayerState* VoteTarget);
+	void StartVote(ACivilianPlayerState* VoteTarget, ACivilianPlayerState* VotePlayer);
 protected:
 	UPROPERTY(EditDefaultsOnly, BlueprintReadOnly, Category = "Vote")
 	int32 Area1VoteCount = 4;
@@ -128,16 +125,6 @@ public:
 	
 #pragma endregion
 
-#pragma region Delegate
-
-public:
-	
-
-private:
-	UFUNCTION()
-	void OnCurrentAreaChanged(EGameArea GameArea);
-	
-#pragma endregion
 	
 #pragma region Manager
 

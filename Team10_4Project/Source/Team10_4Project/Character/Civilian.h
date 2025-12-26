@@ -162,7 +162,7 @@ protected:
 	UPROPERTY(EditAnywhere, BlueprintReadOnly, Category = "PlayerCharacter|Components")
 	TSubclassOf<UAnimInstance> MorphFirstPersonAnimClass;
 	
-	// 감염자 변신 시, 가릴 Mesh Bones
+	// 감염자 변신 시, 가릴 Mesh BonesS
 	UPROPERTY(EditDefaultsOnly, BlueprintReadOnly, Category = "PlayerCharacter|Components|MorphSettings")
 	TArray<FName> MorphFirstPersonBonesToHide;
 	
@@ -199,13 +199,28 @@ protected:
 	
 #pragma endregion
 	
+#pragma region Civilian Death
+	
+public:
+	// AttributeSet에서 호출할 함수
+	virtual void HandleFatalDamage(AActor* Attacker, bool bAttackerIsTransformed);
+	
+	UFUNCTION(BlueprintCallable, Category = "GAS|Respawn")
+	void TeleportToSpawnLocation();
+
+protected:
+	// 스폰 위치 저장
+	UPROPERTY(BlueprintReadOnly, Category = "GameData")
+	FVector InitialSpawnLocation;
+	
 	// 사망 처리
 	UFUNCTION(BlueprintImplementableEvent, Category = "Character")
 	void OnDeath();
 
-	UFUNCTION(NetMulticast, Reliable)
+	UFUNCTION(BlueprintCallable, Category = "GAS|Death")
 	void MulticastHandleDeath();
-
+#pragma endregion
+	
 #pragma region Interaction Logic - 상호작용 로직
 protected:
 	// 클라이언트에서 서버로 상호작용을 요청하는 RPC

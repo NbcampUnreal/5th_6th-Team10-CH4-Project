@@ -95,6 +95,8 @@ void ACivilian::BeginPlay()
 {
 	Super::BeginPlay();
 	
+	InitialSpawnLocation = GetActorLocation(); // 처음 시작 시 스폰 위치 저장
+	
 	UAbilitySystemComponent* ASC = GetAbilitySystemComponent();
 	// Attribute 변경 델리게이트 바인딩
 	if (ASC)
@@ -299,6 +301,16 @@ void ACivilian::ApplyDefaultEffects()
 
 void ACivilian::Move(const FInputActionValue& Value)
 {
+	if (UAbilitySystemComponent* ASC = GetAbilitySystemComponent())
+	{
+		// 시민 스턴이거나 감염자 스턴이면 -> 이동 입력 무시 및 리턴
+		if (ASC->HasMatchingGameplayTag(GamePlayTags::CivilianState::Stun) ||
+			ASC->HasMatchingGameplayTag(GamePlayTags::InfectedState::Stun))
+		{
+			return; 
+		}
+	}
+	
 	const FVector2D MovementVector = Value.Get<FVector2D>();
 
 	if (Controller)
@@ -327,6 +339,16 @@ void ACivilian::Look(const FInputActionValue& Value)
 
 void ACivilian::StartJump()
 {
+	// 스턴 상태면 점프 불가
+	if (UAbilitySystemComponent* ASC = GetAbilitySystemComponent())
+	{
+		if (ASC->HasMatchingGameplayTag(GamePlayTags::CivilianState::Stun) ||
+			ASC->HasMatchingGameplayTag(GamePlayTags::InfectedState::Stun))
+		{
+			return;
+		}
+	}
+	
 	Jump();
 }
 
@@ -394,6 +416,121 @@ void ACivilian::Cheat_SetRole(int32 RoleID)
 void ACivilian::Cheat_SetSanity(float Amount)
 {
 	Server_SetSanity(Amount);
+}
+
+void ACivilian::HandleFatalDamage(AActor* Attacker, bool bAttackerIsTransformed)
+{
+	UAbilitySystemComponent* ASC = GetAbilitySystemComponent();
+	if (!ASC) return;
+
+	// 내가 변신한 괴물인가?
+	if (ASC->HasMatchingGameplayTag(GamePlayTags::InfectedState::Transformed))
+	{
+		// [CASE A] 감염자 리스폰 (Infected Stun)
+		UE_LOG(LogTemp, Warning, TEXT("Infected Groggy....."));
+		FGameplayTagContainer TagContainer;
+		TagContainer.AddTag(GamePlayTags::Ability::Infected::Stun); // 태그 새로 정의 필요
+		ASC->TryActivateAbilitiesByTag(TagContainer);
+	}
+	else
+	{
+		// 인간 폼
+		if (bAttackerIsTransformed)
+		{
+			// [CASE B] 즉사 (Death)
+			UE_LOG(LogTemp, Warning, TEXT("Player Dead."));
+			MulticastHandleDeath();
+		}
+		else
+		{
+			// [CASE C] 시민 투표 대기 (Civilian Voting)
+			UE_LOG(LogTemp, Warning, TEXT("Start Voting....."));
+			FGameplayTagContainer TagContainer;
+			TagContainer.AddTag(GamePlayTags::Ability::Civilian::Stun); // 태그 새로 정의 필요
+			ASC->TryActivateAbilitiesByTag(TagContainer);
+		}
+	}
+}
+
+void ACivilian::TeleportToSpawnLocation()
+{
+	// 서버 권한 확인 
+	if (HasAuthority())
+	{
+		// 물리/이동 정지 (안전 장치)
+		if (GetCharacterMovement())
+		{
+			GetCharacterMovement()->StopMovementImmediately();
+		}
+
+		// 위치 이동
+		SetActorLocation(InitialSpawnLocation, false, nullptr, ETeleportType::TeleportPhysics);
+        
+		// 회전값 초기화
+		SetActorRotation(FRotator::ZeroRotator);
+        
+		UE_LOG(LogTemp, Log, TEXT("Respawned at: %s"), *InitialSpawnLocation.ToString());
+	}
+}
+
+void ACivilian::MulticastHandleDeath()
+{
+	// 중복 실행 방지 (이미 죽었는데 또 죽는 것 방지)
+	if (GetMesh()->IsSimulatingPhysics()) return;
+
+	// 어빌리티 시스템 정리 (사용 중인 스킬 취소)
+	UAbilitySystemComponent* ASC = GetAbilitySystemComponent();
+	if (ASC)
+	{
+		ASC->CancelAllAbilities();
+		// 사망 상태 태그 추가 (로직 안전장치)
+		ASC->AddLooseGameplayTag(GamePlayTags::CivilianState::Dead);
+	}
+
+	// 컨트롤러 입력 차단
+	if (APlayerController* PC = Cast<APlayerController>(GetController()))
+	{
+		DisableInput(PC);
+        
+		// (선택사항) 데스 캠이나 관전 모드 전환 로직은 BP_OnDeath에서 처리 추천
+	}
+
+	// 무브먼트 컴포넌트 비활성화 (이동 불가)
+	if (GetCharacterMovement())
+	{
+		GetCharacterMovement()->StopMovementImmediately();
+		GetCharacterMovement()->DisableMovement();
+		GetCharacterMovement()->SetComponentTickEnabled(false); // 성능 최적화
+	}
+
+	// 캡슐 콜리전 비활성화
+	if (GetCapsuleComponent())
+	{
+		GetCapsuleComponent()->SetCollisionEnabled(ECollisionEnabled::NoCollision);
+		GetCapsuleComponent()->SetCollisionResponseToAllChannels(ECR_Ignore);
+	}
+
+	// 3인칭 메쉬: 래그돌(Ragdoll) 전환
+	if (GetMesh())
+	{
+		// 캡슐이 꺼졌으므로 메쉬가 물리 충돌을 대신해야 함
+		GetMesh()->SetCollisionProfileName(TEXT("Ragdoll")); 
+		GetMesh()->SetCollisionEnabled(ECollisionEnabled::QueryAndPhysics);
+		GetMesh()->SetAllBodiesSimulatePhysics(true);
+		GetMesh()->SetSimulatePhysics(true);
+		GetMesh()->WakeAllRigidBodies();
+		GetMesh()->bPauseAnims = true; // 애니메이션 정지 (물리에 맡김)
+		
+	}
+
+	// 1인칭 메쉬(팔) 숨기기
+	if (FirstPersonMeshComponent)
+	{
+		FirstPersonMeshComponent->SetHiddenInGame(true);
+	}
+
+	// 블루프린트 이벤트 호출 (사망 UI, 사운드, 파티클 등)
+	OnDeath();
 }
 
 void ACivilian::Server_SetRole_Implementation(int32 RoleID)
@@ -550,16 +687,6 @@ void ACivilian::TryAttack()
 	{
 		UE_LOG(LogTemp, Warning, TEXT("[Attack] No Valid Role or Ability Tag Found!"));
 	}
-}
-
-void ACivilian::MulticastHandleDeath_Implementation()
-{
-	// 모든 클라이언트에서 실행
-	GetCharacterMovement()->DisableMovement();
-	GetCapsuleComponent()->SetCollisionEnabled(ECollisionEnabled::NoCollision);
-
-	// 사망 애니메이션/이펙트
-	OnDeath();
 }
 
 #pragma region Interaction Logics - 상호작용 로직 구현

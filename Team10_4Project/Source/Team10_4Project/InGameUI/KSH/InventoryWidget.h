@@ -21,7 +21,7 @@ class TEAM10_4PROJECT_API UInventoryWidget : public UUserWidget
 	
 public:
     // 인벤토리 데이터를 가진 컴포넌트를 연결
-    //void InitWithInventory(UInventoryComponent* InventoryComp);
+    void InitWithInventory(UInventoryComponent* InventoryComp);
 
 protected:
     // 위젯 생성 시 호출 (초기화)
@@ -38,8 +38,8 @@ protected:
 
 private:
     // 연결된 실제 데이터 소스
-    //UPROPERTY()
-    //TObjectPtr<UInventoryComponent> InventoryComponent;
+    UPROPERTY()
+    TObjectPtr<UInventoryComponent> InventoryComponent;
     // 생성된 슬롯 인스턴스들을 담아두는 배열 (데이터 갱신 시 순회용)
     UPROPERTY()
     TArray<TObjectPtr<UInventorySlotWidget>> SlotWidgets;

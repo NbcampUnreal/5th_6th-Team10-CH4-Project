@@ -6,12 +6,14 @@
 #include "GameFramework/GameStateBase.h"
 #include "GameMode/Team10GameMode.h"
 #include "GameMode/GameTypes/GameTypes.h"
+#include "GamePlayTag/GamePlayTags.h"
 #include "Team10GameState.generated.h"
 
 class ACivilianPlayerController;
 class APlayerController;
 
 DECLARE_DYNAMIC_MULTICAST_DELEGATE_OneParam(FOnPhaseTimeChanged, int32, ChangedTime);
+DECLARE_DYNAMIC_MULTICAST_DELEGATE_OneParam(FOnAreaChanged, FGameplayTag, AreaTag);
 
 UCLASS()
 class TEAM10_4PROJECT_API ATeam10GameState : public AGameStateBase
@@ -25,12 +27,15 @@ public:
 	virtual void GetLifetimeReplicatedProps(TArray<FLifetimeProperty>& OutLifetimeProps) const override;
 
 	// 현재 게임 구역
-	UPROPERTY(ReplicatedUsing = OnRep_CurrentArea, BlueprintReadOnly, Category = "GameState")
+	UPROPERTY(ReplicatedUsing = OnRep_ChangedArea, BlueprintReadOnly, Category = "GameState")
 	EGameArea CurrentArea;
 	
 	UFUNCTION()
-	void OnRep_CurrentArea();
+	void OnRep_ChangedArea();
 
+	UPROPERTY(BlueprintAssignable, Category = "Events")
+	FOnAreaChanged OnAreaChanged;
+	
 	// 플레이어를 투표로 죽이는데 필요한 최소 투표 수    
 	UPROPERTY(ReplicatedUsing = OnRep_KillPlayerVotesCount, BlueprintReadOnly, Category = "GameState")
 	int32 KillPlayerVotesCount;
@@ -89,6 +94,9 @@ public:
 
 	
 	// Setter 함수들
+	UFUNCTION(BlueprintCallable, Category = "GameState")
+	void SetCurrentArea(EGameArea NewArea);
+	
 	UFUNCTION(BlueprintCallable, Category = "GameState")
 	void SetCurrentPhase(EGamePhase NewPhase);
 

@@ -27,5 +27,8 @@ public:
 
 	// 상호작용 텍스트: UI 표시용
 	UFUNCTION(BlueprintCallable, BlueprintNativeEvent, Category = "Gimmick|Interaction")
-	FText GetInteractText() const;
+	FText GetInteractText(AActor* _Instigator) const;
+
+	UFUNCTION(BlueprintNativeEvent, BlueprintCallable, Category = "Gimmick|Interaction")
+	void SetInteractionUI(bool bVisible, AActor* _Instigator);
 };

@@ -5,6 +5,7 @@
 
 #include "AbilitySystemComponent.h"
 #include "Character/CivilianAttributeSet.h"
+#include "GamePlayTag/GamePlayTags.h"
 #include "Net/UnrealNetwork.h"
 
 ACivilianPlayerState::ACivilianPlayerState()
@@ -27,13 +28,47 @@ void ACivilianPlayerState::GetLifetimeReplicatedProps(TArray<class FLifetimeProp
 {
 	Super::GetLifetimeReplicatedProps(OutLifetimeProps);
 	
-	DOREPLIFETIME(ACivilianPlayerState, CurrentRole);
 }
 
-void ACivilianPlayerState::SetPlayerRole(EPlayerRole NewRole)
+void ACivilianPlayerState::SetPlayerRoleTag(FGameplayTag NewRoleTag)
 {
-	if (HasAuthority())
+	if (!HasAuthority() || !AbilitySystemComponent) return;
+
+	TSubclassOf<UGameplayEffect> EffectToApply = nullptr;
+	
+	// 태그에 따라 적용할 GE 결정
+	if (NewRoleTag == GamePlayTags::PlayerRole::Civilian)
 	{
-		CurrentRole = NewRole;
+		EffectToApply = CivilianRoleEffectClass;
 	}
+	else if (NewRoleTag == GamePlayTags::PlayerRole::Infected)
+	{
+		EffectToApply = InfectedRoleEffectClass;
+	}
+
+	// GE 적용
+	if (EffectToApply)
+	{
+		// Effect Context 생성 (누가 적용했는지 등 정보 포함)
+		FGameplayEffectContextHandle ContextHandle = AbilitySystemComponent->MakeEffectContext();
+		ContextHandle.AddSourceObject(this);
+
+		// GE 적용 
+		AbilitySystemComponent->ApplyGameplayEffectToSelf(
+			EffectToApply.GetDefaultObject(),
+			1.0f,
+			ContextHandle
+		);
+        
+		UE_LOG(LogTemp, Log, TEXT("Role Changed to: %s"), *NewRoleTag.ToString());
+	}
+}
+
+bool ACivilianPlayerState::IsPlayerRole(FGameplayTag RoleTag) const
+{
+	if (AbilitySystemComponent)
+	{
+		return AbilitySystemComponent->HasMatchingGameplayTag(RoleTag);
+	}
+	return false;
 }

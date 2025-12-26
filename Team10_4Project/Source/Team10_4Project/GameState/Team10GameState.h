@@ -11,6 +11,8 @@
 class ACivilianPlayerController;
 class APlayerController;
 
+DECLARE_DYNAMIC_MULTICAST_DELEGATE_OneParam(FOnPhaseTimeChanged, int32, ChangedTime);
+
 UCLASS()
 class TEAM10_4PROJECT_API ATeam10GameState : public AGameStateBase
 {
@@ -53,6 +55,9 @@ public:
 	// 현재 페이즈 남은 시간
 	UPROPERTY(ReplicatedUsing = OnRep_PhaseTimeRemaining, BlueprintReadOnly, Category = "GameState")
 	int32 PhaseTimeRemaining;
+
+	UPROPERTY(BlueprintAssignable, Category = "Events")
+	FOnPhaseTimeChanged OnPhaseTimeChanged;
 
 	UFUNCTION()
 	void OnRep_PhaseTimeRemaining();

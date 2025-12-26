@@ -42,7 +42,12 @@ public:
 	UPROPERTY(BlueprintReadOnly, Category = "Attributes", ReplicatedUsing = OnRep_MaxHealth)
 	FGameplayAttributeData MaxHealth;
 	ATTRIBUTE_ACCESSORS(UCivilianAttributeSet, MaxHealth);
-
+	
+	// Damage (데미지) - 임시 처리용
+	UPROPERTY(BlueprintReadOnly, Category = "Attributes")
+	FGameplayAttributeData Damage;
+	ATTRIBUTE_ACCESSORS(UCivilianAttributeSet, Damage);
+	
 	// Sanity (감염도)
 	// (감염자 혈액팩 변신 게이지)
 	UPROPERTY(BlueprintReadOnly, Category = "Attributes", ReplicatedUsing = OnRep_Sanity)

@@ -8,6 +8,8 @@
 #include "Character/CivilianAttributeSet.h"
 #include "GameplayAbilitiesModule.h"
 #include "Character/Civilian.h"
+#include "Components/WidgetComponent.h"
+#include "Gimmick/UI/InteractionWidgetBase.h"
 
 // Sets default values
 AAmmoBoxActor::AAmmoBoxActor()
@@ -24,6 +26,14 @@ AAmmoBoxActor::AAmmoBoxActor()
 	// StaticMeshComponent 생성 후 부착
 	MeshComp = CreateDefaultSubobject<UStaticMeshComponent>(TEXT("MeshComponent"));
 	MeshComp->SetupAttachment(RootComponent);
+
+	// InteractionWidget 생성 후 설정
+	InteractionWidget = CreateDefaultSubobject<UWidgetComponent>(TEXT("InteractionWidget"));
+	InteractionWidget->SetupAttachment(RootComponent);
+	InteractionWidget->SetWidgetSpace(EWidgetSpace::Screen);
+	InteractionWidget->SetDrawAtDesiredSize(true);
+	InteractionWidget->SetVisibility(false);
+	InteractionWidget->SetRelativeLocation(FVector(0.f, 0.f, 100.f));
 }
 
 // Called when the game starts or when spawned
@@ -106,7 +116,25 @@ void AAmmoBoxActor::Interact_Implementation(AActor* _Instigator)
 	}
 }
 
-FText AAmmoBoxActor::GetInteractText_Implementation() const
+FText AAmmoBoxActor::GetInteractText_Implementation(AActor* _Instigator) const
 {
-	return NSLOCTEXT("Gimmick", "AmmoBox_Interact", "혈액팩 섭취하기");
+	return NSLOCTEXT("Gimmick", "AmmoBox_Interact", "탄약 줍기 (E)");
+}
+
+void AAmmoBoxActor::SetInteractionUI_Implementation(bool bVisible, AActor* _Instigator)
+{
+	if (!InteractionWidget) return;
+	InteractionWidget->SetVisibility(bVisible);
+
+	if (bVisible && _Instigator)
+	{
+		// 인터페이스를 통해 자식 클래스들이 정의한 텍스트를 가져옴
+		FText NewText = IInteractable::Execute_GetInteractText(this, _Instigator);
+
+		// 위젯을 캐스팅하여 블루프린트 이벤트 호출
+		if (UInteractionWidgetBase* WBP = Cast<UInteractionWidgetBase>(InteractionWidget->GetUserWidgetObject()))
+		{
+			WBP->UpdateText(NewText);
+		}
+	}
 }

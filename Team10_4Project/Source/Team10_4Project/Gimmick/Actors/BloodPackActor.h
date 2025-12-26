@@ -44,11 +44,20 @@ private:
 #pragma region IInteractable Override
 public:
 	virtual void Interact_Implementation(AActor* _Instigator) override;
-	virtual FText GetInteractText_Implementation() const override;
+	virtual FText GetInteractText_Implementation(AActor* _Instigator) const override;
 
 protected:
 	UPROPERTY(EditDefaultsOnly, Category = "GAS")
 	TSubclassOf<class UGameplayEffect> GEClassBloodPack;
 #pragma endregion
 
+
+#pragma region Interaction Text - 상호작용 텍스트
+public:
+	virtual void SetInteractionUI_Implementation(bool bVisible, AActor* _Instigator) override;
+
+protected:
+	UPROPERTY(VisibleAnywhere, Category = "Components")
+	TObjectPtr<class UWidgetComponent> InteractionWidget;
+#pragma endregion
 };

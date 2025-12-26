@@ -32,11 +32,22 @@ public:
 	
 	virtual void GetLifetimeReplicatedProps(TArray<class FLifetimeProperty>& OutLifetimeProps) const override;
 	
-	UFUNCTION(BlueprintCallable, Category = "GameRole")
-	EPlayerRole GetPlayerRole() const { return CurrentRole; }
+	// 태그 기반 역할 변경 함수 (서버 전용)
+	UFUNCTION(BlueprintAuthorityOnly, Category = "GAS|Role")
+	void SetPlayerRoleTag(FGameplayTag NewRoleTag);
+
+	// 현재 역할 확인 함수 (태그 검사)
+	UFUNCTION(BlueprintCallable, Category = "GAS|Role")
+	bool IsPlayerRole(FGameplayTag RoleTag) const;
 	
-	UFUNCTION(BlueprintAuthorityOnly, Category = "GameRole")
-	void SetPlayerRole(EPlayerRole NewRole);
+protected:
+	// 시민 역할 할당 GE
+	UPROPERTY(EditDefaultsOnly, Category = "GAS|Role")
+	TSubclassOf<class UGameplayEffect> CivilianRoleEffectClass;
+
+	// 감염자 역할 할당 GE
+	UPROPERTY(EditDefaultsOnly, Category = "GAS|Role")
+	TSubclassOf<class UGameplayEffect> InfectedRoleEffectClass;
 	
 private:
 	UPROPERTY(VisibleAnywhere, Category = "GAS")
@@ -44,7 +55,4 @@ private:
 	
 	UPROPERTY(VisibleAnywhere, Category = "GAS")
 	TObjectPtr<UCivilianAttributeSet> AttributeSet;
-	
-	UPROPERTY(replicated, VisibleAnywhere, Category = "GAS")
-	EPlayerRole CurrentRole;
 };

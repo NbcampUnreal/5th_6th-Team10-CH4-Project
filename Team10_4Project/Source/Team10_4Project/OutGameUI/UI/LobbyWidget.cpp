@@ -1,7 +1,10 @@
-#include "LobbyWidget.h"
+ï»¿#include "LobbyWidget.h"
 
 #include "Components/Button.h"
 #include "Kismet/GameplayStatics.h"
+
+#include "OutGameUI/UI/LobbyWidget.h"
+#include "OutGameUI/UI/PlayerListWidget.h"
 
 void ULobbyWidget::NativeOnInitialized()
 {
@@ -13,12 +16,21 @@ void ULobbyWidget::NativeOnInitialized()
     }
 
     UE_LOG(LogTemp, Log, TEXT("LobbyWidget Initialized"));
+
+    if (PlayerListWidget)
+    {
+        PlayerListWidget->ClearPlayers();
+
+        PlayerListWidget->AddPlayer(TEXT("HostPlayer"));
+        PlayerListWidget->AddPlayer(TEXT("Client_1"));
+        PlayerListWidget->AddPlayer(TEXT("Client_2"));
+    }
 }
 
 void ULobbyWidget::OnClick_Leave()
 {
     UE_LOG(LogTemp, Log, TEXT("Leave Lobby Clicked"));
 
-    // ÀÏ´Ü Å×½ºÆ® ´Ü°èÀÌ¹Ç·Î ¸ŞÀÎ¸Ş´º ·¹º§·Î ÀÌµ¿
+    // ì¼ë‹¨ í…ŒìŠ¤íŠ¸ ë‹¨ê³„ì´ë¯€ë¡œ ë©”ì¸ë©”ë‰´ ë ˆë²¨ë¡œ ì´ë™
     UGameplayStatics::OpenLevel(this, FName("L_UITest"));
 }

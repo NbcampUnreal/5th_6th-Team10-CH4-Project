@@ -4,6 +4,9 @@
 #include "Blueprint/UserWidget.h"
 #include "LobbyWidget.generated.h"
 
+class UButton;
+class UPlayerListWidget;
+
 UCLASS()
 class TEAM10_4PROJECT_API ULobbyWidget : public UUserWidget
 {
@@ -18,4 +21,7 @@ protected:
 
     UFUNCTION()
     void OnClick_Leave();
+
+    UPROPERTY(meta = (BindWidget))
+    UPlayerListWidget* PlayerListWidget;
 };

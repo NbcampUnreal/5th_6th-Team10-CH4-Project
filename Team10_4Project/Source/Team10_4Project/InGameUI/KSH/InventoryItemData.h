@@ -50,7 +50,7 @@ public:
     UPROPERTY(EditAnywhere, BlueprintReadWrite, Category = "Item")
     FGameplayTag ItemTag;
 
-    // 사용 시 적용할 이펙트 (필요 시 주석 해제)
+    // 사용 시 적용할 이펙트 (필요 시 사용)
     // UPROPERTY(EditAnywhere, BlueprintReadWrite, Category = "Item")
     // TSubclassOf<class UGameplayEffect> ItemEffect;
 };

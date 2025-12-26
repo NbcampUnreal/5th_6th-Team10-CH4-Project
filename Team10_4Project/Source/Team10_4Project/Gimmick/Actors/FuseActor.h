@@ -40,8 +40,8 @@ private:
 	TObjectPtr<UStaticMeshComponent> MeshComp;
 
 protected:
-	UPROPERTY(EditAnywhere, Category = "Gimmick Settings")
-	EGameArea BelongingArea;
+	/*UPROPERTY(EditAnywhere, Category = "Gimmick Settings")
+	FGameplayTag BelongingArea;*/
 #pragma endregion
 
 //--------------------------------------------------------------

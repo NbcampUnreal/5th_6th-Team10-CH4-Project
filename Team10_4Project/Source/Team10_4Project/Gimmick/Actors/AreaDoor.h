@@ -5,6 +5,7 @@
 #include "CoreMinimal.h"
 #include "GameFramework/Actor.h"
 #include "GameMode/GameTypes/GameTypes.h"
+#include "GamePlayTag/GamePlayTags.h"
 #include "AreaDoor.generated.h"
 
 UCLASS()
@@ -33,8 +34,13 @@ protected:
 #pragma region Settings - 설정
 protected:
 	// 이 문이 열려야 하는 구역 (예: Area 1->2 사이의 문이라면 Area 2 설정)
-	UPROPERTY(EditAnywhere, Category = "Gimmick Settings")
-	EGameArea TargetArea;
+	/*UPROPERTY(EditAnywhere, Category = "Gimmick Settings")
+	EGameArea TargetArea;*/
+	UPROPERTY(EditAnywhere, Category = "Gimmick")
+	FGameplayTag TargetAreaTag;
+
+	UFUNCTION()
+	void HandleAreaChanged(FGameplayTag NewAreaTag);
 #pragma endregion
 
 //------------------------------------------------
@@ -52,8 +58,8 @@ protected:
 
 #pragma region Event Binding - 이벤트 바인딩
 protected:
-	UFUNCTION()
-	void HandleAreaChanged(EGameArea NewArea);
+	//UFUNCTION()
+	//void HandleAreaChanged(EGameArea NewArea);
 
 	UFUNCTION(BlueprintNativeEvent, Category = "Gimmick")
 	void OpenDoor();

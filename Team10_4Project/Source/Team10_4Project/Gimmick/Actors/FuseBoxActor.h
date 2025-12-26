@@ -8,6 +8,7 @@
 #include "Components/SphereComponent.h"
 #include "Components/StaticMeshComponent.h"
 #include "GameMode/GameTypes/GameTypes.h"
+#include "GamePlayTag/GamePlayTags.h"
 #include "FuseBoxActor.generated.h"
 
 UCLASS()
@@ -44,10 +45,10 @@ private:
 
 protected:
 	UPROPERTY(EditAnywhere, Category = "Gimmick Settings")
-	EGameArea BelongingArea;
+	FGameplayTag BelongingArea;
 
 public:
-	EGameArea GetBelongingArea() const { return BelongingArea; }
+	FGameplayTag GetBelongingArea() const { return BelongingArea; }
 #pragma endregion
 
 //------------------------------------------------------------

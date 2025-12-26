@@ -31,22 +31,28 @@ void UGameFlowManager::InitializeRemainingFuseBoxes()
 	// 금성 - 새로 추가한 코드
 	if (!Team10GameState) return;
 
-	int32 Count = 0;
-	EGameArea TargetArea = Team10GameState->CurrentArea;
+	// 현재 구역에 해당하는 태그 결정
+	FGameplayTag TargetTag;
+	switch (Team10GameState->CurrentArea)
+	{
+	case EGameArea::Area1: TargetTag = GamePlayTags::AreaTag::Area_Area1; break;
+	case EGameArea::Area2: TargetTag = GamePlayTags::AreaTag::Area_Area2; break;
+	case EGameArea::Area3: TargetTag = GamePlayTags::AreaTag::Area_Area3; break;
+	default: return;
+	}
 
-	// 현재 월드에 배치된 모든 AFuseBoxActor를 순회
+	int32 Count = 0;
 	for (TActorIterator<AFuseBoxActor> It(GetWorld()); It; ++It)
 	{
-		// 액터의 BelongingArea가 현재 게임 구역과 일치하는지 확인
-		// (FuseBoxActor.h에 BelongingArea가 public 또는 getter로 선언되어 있어야 함)
-		if (It->GetBelongingArea() == TargetArea)
+		// Enum이 아닌 Tag 비교로 개수를 셉니다.
+		if (It->GetBelongingArea().MatchesTagExact(TargetTag))
 		{
 			Count++;
 		}
 	}
 
 	Team10GameState->RemainingFuseBoxCount = Count;
-	UE_LOG(LogTemp, Warning, TEXT("Area %d initialized with %d Fuses"), (int32)TargetArea, Count);
+	UE_LOG(LogTemp, Warning, TEXT("Area Tag %s Initialized: %d Boxes"), *TargetTag.ToString(), Count);
 }
 
 void UGameFlowManager::StartGame()

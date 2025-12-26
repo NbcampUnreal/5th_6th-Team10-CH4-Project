@@ -1,4 +1,4 @@
-#pragma once
+癤�#pragma once
 
 #include "CoreMinimal.h"
 #include "GameFramework/PlayerController.h"
@@ -6,6 +6,7 @@
 
 class UMainMenuWidget;
 class UServerBrowserWidget;
+class ULobbyWidget;
 
 UCLASS()
 class TEAM10_4PROJECT_API AMenuPlayerController : public APlayerController
@@ -15,22 +16,23 @@ class TEAM10_4PROJECT_API AMenuPlayerController : public APlayerController
 public:
     virtual void BeginPlay() override;
 
-    // 메인 메뉴 표시
-    UFUNCTION()
     void ShowMainMenu();
-
-    // 서버 브라우저 표시
-    UFUNCTION()
     void ShowServerBrowser();
+    void ShowLobby();
 
 protected:
-    UPROPERTY(EditDefaultsOnly, Category = "UI")
-    TSubclassOf<UMainMenuWidget> MainMenuWidgetClass;
-
-    UPROPERTY(EditDefaultsOnly, Category = "UI")
-    TSubclassOf<UServerBrowserWidget> ServerBrowserWidgetClass;
-
-private:
     UPROPERTY()
     UUserWidget* CurrentWidget;
+
+    UPROPERTY(EditAnywhere, Category = "UI")
+    TSubclassOf<UMainMenuWidget> MainMenuWidgetClass;
+
+    UPROPERTY(EditAnywhere, Category = "UI")
+    TSubclassOf<UServerBrowserWidget> ServerBrowserWidgetClass;
+
+    UPROPERTY(EditAnywhere, Category = "UI")
+    TSubclassOf<ULobbyWidget> LobbyWidgetClass;
+
+private:
+    void ClearCurrentWidget();
 };

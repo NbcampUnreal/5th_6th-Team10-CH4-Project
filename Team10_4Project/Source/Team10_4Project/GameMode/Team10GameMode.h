@@ -42,8 +42,8 @@ public:
 	void HandlePlayerDeath(APlayerController* DeadPlayer, APlayerController* AttackPlayer);
 
 	// 부활이 가능한 사망
-	UFUNCTION(BlueprintCallable, Category = "Player")
-	void HandlePlayerDeath(APlayerController* DeadPlayer);
+	//UFUNCTION(BlueprintCallable, Category = "Player")
+	//void HandlePlayerDeath(APlayerController* DeadPlayer);
 	
 	// 부활이 불가능한 사망
 	UFUNCTION(BlueprintCallable, Category = "Player")
@@ -76,7 +76,14 @@ protected:
 	// 현재 맵 로딩을 완료한 플레이어 수
 	// 지금은 GameMode에 선언 했지만 UI가 필요할 경우 GameState에서 Replicate 예정
 	UPROPERTY(VisibleAnywhere, BlueprintReadOnly, Category = "GameFlow")
-	int32 LoadedPlayerCount  = 0; 
+	int32 LoadedPlayerCount  = 0;
+
+	// 감염자가 변신에 필요한 최소 혈액량
+	UPROPERTY(EditDefaultsOnly, BlueprintReadOnly, Category = "GameFlow")
+	int32 MinBloodForTransformation = 100; // 임시로 설정
+	
+	UPROPERTY(VisibleAnywhere, BlueprintReadOnly, Category = "GameFlow")
+	bool CanRespawn;
 
 	// GameState 레퍼런스
 	UPROPERTY()

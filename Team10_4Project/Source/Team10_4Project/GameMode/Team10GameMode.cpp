@@ -121,12 +121,12 @@ void ATeam10GameMode::HandleStartingNewPlayer_Implementation(APlayerController* 
 
 
 		// 사망 시 관전 및 리스폰 테스트
-		FTimerHandle TimerHandle;
-		
-		GetWorldTimerManager().SetTimer(TimerHandle, FTimerDelegate::CreateLambda([this, CivilianPlayerController]()
-		{
-			HandlePlayerDeath(CivilianPlayerController);
-		}), 10.f, false);
+		// FTimerHandle TimerHandle;
+		//
+		// GetWorldTimerManager().SetTimer(TimerHandle, FTimerDelegate::CreateLambda([this, CivilianPlayerController]()
+		// {
+		// 	HandlePlayerDeath(CivilianPlayerController);
+		// }), 10.f, false);
 	
 	}
 }
@@ -164,6 +164,12 @@ void ATeam10GameMode::CheckWinCondition()
 
 void ATeam10GameMode::HandlePlayerDeath(APlayerController* DeadPlayer, APlayerController* AttackPlayer)
 {
+	// 플레이어가 기본 상태에서 기본 공격(총)에 의해 사망 할 경우 투표 상태로 변경
+	// 투표 상태에서 일정 시간이 지나면 리스폰
+	// 플레이어가 감염자 변신 상태에서 사망할 경우 리스폰 (변신이 풀리는지는 모름)
+	// 플레이어가 감염자 변신 공격에 사망할 경우 영구 사망
+	// 투표 상태에서 투표 수 초과 할 경우 영구 사망
+	
 	if (!DeadPlayer)
 	{
 		return;
@@ -173,12 +179,24 @@ void ATeam10GameMode::HandlePlayerDeath(APlayerController* DeadPlayer, APlayerCo
 	{
 		return;
 	}
+
+	ACivilianPlayerState* AttackPlayerState = AttackPlayer->GetPlayerState<ACivilianPlayerState>();
+	
+	if (!AttackPlayerState)
+	{
+		return;
+	}
+
+	// if (AttackPlayerState->)
+	// {
+	// 	
+	// }
 	
 	APawn* Pawn = DeadPlayer->GetPawn();
 
 	if (Pawn)
 	{
-		UE_LOG(LogTemp, Error, TEXT("Pawn Valid"));
+		//UE_LOG(LogTemp, Error, TEXT("Pawn Valid"));
 		DeadPlayer->UnPossess();
 		Pawn->Destroy();
 	}
@@ -317,7 +335,6 @@ void ATeam10GameMode::StartVote(ACivilianPlayerState* VoteTarget)
 }
 
 
-
 void ATeam10GameMode::OnFuseBoxActivated()
 {
 	if (Team10GameState)
@@ -329,7 +346,6 @@ void ATeam10GameMode::OnFuseBoxActivated()
 			GameFlowManager->OpenNextArea();
 		}
 	}
-	
 }
 
 void ATeam10GameMode::InitializeRemainingFuseBoxes()
@@ -369,6 +385,8 @@ bool ATeam10GameMode::CanInfectedTransform(APlayerState* PlayerState)
 		return false;
 	}
 
+	// 감염자가 이미 변신 중이거나 변신에 필요한 혈액량이 부족할 경우 return false
+		
 	return true;
 	
 }
@@ -394,7 +412,6 @@ void ATeam10GameMode::ProcessChatMessage(APlayerController* InPlayerController, 
 	APlayerState* InPlayerState = InPlayerController->PlayerState;
 	if (!IsValid(InPlayerState)) return;
 
-<<<<<<< Updated upstream
 	int32 SenderIndex = GameState->PlayerArray.Find(InPlayerState);
 	if (SenderIndex == -1) return;
 
@@ -422,36 +439,3 @@ void ATeam10GameMode::ProcessChatMessage(APlayerController* InPlayerController, 
 		CastPlayerController->ClientRPC_ReceiveMessage(RefinedChatMessage);
 	}
 }
-=======
-// void ATeam10GameMode::ProcessChatMessage(APlayerController* InPlayerController, const FChatMessage& ChatMessage)
-// {
-// 	//TArray<TObjectPtr<APlayerController>> PlayerList;
-// 	TArray<TWeakObjectPtr<APlayerController>> ValidPlayerList;
-// 	FChatMessage RefinedChatMessage = ChatMessage;
-//
-// 	APlayerState* InPlayerState = InPlayerController->PlayerState;
-// 	if (IsValid(InPlayerState) == false) return;
-// 	FString SenderName = InPlayerState->GetPlayerName();
-//
-// 	for (APlayerController* ClientPlayer : PlayerList)
-// 	{
-// 		if (IsValid(ClientPlayer) == false) continue;
-// 		if (ClientPlayer == InPlayerController)
-// 		{
-// 			if (RefinedChatMessage.PlayerName != SenderName)	// hacking ?
-// 			{
-// 				RefinedChatMessage.PlayerName = SenderName;
-// 			}
-// 			continue;
-// 		}
-// 		ValidPlayerList.Push(ClientPlayer);
-// 	}
-// 	
-// 	if (ValidPlayerList.Num() <= 0) return;
-//
-// 	for (APlayerController* ValidPlayer : ValidPlayerList)
-// 	{
-// 		ValidPlayer->ClientRPC_ReceiveMessage(RefinedChatMessage);
-// 	}
-// }
->>>>>>> Stashed changes

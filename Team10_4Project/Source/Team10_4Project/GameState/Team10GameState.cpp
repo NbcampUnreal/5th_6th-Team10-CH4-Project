@@ -26,9 +26,25 @@ void ATeam10GameState::GetLifetimeReplicatedProps(TArray<FLifetimeProperty>& Out
 	DOREPLIFETIME(ThisClass, AliveInfectedCount);
 }
 
-void ATeam10GameState::OnRep_CurrentArea()
+void ATeam10GameState::OnRep_ChangedArea()
 {
-	
+	if (OnAreaChanged.IsBound())
+	{
+		switch(CurrentArea)
+		{
+		case EGameArea::Area1:
+			OnAreaChanged.Broadcast(GamePlayTags::AreaTag::Area_Area1);
+			break;
+		case EGameArea::Area2:
+			OnAreaChanged.Broadcast(GamePlayTags::AreaTag::Area_Area2);
+			break;
+		case EGameArea::Area3:
+			OnAreaChanged.Broadcast(GamePlayTags::AreaTag::Area_Area3);
+			break;
+			default:
+			break;
+		}
+	}
 }
 
 void ATeam10GameState::OnRep_KillPlayerVotesCount()
@@ -69,6 +85,15 @@ void ATeam10GameState::OnRep_RemainingFuseBoxCount()
 void ATeam10GameState::OnRep_GameResult()
 {
 	// UI 설정
+}
+
+void ATeam10GameState::SetCurrentArea(EGameArea NewArea)
+{
+	if (HasAuthority())
+	{
+		CurrentArea = NewArea;
+		OnRep_ChangedArea();
+	}
 }
 
 void ATeam10GameState::SetCurrentPhase(EGamePhase NewPhase)

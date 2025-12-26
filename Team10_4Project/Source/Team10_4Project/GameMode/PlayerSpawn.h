@@ -3,6 +3,7 @@
 #pragma once
 
 #include "CoreMinimal.h"
+#include "GameplayTagContainer.h"
 #include "GameFramework/PlayerStart.h"
 #include "GameTypes/GameTypes.h"
 #include "PlayerSpawn.generated.h"
@@ -19,5 +20,5 @@ public:
 	//FGameplayTag AreaTag;
 
 	UPROPERTY(EditAnywhere, BlueprintReadOnly, Category = "Spawn")
-	EGameArea GameArea;
+	FGameplayTag AreaTag;
 };

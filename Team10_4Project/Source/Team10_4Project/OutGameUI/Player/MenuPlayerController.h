@@ -21,19 +21,18 @@ public:
     void ShowLobby();
 
 protected:
-    void ChangeWidget(UUserWidget* NewWidget);
+    UPROPERTY()
+    UUserWidget* CurrentWidget;
 
-protected:
-    UPROPERTY(EditAnywhere, BlueprintReadOnly, Category = "UI")
+    UPROPERTY(EditAnywhere, Category = "UI")
     TSubclassOf<UMainMenuWidget> MainMenuWidgetClass;
 
-    UPROPERTY(EditAnywhere, BlueprintReadOnly, Category = "UI")
+    UPROPERTY(EditAnywhere, Category = "UI")
     TSubclassOf<UServerBrowserWidget> ServerBrowserWidgetClass;
 
-    UPROPERTY(EditAnywhere, BlueprintReadOnly, Category = "UI")
+    UPROPERTY(EditAnywhere, Category = "UI")
     TSubclassOf<ULobbyWidget> LobbyWidgetClass;
 
 private:
-    UPROPERTY()
-    UUserWidget* CurrentWidget;
+    void ClearCurrentWidget();
 };

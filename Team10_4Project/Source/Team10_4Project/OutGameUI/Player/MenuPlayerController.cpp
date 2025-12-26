@@ -1,4 +1,4 @@
-﻿#include "MenuPlayerController.h"
+﻿#include "OutGameUI/Player/MenuPlayerController.h"
 
 #include "Blueprint/UserWidget.h"
 #include "OutGameUI/UI/MainMenuWidget.h"
@@ -15,48 +15,50 @@ void AMenuPlayerController::BeginPlay()
     ShowMainMenu();
 }
 
-void AMenuPlayerController::ChangeWidget(UUserWidget* NewWidget)
+void AMenuPlayerController::ClearCurrentWidget()
 {
     if (CurrentWidget)
     {
         CurrentWidget->RemoveFromParent();
         CurrentWidget = nullptr;
     }
+}
 
-    CurrentWidget = NewWidget;
+void AMenuPlayerController::ShowMainMenu()
+{
+    ClearCurrentWidget();
 
+    if (!MainMenuWidgetClass) return;
+
+    CurrentWidget = CreateWidget<UMainMenuWidget>(this, MainMenuWidgetClass);
     if (CurrentWidget)
     {
         CurrentWidget->AddToViewport();
     }
 }
 
-void AMenuPlayerController::ShowMainMenu()
-{
-    if (!MainMenuWidgetClass) return;
-
-    UMainMenuWidget* Widget =
-        CreateWidget<UMainMenuWidget>(this, MainMenuWidgetClass);
-
-    ChangeWidget(Widget);
-}
-
 void AMenuPlayerController::ShowServerBrowser()
 {
+    ClearCurrentWidget();
+
     if (!ServerBrowserWidgetClass) return;
 
-    UServerBrowserWidget* Widget =
-        CreateWidget<UServerBrowserWidget>(this, ServerBrowserWidgetClass);
-
-    ChangeWidget(Widget);
+    CurrentWidget = CreateWidget<UServerBrowserWidget>(this, ServerBrowserWidgetClass);
+    if (CurrentWidget)
+    {
+        CurrentWidget->AddToViewport();
+    }
 }
 
 void AMenuPlayerController::ShowLobby()
 {
+    ClearCurrentWidget();
+
     if (!LobbyWidgetClass) return;
 
-    ULobbyWidget* Widget =
-        CreateWidget<ULobbyWidget>(this, LobbyWidgetClass);
-
-    ChangeWidget(Widget);
+    CurrentWidget = CreateWidget<ULobbyWidget>(this, LobbyWidgetClass);
+    if (CurrentWidget)
+    {
+        CurrentWidget->AddToViewport();
+    }
 }

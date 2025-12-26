@@ -41,10 +41,8 @@ void UServerSlotWidget::SetServerInfo(
 
 void UServerSlotWidget::OnClick_Join()
 {
-    AMenuPlayerController* MenuPC =
-        Cast<AMenuPlayerController>(GetOwningPlayer());
-
-    if (MenuPC)
+    if (AMenuPlayerController* MenuPC =
+        Cast<AMenuPlayerController>(GetOwningPlayer()))
     {
         MenuPC->ShowLobby();
     }

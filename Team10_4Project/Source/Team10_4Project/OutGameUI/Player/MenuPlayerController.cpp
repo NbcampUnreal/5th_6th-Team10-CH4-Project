@@ -1,29 +1,21 @@
-#include "MenuPlayerController.h"
+﻿#include "MenuPlayerController.h"
 
 #include "Blueprint/UserWidget.h"
 #include "OutGameUI/UI/MainMenuWidget.h"
 #include "OutGameUI/UI/ServerBrowserWidget.h"
+#include "OutGameUI/UI/LobbyWidget.h"
 
 void AMenuPlayerController::BeginPlay()
 {
     Super::BeginPlay();
 
-    if (MainMenuWidgetClass)
-    {
-        UUserWidget* Widget =
-            CreateWidget(this, MainMenuWidgetClass);
+    bShowMouseCursor = true;
+    SetInputMode(FInputModeUIOnly());
 
-        if (Widget)
-        {
-            Widget->AddToViewport();
-            SetInputMode(FInputModeUIOnly());
-            bShowMouseCursor = true;
-        }
-    }
+    ShowMainMenu();
 }
 
-
-void AMenuPlayerController::ShowMainMenu()
+void AMenuPlayerController::ChangeWidget(UUserWidget* NewWidget)
 {
     if (CurrentWidget)
     {
@@ -31,59 +23,40 @@ void AMenuPlayerController::ShowMainMenu()
         CurrentWidget = nullptr;
     }
 
-    if (MainMenuWidgetClass)
-    {
-        CurrentWidget = CreateWidget(this, MainMenuWidgetClass);
-        if (CurrentWidget)
-        {
-            CurrentWidget->AddToViewport();
-        }
-    }
-}
-
-void AMenuPlayerController::ShowServerBrowser()
-{
-    if (!ServerBrowserWidgetClass)
-    {
-        UE_LOG(LogTemp, Error, TEXT("ServerBrowserWidgetClass is NULL"));
-        return;
-    }
-
-    if (CurrentWidget)
-    {
-        CurrentWidget->RemoveFromParent();
-        CurrentWidget = nullptr;
-    }
-
-    CurrentWidget = CreateWidget<UUserWidget>(
-        this,
-        ServerBrowserWidgetClass
-    );
+    CurrentWidget = NewWidget;
 
     if (CurrentWidget)
     {
         CurrentWidget->AddToViewport();
-
-        SetInputMode(FInputModeUIOnly());
-        bShowMouseCursor = true;
-
-        UE_LOG(LogTemp, Log, TEXT("ServerBrowserWidget shown"));
     }
+}
+
+void AMenuPlayerController::ShowMainMenu()
+{
+    if (!MainMenuWidgetClass) return;
+
+    UMainMenuWidget* Widget =
+        CreateWidget<UMainMenuWidget>(this, MainMenuWidgetClass);
+
+    ChangeWidget(Widget);
+}
+
+void AMenuPlayerController::ShowServerBrowser()
+{
+    if (!ServerBrowserWidgetClass) return;
+
+    UServerBrowserWidget* Widget =
+        CreateWidget<UServerBrowserWidget>(this, ServerBrowserWidgetClass);
+
+    ChangeWidget(Widget);
 }
 
 void AMenuPlayerController::ShowLobby()
 {
-    if (!LobbyWidgetClass)
-    {
-        UE_LOG(LogTemp, Error, TEXT("LobbyWidgetClass is NULL"));
-        return;
-    }
+    if (!LobbyWidgetClass) return;
 
-    UUserWidget* LobbyWidget =
-        CreateWidget<UUserWidget>(this, LobbyWidgetClass);
+    ULobbyWidget* Widget =
+        CreateWidget<ULobbyWidget>(this, LobbyWidgetClass);
 
-    if (LobbyWidget)
-    {
-        LobbyWidget->AddToViewport();
-    }
+    ChangeWidget(Widget);
 }

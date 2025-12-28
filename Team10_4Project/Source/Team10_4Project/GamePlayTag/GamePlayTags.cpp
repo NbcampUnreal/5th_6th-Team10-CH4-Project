@@ -68,6 +68,11 @@ namespace GamePlayTags
 			UE_DEFINE_GAMEPLAY_TAG_COMMENT(Morph, "Ability.Infected.Morph", "Ability for Infected Player");
 		}
 	}
+
+	namespace Gimmick {
+		UE_DEFINE_GAMEPLAY_TAG(Item_Fuse, "Gimmick,.Item_Fuse");
+		UE_DEFINE_GAMEPLAY_TAG(Status_HasFuse, "Gimmick.Status_HasFuse");
+	}
 }
 
 

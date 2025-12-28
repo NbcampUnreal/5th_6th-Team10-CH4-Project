@@ -28,16 +28,13 @@ void UMainMenuWidget::NativeConstruct()
 
 void UMainMenuWidget::OnClick_Play()
 {
-    UE_LOG(LogTemp, Log, TEXT("Play 버튼 클릭"));
-
-    AMenuPlayerController* MenuPC =
-        Cast<AMenuPlayerController>(GetOwningPlayer());
-
-    if (MenuPC)
+    if (AMenuPlayerController* MenuPC =
+        Cast<AMenuPlayerController>(GetOwningPlayer()))
     {
         MenuPC->ShowServerBrowser();
     }
 }
+
 
 void UMainMenuWidget::OnClick_Settings()
 {

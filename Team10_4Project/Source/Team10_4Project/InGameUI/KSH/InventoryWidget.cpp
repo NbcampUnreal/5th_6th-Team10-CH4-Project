@@ -4,7 +4,7 @@
 #include "InGameUI/KSH/InventoryWidget.h"
 #include "InGameUI/KSH/InventorySlotWidget.h"
 #include "Components/UniformGridPanel.h"
-//#include "InventoryComponent.h" 인벤토리 컴포넌트
+#include "InventoryComponent.h" // 인벤토리 컴포넌트
 
 void UInventoryWidget::NativeConstruct()
 {
@@ -16,18 +16,21 @@ void UInventoryWidget::NativeDestruct()
     Super::NativeDestruct();
 }
 
-//void UInventoryWidget::InitWithInventory(UInventoryComponent* InventoryComp)
-//{
-//    if (!InventoryComp) return;
-//
-//    InventoryComponent = InventoryComp;
-//
-//    // 1. 컴포넌트에 설정된 최대 슬롯 수만큼 UI 슬롯 생성
-//    CreateSlots(InventoryComp->GetMaxSlotCount());
-//
-//    // 2. 초기 데이터 반영
-//    OnInventoryDataChanged();
-//}
+void UInventoryWidget::InitWithInventory(UInventoryComponent* InventoryComp)
+{
+    if (!InventoryComp) return;
+
+    InventoryComponent = InventoryComp;
+
+    // 1. 컴포넌트에 설정된 최대 슬롯 수만큼 UI 슬롯 생성
+    CreateSlots(InventoryComp->GetMaxSlotCount());
+
+    // 2. 델리게이트 연결
+    InventoryComponent->OnInventoryChanged.AddUObject(this, &UInventoryWidget::OnInventoryDataChanged);
+
+    // 3. 초기 데이터 반영
+    OnInventoryDataChanged();
+}
 
 void UInventoryWidget::CreateSlots(int32 NumSlots)
 {
@@ -57,13 +60,17 @@ void UInventoryWidget::CreateSlots(int32 NumSlots)
 
 void UInventoryWidget::OnInventoryDataChanged()
 {
-    //if (!InventoryComponent) return;
+    if (!InventoryComponent) return;
 
-    //// 컴포넌트에서 TArray<FInventoryItemData> 등을 받아와야 함
-    //// 예시 루프:
-    //for (int32 i = 0; i < SlotWidgets.Num(); ++i)
-    //{
-    //    // InventoryComponent->GetItemAt(i) 같은 함수로 데이터를 가져와서
-    //    // SlotWidgets[i]->SetItemData(가져온데이터, 수량); 을 호출
-    //}
+    // 컴포넌트로부터 실제 슬롯 데이터 배열 가져옴
+    const TArray<FInventorySlot>& Slots = InventoryComponent->GetInventorySlots();
+
+    for (int32 i = 0; i < SlotWidgets.Num(); ++i)
+    {
+        // UI 슬롯 인덱스가 데이터 범위 안에 있는지 확인 후 데이터를 전달
+        if (Slots.IsValidIndex(i))
+        {
+            SlotWidgets[i]->SetItemData(Slots[i].ItemData, Slots[i].CurrentStack);
+        }
+    }
 }

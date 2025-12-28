@@ -18,6 +18,8 @@ enum class EPlayerRole : uint8
 	Infected UMETA(DisplayName = "Infected")
 };
 
+DECLARE_DYNAMIC_MULTICAST_DELEGATE(FOnVoterListChanged);
+
 UCLASS()
 class TEAM10_4PROJECT_API ACivilianPlayerState : public APlayerState, public IAbilitySystemInterface
 {
@@ -55,4 +57,15 @@ private:
 	
 	UPROPERTY(VisibleAnywhere, Category = "GAS")
 	TObjectPtr<UCivilianAttributeSet> AttributeSet;
+
+#pragma region Vote
+public:
+	FOnVoterListChanged OnVoterListChanged;
+	UFUNCTION()
+	void OnRep_Voters();
+	TArray<TObjectPtr<APlayerState>> GetVoterList() const { return VoterList; };
+protected:
+	UPROPERTY(ReplicatedUsing = OnRep_Voters)
+	TArray<TObjectPtr<APlayerState>> VoterList;
+#pragma endregion
 };

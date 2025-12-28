@@ -28,6 +28,7 @@ void ACivilianPlayerState::GetLifetimeReplicatedProps(TArray<class FLifetimeProp
 {
 	Super::GetLifetimeReplicatedProps(OutLifetimeProps);
 	
+	DOREPLIFETIME(ThisClass, VoterList);	// Vote
 }
 
 void ACivilianPlayerState::SetPlayerRoleTag(FGameplayTag NewRoleTag)
@@ -71,4 +72,12 @@ bool ACivilianPlayerState::IsPlayerRole(FGameplayTag RoleTag) const
 		return AbilitySystemComponent->HasMatchingGameplayTag(RoleTag);
 	}
 	return false;
+}
+
+void ACivilianPlayerState::OnRep_Voters()
+{
+	if (OnVoterListChanged.IsBound())
+	{
+		OnVoterListChanged.Broadcast();
+	}
 }

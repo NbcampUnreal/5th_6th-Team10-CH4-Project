@@ -18,6 +18,7 @@ class USpringArmComponent;
 class UInputMappingContext;
 class UInputAction;
 class UAnimMontage;
+class UWidgetComponent;
 
 UCLASS()
 class TEAM10_4PROJECT_API ACivilian : public ACharacter, public IAbilitySystemInterface
@@ -40,7 +41,6 @@ public:
 	virtual void OnRep_PlayerState() override;
 	
 	virtual float PlayAnimMontage(class UAnimMontage* AnimMontage, float InPlayRate = 1.f, FName StartSectionName = NAME_None) override;
-	
 #pragma endregion
 	
 #pragma region Civilian Components
@@ -61,6 +61,8 @@ protected:
 	UPROPERTY(VisibleAnywhere, BlueprintReadOnly, Category = "PlayerCharacter|Components", meta = (AllowPrivateAccess = "true"))
 	TObjectPtr<USkeletalMeshComponent> FirstPersonMeshComponent;
 
+	UPROPERTY(VisibleAnywhere, BlueprintReadOnly, Category = "PlayerCharacter|Components", meta = (AllowPrivateAccess = "true"))
+	TObjectPtr<UWidgetComponent> VoteWidgetComponent;
 #pragma endregion
 	
 #pragma region Civilian GAS

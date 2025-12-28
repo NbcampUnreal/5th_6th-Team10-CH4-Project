@@ -20,7 +20,9 @@
 #include "Net/UnrealNetwork.h"
 #include "Gimmick/Interfaces/Interactable.h"
 #include "Kismet/KismetSystemLibrary.h"
-
+#include "InGameUI/JKH/VoteWidgetComponent.h"
+#include "Components/WidgetComponent.h"
+#include "Kismet/GameplayStatics.h"
 
 ACivilian::ACivilian()
 {
@@ -84,6 +86,12 @@ ACivilian::ACivilian()
 		FName("neck_01"),
 		FName("head")
 	};
+
+	// 투표 위젯
+	VoteWidgetComponent = CreateDefaultSubobject<UWidgetComponent>(TEXT("VoteWidget"));
+	VoteWidgetComponent->SetWidgetClass(UVoteWidgetComponent::StaticClass());
+	VoteWidgetComponent->SetWidgetSpace(EWidgetSpace::World);
+	VoteWidgetComponent->SetupAttachment(RootComponent);
 }
 
 UAbilitySystemComponent* ACivilian::GetAbilitySystemComponent() const
@@ -174,6 +182,23 @@ void ACivilian::Tick(float DeltaTime)
 
 		// 기존 CurrentInteractableActor 변수 업데이트 (필요 시)
 		CurrentInteractableActor = HitActor;
+	}
+
+	// 투표
+	if (VoteWidgetComponent->IsVisible())
+	{
+		// 다른 캐릭터 투표 위젯은 보이도록 설정
+		if(!IsLocallyControlled())
+		{
+			// 캐릭터에 위젯이 플로팅되어 자연스럽게 보이도록 지정
+			APlayerCameraManager* CameraManager = UGameplayStatics::GetPlayerCameraManager(GetWorld(), 0);
+			if (IsValid(CameraManager))
+			{
+				FRotator TargetRot = CameraManager->GetCameraRotation();
+				TargetRot.Yaw += 180.f;
+				VoteWidgetComponent->SetWorldRotation(TargetRot);
+			}
+		}
 	}
 }
 

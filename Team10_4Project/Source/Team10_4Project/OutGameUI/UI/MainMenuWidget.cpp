@@ -28,12 +28,12 @@ void UMainMenuWidget::NativeConstruct()
 
 void UMainMenuWidget::OnClick_Play()
 {
-    if (AMenuPlayerController* MenuPC =
-        Cast<AMenuPlayerController>(GetOwningPlayer()))
+    if (auto* PC = Cast<AMenuPlayerController>(GetOwningPlayer()))
     {
-        MenuPC->ShowServerBrowser();
+        PC->ShowServerBrowser();
     }
 }
+
 
 
 void UMainMenuWidget::OnClick_Settings()

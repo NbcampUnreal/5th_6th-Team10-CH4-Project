@@ -26,8 +26,8 @@ public:
     TObjectPtr<UHealthBarWidget> HealthBar; // 체력바 위젯
     UPROPERTY(meta = (BindWidget))
     TObjectPtr<UStaminaBarWidget> StaminaBar; // 스태미나바 위젯
-    //UPROPERTY(meta = (BindWidget))
-    //TObjectPtr<UInventoryWidget> Inventory; // 인벤토리 위젯 바인딩
+    UPROPERTY(meta = (BindWidget))
+    TObjectPtr<UInventoryWidget> Inventory; // 인벤토리 위젯 바인딩
 
 
     // 기타 UI 요소들 (예: 인벤토리 등) 추가

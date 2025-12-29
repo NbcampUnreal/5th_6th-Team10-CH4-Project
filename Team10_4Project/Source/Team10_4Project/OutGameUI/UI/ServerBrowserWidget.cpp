@@ -27,7 +27,6 @@ void UServerBrowserWidget::OnClick_Back()
     }
 }
 
-
 //void UServerBrowserWidget::OnClick_Back()
 //{
 //    if (APlayerController* PC = GetOwningPlayer())

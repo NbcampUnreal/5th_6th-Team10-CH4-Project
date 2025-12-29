@@ -27,21 +27,8 @@ ATeam10GameMode::ATeam10GameMode()
 void ATeam10GameMode::BeginPlay()
 {
 	Super::BeginPlay();
-
-	GameFlowManager->OnCurrentAreaChangedDelegate.AddUObject(this, &ThisClass::OnCurrentAreaChanged);
 	
 	Team10GameState = Cast<ATeam10GameState>(GameState);
-	
-	if (Team10GameState)
-	{
-		for (int i = 0; i < Team10GameState->PlayerArray.Num(); i++)
-		{
-			ACivilianPlayerController* CivilianPlayerController = Cast<ACivilianPlayerController>(Team10GameState->PlayerArray[i]->GetPlayerController());
-			Team10GameState->AllPlayers.Add(CivilianPlayerController);
-		}
-	}
-	
-	Team10GameState->CurrentArea = EGameArea::Area1;
 	
 }
 
@@ -67,15 +54,15 @@ void ATeam10GameMode::Logout(AController* Exiting)
 			 		return;
 			 	}
 			 	
-			 	// if (CivilianPlayerState->role == Citizen && CivilianPlayerState->IsAlive)
+			 	// if (CivilianPlayerState->IsPlayerRole(GamePlayTags::PlayerRole::Civilian) && CivilianPlayerState->IsAlive)
 			 	// {
 			 	// 	Team10GameState->AliveCitizenCount--;
 			 	// }
-			 	// else if (CivilianPlayerState->role == Infecter && CivilianPlayerState->IsAlive)
+			 	// else if (CivilianPlayerState->IsPlayerRole(GamePlayTags::PlayerRole::Infected) && CivilianPlayerState->IsAlive)
 			 	// {
 			 	// 	Team10GameState->AliveInfectedCount--;
 			 	// }
-			 	CheckWinCondition();
+			 	// CheckWinCondition();
 			 }
 		}
 	}
@@ -91,6 +78,18 @@ void ATeam10GameMode::HandleStartingNewPlayer_Implementation(APlayerController* 
 	{
 		return;
 	}
+
+	if (!Team10GameState)
+	{
+		return;
+	}
+
+	ACivilianPlayerController* CivilianPlayerController = Cast<ACivilianPlayerController>(NewPlayer);
+
+	if (CivilianPlayerController)
+	{
+		Team10GameState->AllPlayers.Add(CivilianPlayerController);
+	}
 	
 	LoadedPlayerCount++;
 	const int32 ExpectedPlayers = 2; // 크래시 나길래 추가한 크래시 방지용 임시 추가코드. - 금성
@@ -100,103 +99,22 @@ void ATeam10GameMode::HandleStartingNewPlayer_Implementation(APlayerController* 
 		// 모든 플레이어의 로딩이 끝나면 로딩 UI를 해제한다.
 		UE_LOG(LogTemp, Log, TEXT("All Player Loaded"));
 		
-		InitializeRemainingFuseBoxes();
 		AssignInfectedPlayers();
-		PlayerSpawnManager->FoundPlayerSpawner(EGameArea::Area1);
+		PlayerSpawnManager->FoundPlayerSpawner(GamePlayTags::AreaTag::Area_Area1);
 		PlayerSpawnManager->SpawnAllPlayer();
 		GameFlowManager->StartGame();
-	}
-}
 
-void ATeam10GameMode::ReSpawnPlayer(APlayerController* Controller)
-{
-	// 사망한 플레이어 랜덤 스폰 지점으로 리스폰
-	if (PlayerSpawnManager)
-	{
-		RestartPlayerAtPlayerStart(Controller, PlayerSpawnManager->GetPlayerSpawner());
-	}
-}
 
-void ATeam10GameMode::CheckWinCondition()
-{
-	if (!Team10GameState)
-	{
-		return;
-	}
-
-	if (!GameFlowManager)
-	{
-		return;
-	}
+		// 사망 시 관전 및 리스폰 테스트
+		// FTimerHandle TimerHandle;
+		//
+		// GetWorldTimerManager().SetTimer(TimerHandle, FTimerDelegate::CreateLambda([this, CivilianPlayerController]()
+		// {
+		// 	HandlePlayerDeath(CivilianPlayerController);
+		// }), 10.f, false);
 	
-	if (GetAliveCitizenCount()== 0)
-	{
-		GameFlowManager->EndGame(EGameResult::InfectedWin);
-	}
-	else if (GetAliveInfectedCount() == 0)
-	{
-		GameFlowManager->EndGame(EGameResult::CitizenWin);
 	}
 }
-
-void ATeam10GameMode::HandlePlayerDeath(APlayerController* DeadPlayer)
-{
-	if (!DeadPlayer)
-	{
-		return;
-	}
-
-	if(!Team10GameState)
-	{
-		return;
-	}
-	
-	APawn* Pawn = DeadPlayer->GetPawn();
-
-	if (Pawn)
-	{
-		Pawn->Destroy();
-	}
-
-	// // 플레이어가 다시 스폰이 가능한 사망인지 영구적 사망인지 체크
-	//
-	// // 영구 사망 DeadPlayer의 역할에 맞춰 AliveCount감소
-	//
-	// ACivilianPlayerState* CivilianPlayerState = Pawn->GetController()->GetPlayerState<ACivilianPlayerState>();
-	//
-	// if (CivilianPlayerState)
-	// {
-	// 	if (CivilianPlayerState->GetPlayerRole() == EPlayerRole::Civilian)
-	// 	{
-	// 		Team10GameState->AliveCitizenCount--;
-	// 	}
-	// 	else if(CivilianPlayerState->GetPlayerRole() == EPlayerRole::Infected)
-	// 	{
-	// 		Team10GameState->AliveInfectedCount--;
-	// 	}
-	//
-	// 	CheckWinCondition();
-	// }
-	//
-	// // 사망한 플레이어 관전상태로 변경
-	//
-	// for (ACivilianPlayerController* CivilianPlayerController : Team10GameState->AllPlayers)
-	// {
-	// 	APawn* TargetPawn = CivilianPlayerController->GetPawn();
-	// 	if (TargetPawn)
-	// 	{
-	// 		DeadPlayer->SetViewTargetWithBlend(TargetPawn);
-	// 		return;
-	// 	}
-	// 	
-	// }
-	//
-	// // 리스폰 가능한 사망
-	//
-	// ReSpawnPlayer(DeadPlayer);
-	//
-}
-
 void ATeam10GameMode::AssignInfectedPlayers()
 {
 	if (!Team10GameState)
@@ -224,7 +142,7 @@ void ATeam10GameMode::AssignInfectedPlayers()
 	// 인덱스를 랜덤으로 섞고 랜덤한 인덱스 값에 해당하는 플레이어를 찾아 감염자로 설정한다.
 	
 	for (int i = 0; i < ActualInfectedCount; i++)	// 크래시 나길래 추가한 크래시 방지용 임시 추가 코드. - 금성
-	//for (int i = 0; i < InfectedCount; i++)
+		//for (int i = 0; i < InfectedCount; i++)
 	{
 		ACivilianPlayerState* CivilianPlayerState = Cast<ACivilianPlayerState>(Team10GameState->PlayerArray[RandomInfectedArray[i]]);
 		CivilianPlayerState->SetPlayerRoleTag(GamePlayTags::PlayerRole::Infected);
@@ -242,12 +160,164 @@ void ATeam10GameMode::AssignInfectedPlayers()
 }
 
 
-void ATeam10GameMode::OnCurrentAreaChanged(EGameArea GameArea)
+void ATeam10GameMode::ReSpawnPlayer(APlayerController* Controller)
 {
+	// 사망한 플레이어 랜덤 스폰 지점으로 리스폰
 	if (PlayerSpawnManager)
 	{
-		PlayerSpawnManager->FoundPlayerSpawner(GameArea);
+		RestartPlayerAtPlayerStart(Controller, PlayerSpawnManager->GetPlayerSpawner());
 	}
+
+	//player state idle로 변경
+}
+
+void ATeam10GameMode::HandlePlayerDeath(APlayerController* DeadPlayer, APlayerController* AttackPlayer)
+{
+	// 플레이어가 기본 상태에서 기본 공격(총)에 의해 사망 할 경우 투표 상태로 변경
+	// 투표 상태에서 일정 시간이 지나면 리스폰
+	// 플레이어가 감염자 변신 상태에서 사망할 경우 리스폰 (변신이 풀리는지는 모름)
+	// 플레이어가 감염자 변신 공격에 사망할 경우 영구 사망
+	// 투표 상태에서 투표 수 초과 할 경우 영구 사망
+	
+	if (!DeadPlayer)
+	{
+		return;
+	}
+
+	if (!AttackPlayer)
+	{
+		return;
+	}
+	
+	if(!Team10GameState)
+	{
+		return;
+	}
+
+	ACivilianPlayerState* AttackPlayerState = AttackPlayer->GetPlayerState<ACivilianPlayerState>();
+	ACivilianPlayerState* DeadPlayerState = DeadPlayer->GetPlayerState<ACivilianPlayerState>();
+	
+	if (!AttackPlayerState)
+	{
+		return;
+	}
+
+	if (!DeadPlayerState)
+	{
+		return;
+	}
+	
+	// // 감염자가 변신 상태에서 사망 시 리스폰 
+	// if (DeadPlayerState->IsPlayerRole(GamePlayTags::PlayerRole::Infected))
+	// {
+	// 	if (DeadPlayerState->IsInfectedState(GamePlayTags::InfectedState::Transformed))
+	// 	{
+	// 		RespawnDeath(DeadPlayer);
+	// 		return;
+	// 	}
+	// }
+	// else
+	// {
+	// 	//시민이 감연자 변신에 사망할 경우 영구 사망
+	// 	if (AttackPlayerState->IsPlayerRole(GamePlayTags::PlayerRole::Infected) && DeadPlayerState->IsInfectedState(GamePlayTags::InfectedState::Transformed))
+	// 	{
+	// 		EternalDeath(DeadPlayer);
+	// 		return;
+	// 	}
+	// }
+	//
+	// // 위의 두가지 경우를 제외하고 모두 투표 상태로 전환
+	// StartVote(DeadPlayerState, AttackPlayerState);
+	//
+	// UE_LOG(LogTemp, Error, TEXT("Player Dead"));
+	
+}
+
+void ATeam10GameMode::RespawnDeath(APlayerController* DeadPlayer)
+{
+	APawn* Pawn = DeadPlayer->GetPawn();
+
+	if (Pawn)
+	{
+		//UE_LOG(LogTemp, Error, TEXT("Pawn Valid"));
+		DeadPlayer->UnPossess();
+		Pawn->Destroy();
+	}
+
+	ReSpawnPlayer(DeadPlayer);
+}
+
+void ATeam10GameMode::EternalDeath(APlayerController* DeadPlayer)
+{
+	ACivilianPlayerState* CivilianPlayerState = DeadPlayer->GetPlayerState<ACivilianPlayerState>();
+
+	if (!Team10GameState)
+	{
+		return;
+	}
+	
+	// if (CivilianPlayerState)
+	// {
+	// 	if (CivilianPlayerState->IsPlayerRole(GamePlayTags::PlayerRole::Civilian))
+	// 	{
+	// 		CivilianPlayerState->SetCivilianState(GamePlayTags::CivilianState::Dead);
+	// 		Team10GameState->AliveCitizenCount--;
+	// 		
+	// 	}
+	// 	else if(CivilianPlayerState->IsPlayerRole(GamePlayTags::PlayerRole::Infected))
+	// 	{
+	// 		CivilianPlayerState->SetInfectedState(GamePlayTags::InfectedState::Dead);
+	// 		Team10GameState->AliveInfectedCount--;
+	// 	}
+	//
+	// 	CheckWinCondition();
+	// }
+
+	APawn* Pawn = DeadPlayer->GetPawn();
+
+	if (Pawn)
+	{
+		//UE_LOG(LogTemp, Error, TEXT("Pawn Valid"));
+		DeadPlayer->UnPossess();
+		Pawn->Destroy();
+	}
+	
+	for (ACivilianPlayerController* CivilianPlayerController : Team10GameState->AllPlayers)
+	{
+		APawn* TargetPawn = CivilianPlayerController->GetPawn();
+		if (TargetPawn)
+		{
+			// 클라에서 실행
+			DeadPlayer->SetViewTargetWithBlend(TargetPawn);
+			return;
+		}
+	}
+}
+
+
+void ATeam10GameMode::StartVote(ACivilianPlayerState* VoteTarget, ACivilianPlayerState* VotePlayer)
+{
+	if (!VoteTarget)
+	{
+		return;
+	}
+
+	if (!VotePlayer)
+	{
+		return;
+	}
+	
+	// if (VoteTarget->IsPlayerRole(GamePlayTags::PlayerRole::Infected))
+	// {
+	// 	VoteTarget->SetCivilianStateTag(GamePlayTags::InfectedState::Stun);
+	// }
+	// else
+	// {
+	// 	VoteTarget->SetInfectedStateTag(GamePlayTags::CivilianState::Stun);
+	// }
+
+	// 투표한 플레이어 저장해서 중복 투표 불가능하게 설정
+	//VoteTarget->
 }
 
 void ATeam10GameMode::UpdateKillPlayerVotesCount()
@@ -281,6 +351,7 @@ void ATeam10GameMode::UpdateKillPlayerVotesCount()
 	Team10GameState->KillPlayerVotesCount = AlivePlayerCount >= AreaVoteCount ? AreaVoteCount : AlivePlayerCount;
 }
 
+
 void ATeam10GameMode::OnFuseBoxActivated()
 {
 	if (Team10GameState)
@@ -292,18 +363,66 @@ void ATeam10GameMode::OnFuseBoxActivated()
 			GameFlowManager->OpenNextArea();
 		}
 	}
-	
 }
 
-void ATeam10GameMode::InitializeRemainingFuseBoxes()
+void ATeam10GameMode::CheckWinCondition()
 {
-	if (Team10GameState)
+	if (!Team10GameState)
 	{
-		Team10GameState->RemainingFuseBoxCount = TotalFuseBoxCount;
+		return;
+	}
+
+	if (!GameFlowManager)
+	{
+		return;
+	}
+	
+	if (GetAliveCitizenCount()== 0)
+	{
+		GameFlowManager->EndGame(EGameResult::InfectedWin);
+	}
+	else if (GetAliveInfectedCount() == 0)
+	{
+		GameFlowManager->EndGame(EGameResult::CitizenWin);
 	}
 }
 
+bool ATeam10GameMode::CanInfectedTransform(APlayerState* PlayerState)
+{
+	if (!Team10GameState)
+	{
+		return false;
+	}
+	
+	if (!PlayerState)
+	{
+		return false;
+	}
 
+	ACivilianPlayerState* CivilianPlayerState = Cast<ACivilianPlayerState>(PlayerState);
+
+	if (!CivilianPlayerState)
+	{
+		return false;
+	}
+	
+	if (Team10GameState->CurrentPhase != EGamePhase::NightPhase && Team10GameState->CurrentPhase != EGamePhase::TrapIn)
+	{
+		return false;
+	}
+
+	if (CivilianPlayerState->IsPlayerRole(GamePlayTags::PlayerRole::Civilian))
+	{
+		return false;
+	}
+
+	// 감염자가 이미 변신 중이거나 변신에 필요한 혈액량이 부족할 경우 return false
+		
+	return true;
+	
+}
+// 그 외에 밤 페이즈가 되면 화면 어둡게 설정 델리게이트로 nightphase가 되면 맵에 있는 lightobject의 light를 비활성화 하는 방식 생각 중
+// 밤 페이즈가 끝나면 되면 변신이 풀려야 함
 
 int32 ATeam10GameMode::GetAliveCitizenCount()
 {

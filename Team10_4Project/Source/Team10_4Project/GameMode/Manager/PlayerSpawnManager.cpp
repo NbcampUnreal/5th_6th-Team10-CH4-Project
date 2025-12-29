@@ -23,7 +23,7 @@ void UPlayerSpawnManager::BeginPlay()
 	Team10GameState = GetWorld()->GetGameState<ATeam10GameState>();
 }
 
-void UPlayerSpawnManager::FoundPlayerSpawner(EGameArea GameArea)
+void UPlayerSpawnManager::FoundPlayerSpawner(FGameplayTag AreaTag)
 {
 	if (!Team10GameState)
 	{
@@ -32,7 +32,7 @@ void UPlayerSpawnManager::FoundPlayerSpawner(EGameArea GameArea)
 	
 	for (TActorIterator<APlayerSpawn> It(GetWorld()); It; ++It)
 	{
-		if(It->GameArea == Team10GameState->CurrentArea)
+		if(It->AreaTag == AreaTag)
 		{
 			PlayerSpawners.Add(*It);
 		}

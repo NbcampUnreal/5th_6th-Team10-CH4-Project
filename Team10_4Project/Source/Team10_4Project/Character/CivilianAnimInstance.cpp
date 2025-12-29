@@ -4,6 +4,7 @@
 #include "Character/CivilianAnimInstance.h"
 
 #include "Character/Civilian.h"
+#include "Weapon/WeaponBase.h" 
 #include "Kismet/KismetMathLibrary.h" 
 #include "GameFramework/CharacterMovementComponent.h"
 
@@ -28,6 +29,12 @@ void UCivilianAnimInstance::NativeInitializeAnimation()
 	{
 		return;
 	}
+	
+	// 무기 장착 여부 확인
+	bHasWeapon = (OwnerCharacter->GetCurrentWeapon() != nullptr);
+
+	// 컨트롤 로테이션 (Aim Offset용)
+	ControlRotation = OwnerCharacter->GetControlRotation();
 }
 
 void UCivilianAnimInstance::NativeUpdateAnimation(float DeltaSeconds)
@@ -38,6 +45,12 @@ void UCivilianAnimInstance::NativeUpdateAnimation(float DeltaSeconds)
 	{
 		return;
 	}
+	
+	// 무기 장착 여부 확인
+	bHasWeapon = (OwnerCharacter->GetCurrentWeapon() != nullptr);
+
+	// 컨트롤 로테이션 (Aim Offset용)
+	ControlRotation = OwnerCharacter->GetControlRotation();
 	
 	// 속도 계산
 	Velocity = OwnerCharacterMovementComponent->Velocity;

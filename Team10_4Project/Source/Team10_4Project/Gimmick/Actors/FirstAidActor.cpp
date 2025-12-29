@@ -33,7 +33,7 @@ AFirstAidActor::AFirstAidActor()
 	InteractionWidget->SetWidgetSpace(EWidgetSpace::Screen);
 	InteractionWidget->SetDrawAtDesiredSize(true);
 	InteractionWidget->SetVisibility(false);
-	InteractionWidget->SetRelativeLocation(FVector(0.f, 0.f, 100.f));
+	InteractionWidget->SetRelativeLocation(FVector(0.f, 0.f, 50.f));
 }
 
 // Called when the game starts or when spawned

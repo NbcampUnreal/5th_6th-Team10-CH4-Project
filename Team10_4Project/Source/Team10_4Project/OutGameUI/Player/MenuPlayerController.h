@@ -1,4 +1,4 @@
-#pragma once
+Ôªø#pragma once
 
 #include "CoreMinimal.h"
 #include "GameFramework/PlayerController.h"
@@ -6,6 +6,7 @@
 
 class UMainMenuWidget;
 class UServerBrowserWidget;
+class ULobbyWidget;
 
 UCLASS()
 class TEAM10_4PROJECT_API AMenuPlayerController : public APlayerController
@@ -15,22 +16,34 @@ class TEAM10_4PROJECT_API AMenuPlayerController : public APlayerController
 public:
     virtual void BeginPlay() override;
 
-    // ∏ﬁ¿Œ ∏ﬁ¥∫ «•Ω√
-    UFUNCTION()
     void ShowMainMenu();
-
-    // º≠πˆ ∫Í∂ÛøÏ¿˙ «•Ω√
-    UFUNCTION()
     void ShowServerBrowser();
+    void ShowLobby();
+
+    UFUNCTION(Server, Reliable)
+    void Server_ToggleReady();
+
+    void RequestToggleReady();
+
+    void RequestStartGame();
+
+    // Ïã§Ï†ú ÏÑúÎ≤ÑÏóêÏÑú Ïã§ÌñâÎê† RPC
+    UFUNCTION(Server, Reliable, WithValidation)
+    void Server_StartGame();
 
 protected:
-    UPROPERTY(EditDefaultsOnly, Category = "UI")
-    TSubclassOf<UMainMenuWidget> MainMenuWidgetClass;
-
-    UPROPERTY(EditDefaultsOnly, Category = "UI")
-    TSubclassOf<UServerBrowserWidget> ServerBrowserWidgetClass;
-
-private:
     UPROPERTY()
     UUserWidget* CurrentWidget;
+
+    UPROPERTY(EditAnywhere, Category = "UI")
+    TSubclassOf<UMainMenuWidget> MainMenuWidgetClass;
+
+    UPROPERTY(EditAnywhere, Category = "UI")
+    TSubclassOf<UServerBrowserWidget> ServerBrowserWidgetClass;
+
+    UPROPERTY(EditAnywhere, Category = "UI")
+    TSubclassOf<ULobbyWidget> LobbyWidgetClass;
+
+private:
+    void ClearCurrentWidget();
 };

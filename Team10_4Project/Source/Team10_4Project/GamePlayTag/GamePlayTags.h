@@ -61,11 +61,18 @@ namespace GamePlayTags
 	{
 		namespace Civilian
 		{
-			
+			TEAM10_4PROJECT_API UE_DECLARE_GAMEPLAY_TAG_EXTERN(Stun);
 		}
 		namespace Infected
 		{
 			TEAM10_4PROJECT_API UE_DECLARE_GAMEPLAY_TAG_EXTERN(Morph);
+			TEAM10_4PROJECT_API UE_DECLARE_GAMEPLAY_TAG_EXTERN(Stun);
 		}
+	}
+
+	namespace Gimmick
+	{
+		TEAM10_4PROJECT_API UE_DECLARE_GAMEPLAY_TAG_EXTERN(Item_Fuse);
+		TEAM10_4PROJECT_API UE_DECLARE_GAMEPLAY_TAG_EXTERN(Status_HasFuse);
 	}
 }

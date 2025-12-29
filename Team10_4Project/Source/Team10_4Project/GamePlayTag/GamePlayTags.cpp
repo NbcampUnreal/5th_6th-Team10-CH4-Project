@@ -61,12 +61,18 @@ namespace GamePlayTags
 	{
 		namespace Civilian
 		{
-			
+			UE_DEFINE_GAMEPLAY_TAG_COMMENT(Stun, "Ability.Civilian.Stun", "Ability for Civilian Player");
 		}
 		namespace Infected
 		{
 			UE_DEFINE_GAMEPLAY_TAG_COMMENT(Morph, "Ability.Infected.Morph", "Ability for Infected Player");
+			UE_DEFINE_GAMEPLAY_TAG_COMMENT(Stun, "Ability.Infected.Stun", "Ability for Infected Player");
 		}
+	}
+
+	namespace Gimmick {
+		UE_DEFINE_GAMEPLAY_TAG(Item_Fuse, "Gimmick,.Item_Fuse");
+		UE_DEFINE_GAMEPLAY_TAG(Status_HasFuse, "Gimmick.Status_HasFuse");
 	}
 }
 

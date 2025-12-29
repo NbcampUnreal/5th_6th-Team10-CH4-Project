@@ -2,6 +2,9 @@
 
 
 #include "Character/CivilianAttributeSet.h"
+
+#include "Character/Civilian.h"
+#include "GamePlayTag/GamePlayTags.h"
 #include "GameplayEffect.h"
 #include "GameplayEffectExtension.h"
 #include "Net/UnrealNetwork.h"
@@ -55,23 +58,49 @@ void UCivilianAttributeSet::PreAttributeChange(const FGameplayAttribute& Attribu
 void UCivilianAttributeSet::PostGameplayEffectExecute(const FGameplayEffectModCallbackData& Data)
 {
 	Super::PostGameplayEffectExecute(Data);
-	
+
 	// 데미지 처리
 	if (Data.EvaluatedData.Attribute == GetDamageAttribute())
 	{
 		const float LocalDamage = GetDamage();
-		SetDamage(0.0f); // 데미지 처리 후, 0으로 즉시 리셋
+		SetDamage(0.0f); // 데미지 소비
 
 		if (LocalDamage > 0.0f)
 		{
-			const float NewHealth = GetHealth() - LocalDamage; // 현재 체력에서 차감
+			const float OldHealth = GetHealth();
+			const float NewHealth = OldHealth - LocalDamage;
+            
+			// 체력 적용 (일단 0 밑으로 안 내려가게)
 			SetHealth(FMath::Clamp(NewHealth, 0.0f, GetMaxHealth()));
+
+			// [핵심 로직] 이번 공격으로 체력이 0이 되었는가?
+			if (OldHealth > 0.0f && NewHealth <= 0.0f)
+			{
+				// 공격자(Source) 정보 가져오기
+				AActor* SourceActor = Data.EffectSpec.GetContext().GetInstigator();
+				UAbilitySystemComponent* SourceASC = Data.EffectSpec.GetContext().GetInstigatorAbilitySystemComponent();
+
+				// 피격자(Target/Me) 정보 가져오기
+				ACivilian* TargetCharacter = Cast<ACivilian>(Data.Target.GetAvatarActor());
+				
+				if (TargetCharacter && SourceASC)
+				{
+					// 공격자가 '변신 상태(Transformed)'인지 확인
+					bool bAttackerIsTransformed = SourceASC->HasMatchingGameplayTag(GamePlayTags::InfectedState::Transformed);
+
+					// 캐릭터에게 "너 치명상 입었어"라고 알림 (공격자 정보 포함)
+					TargetCharacter->HandleFatalDamage(SourceActor, bAttackerIsTransformed);
+				}
+			}
+			else
+			{
+				// 죽지 않았으면 피격 모션 처리 (기존 로직)
+				if (ACivilian* TargetCharacter = Cast<ACivilian>(Data.Target.GetAvatarActor()))
+				{
+					// TargetCharacter->HandleTakeDamage(); // 피격 애니메이션 등
+				}
+			}
 		}
-	}
-	// 체력 변경 시, 적용 사항(아이템 등 상호작용으로 인한 즉시 변경)
-	else if (Data.EvaluatedData.Attribute == GetHealthAttribute())
-	{
-		SetHealth(FMath::Clamp(GetHealth(), 0.0f, GetMaxHealth()));
 	}
 }
 

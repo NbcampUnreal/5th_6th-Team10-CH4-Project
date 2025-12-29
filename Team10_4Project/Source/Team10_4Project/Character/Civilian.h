@@ -38,7 +38,7 @@ public:
 	virtual void Tick(float DeltaTime) override;
 	virtual void SetupPlayerInputComponent(class UInputComponent* PlayerInputComponent) override;
 	virtual void OnRep_PlayerState() override;
-	
+	virtual void GetLifetimeReplicatedProps(TArray<FLifetimeProperty>& OutLifetimeProps) const override;
 	virtual float PlayAnimMontage(class UAnimMontage* AnimMontage, float InPlayRate = 1.f, FName StartSectionName = NAME_None) override;
 	
 #pragma endregion
@@ -162,7 +162,7 @@ protected:
 	UPROPERTY(EditAnywhere, BlueprintReadOnly, Category = "PlayerCharacter|Components")
 	TSubclassOf<UAnimInstance> MorphFirstPersonAnimClass;
 	
-	// 감염자 변신 시, 가릴 Mesh Bones
+	// 감염자 변신 시, 가릴 Mesh BonesS
 	UPROPERTY(EditDefaultsOnly, BlueprintReadOnly, Category = "PlayerCharacter|Components|MorphSettings")
 	TArray<FName> MorphFirstPersonBonesToHide;
 	
@@ -199,13 +199,72 @@ protected:
 	
 #pragma endregion
 	
+#pragma region Civilian Death
+	
+public:
+	// AttributeSet에서 호출할 함수
+	virtual void HandleFatalDamage(AActor* Attacker, bool bAttackerIsTransformed);
+	
+	UFUNCTION(BlueprintCallable, Category = "GAS|Respawn")
+	void TeleportToSpawnLocation();
+
+protected:
+	// 스폰 위치 저장
+	UPROPERTY(BlueprintReadOnly, Category = "GameData")
+	FVector InitialSpawnLocation;
+	
 	// 사망 처리
 	UFUNCTION(BlueprintImplementableEvent, Category = "Character")
 	void OnDeath();
 
-	UFUNCTION(NetMulticast, Reliable)
+	UFUNCTION(BlueprintCallable, Category = "GAS|Death")
 	void MulticastHandleDeath();
+#pragma endregion
+	
+#pragma region Civilian Weapon
+	
+protected:
+	
+	UPROPERTY(EditAnywhere, BlueprintReadOnly, Category = "Input")
+	class UInputAction* IA_Slot1;
 
+	UPROPERTY(EditAnywhere, BlueprintReadOnly, Category = "Input")
+	class UInputAction* IA_Slot2;
+	
+	// 무기 클래스
+	UPROPERTY(EditDefaultsOnly, Category = "Combat")
+	TSubclassOf<class AWeaponBase> StartingWeaponClass;
+
+	// 현재 들고 있는 무기
+	UPROPERTY(ReplicatedUsing = OnRep_CurrentWeapon, BlueprintReadOnly, Category = "Combat")
+	class AWeaponBase* CurrentWeapon;
+	
+	UFUNCTION()
+	void OnRep_CurrentWeapon(class AWeaponBase* OldWeapon);
+	
+	// 무기 장착 해제 (1번 키)
+	void UnEquipWeapon();
+
+	// 특정 무기 클래스 장착 (2번 키 공용)
+	void EquipWeapon(TSubclassOf<class AWeaponBase> NewWeaponClass);
+	
+	UFUNCTION(Server, Reliable)
+	void Server_EquipWeapon(TSubclassOf<class AWeaponBase> NewWeaponClass);
+
+	UFUNCTION(Server, Reliable)
+	void Server_UnEquipWeapon();
+	
+protected:
+	// 입력 바인딩 함수
+	void OnInput_Slot1(); // 비무장 전환
+	void OnInput_Slot2(); // 권총 전환
+	
+public:
+	// Getter
+	AWeaponBase* GetCurrentWeapon() const { return CurrentWeapon; }
+	
+#pragma endregion
+	
 #pragma region Interaction Logic - 상호작용 로직
 protected:
 	// 클라이언트에서 서버로 상호작용을 요청하는 RPC

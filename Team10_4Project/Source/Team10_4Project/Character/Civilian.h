@@ -299,4 +299,21 @@ private:
 	UPROPERTY(EditDefaultsOnly, Category = "Interaction")
 	float InteractDistance = 200.0f;
 #pragma endregion
+
+#pragma region Inventory Logic - 인벤토리 로직
+public:
+	// [테스트용]
+	UFUNCTION(Exec)
+	void Cheat_AddItem(FName ItemID);
+	UFUNCTION(Exec)
+	void Cheat_AddStackItem(FName ItemID, int32 Count);
+protected:
+	// [테스트용]
+	UFUNCTION(Server, Reliable)
+	void Server_AddItem(FName ItemID);
+	UFUNCTION(Server, Reliable)
+	void Server_AddStackItem(FName ItemID, int32 Count);
+
+#pragma endregion
+
 };

@@ -23,6 +23,7 @@
 #include "Weapon/WeaponBase.h"
 #include "InGameUI/KSH/InGameUIWidget.h"
 #include "Blueprint/UserWidget.h"
+#include "InGameUI/KSH/InventoryComponent.h"
 
 ACivilian::ACivilian()
 {
@@ -969,4 +970,33 @@ AActor* ACivilian::GetInteractableActor()
 	}
 	return nullptr;
 }
+void ACivilian::Cheat_AddItem(FName ItemID)
+{
+	Server_AddItem(ItemID);
+}
+void ACivilian::Cheat_AddStackItem(FName ItemID, int32 Count)
+{
+	Server_AddStackItem(ItemID, Count);
+}
+void ACivilian::Server_AddItem_Implementation(FName ItemID)
+{
+	if (ACivilianPlayerState* PS = GetPlayerState<ACivilianPlayerState>())
+	{
+		if (PS->InventoryComponent)
+		{
+			PS->InventoryComponent->AddItemByID(ItemID);
+		}
+	}
+}
+void ACivilian::Server_AddStackItem_Implementation(FName ItemID, int32 Count)
+{
+	if (ACivilianPlayerState* PS = GetPlayerState<ACivilianPlayerState>())
+	{
+		if (PS->InventoryComponent)
+		{
+			PS->InventoryComponent->AddItemByID(ItemID, Count);
+		}
+	}
+}
+
 #pragma endregion

@@ -149,6 +149,17 @@ void ACivilian::BeginPlay()
 		// 애니메이션 블루프린트 클래스 저장
 		DefaultFirstPersonAnimClass = FirstPersonMeshComponent->GetAnimClass();
 	}
+	
+	// 로컬 플레이어(내 캐릭터)인 경우에만 Crosshair 생성
+	if (IsLocallyControlled() && CrosshairWidgetClass)
+	{
+		CrosshairWidget = CreateWidget<UUserWidget>(GetWorld(), CrosshairWidgetClass);
+		if (CrosshairWidget)
+		{
+			CrosshairWidget->AddToViewport();
+			CrosshairWidget->SetVisibility(ESlateVisibility::Hidden); 
+		}
+	}
 }
 
 void ACivilian::PossessedBy(AController* NewController)
@@ -501,7 +512,7 @@ void ACivilian::HandleFatalDamage(AActor* Attacker, bool bAttackerIsTransformed)
 	if (ASC->HasMatchingGameplayTag(GamePlayTags::InfectedState::Transformed))
 	{
 		// [CASE A] 감염자 리스폰 (Infected Stun)
-		UE_LOG(LogTemp, Warning, TEXT("Infected Groggy....."));
+		UE_LOG(LogTemp, Warning, TEXT("[Groggy] Infected Groggy....."));
 		FGameplayTagContainer TagContainer;
 		TagContainer.AddTag(GamePlayTags::Ability::Infected::Stun); 
 		ASC->TryActivateAbilitiesByTag(TagContainer);
@@ -512,13 +523,13 @@ void ACivilian::HandleFatalDamage(AActor* Attacker, bool bAttackerIsTransformed)
 		if (bAttackerIsTransformed)
 		{
 			// [CASE B] 즉사 (Death)
-			UE_LOG(LogTemp, Warning, TEXT("Player Dead."));
+			UE_LOG(LogTemp, Warning, TEXT("[Dead] Player Dead."));
 			MulticastHandleDeath(); // GameMode - 사망처리로 대체 예정
 		}
 		else
 		{
 			// [CASE C] 시민 투표 대기 (Civilian Voting)
-			UE_LOG(LogTemp, Warning, TEXT("Start Voting....."));
+			UE_LOG(LogTemp, Warning, TEXT("[Voting] Start Voting....."));
 			
 			FGameplayTagContainer TagContainer;
 			TagContainer.AddTag(GamePlayTags::Ability::Civilian::Stun); 
@@ -610,19 +621,15 @@ void ACivilian::MulticastHandleDeath()
 
 void ACivilian::OnRep_CurrentWeapon(class AWeaponBase* OldWeapon)
 {
-	// 1. 기존 무기가 있었다면 제거 (혹은 숨김)
 	if (OldWeapon)
 	{
-		OldWeapon->Destroy(); // 혹은 DetachFromActor 등
+		OldWeapon->Destroy(); 
 	}
-
-	// 2. 새 무기가 들어왔다면 손에 부착!
+	
 	if (CurrentWeapon)
 	{
-		// 3인칭 메쉬에 부착 (다른 사람이 볼 때 중요)
 		CurrentWeapon->AttachToComponent(GetMesh(), FAttachmentTransformRules::SnapToTargetNotIncludingScale, FName("WeaponSocket"));
-
-		// [중요] 만약 '내 화면(IsLocallyControlled)'이라면 1인칭 팔에도 붙여줘야 함
+		
 		if (IsLocallyControlled() && FirstPersonMeshComponent) 
 		{
 			if (USkeletalMeshComponent* WeaponMesh1P = CurrentWeapon->GetWeaponMesh1P())
@@ -630,6 +637,11 @@ void ACivilian::OnRep_CurrentWeapon(class AWeaponBase* OldWeapon)
 				WeaponMesh1P->AttachToComponent(FirstPersonMeshComponent, FAttachmentTransformRules::SnapToTargetNotIncludingScale, FName("WeaponSocket"));
 			}
 		}
+	}
+	
+	if (IsLocallyControlled())
+	{
+		UpdateCrosshairVisibility();
 	}
 }
 
@@ -643,6 +655,20 @@ void ACivilian::Server_UnEquipWeapon_Implementation()
 	UnEquipWeapon();
 }
 
+void ACivilian::UpdateCrosshairVisibility()
+{
+	if (!CrosshairWidget) return;
+	
+	if (CurrentWeapon)
+	{
+		CrosshairWidget->SetVisibility(ESlateVisibility::HitTestInvisible); 
+	}
+	else
+	{
+		CrosshairWidget->SetVisibility(ESlateVisibility::Hidden);
+	}
+}
+
 void ACivilian::UnEquipWeapon()
 {
 	if (CurrentWeapon)
@@ -651,6 +677,8 @@ void ACivilian::UnEquipWeapon()
 		CurrentWeapon = nullptr;
         
 		UE_LOG(LogTemp, Log, TEXT("Weapon Unequipped (Unarmed Mode)"));
+		
+		if (IsLocallyControlled()) UpdateCrosshairVisibility();
 	}
 }
 
@@ -675,6 +703,8 @@ void ACivilian::EquipWeapon(TSubclassOf<class AWeaponBase> NewWeaponClass)
 
 		CurrentWeapon = NewWeapon;
 		UE_LOG(LogTemp, Log, TEXT("Pistol Equipped!"));
+		
+		if (IsLocallyControlled()) UpdateCrosshairVisibility();
 	}
 }
 

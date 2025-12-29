@@ -250,6 +250,17 @@ protected:
 	UFUNCTION()
 	void OnRep_CurrentWeapon(class AWeaponBase* OldWeapon);
 	
+	// Crosshair
+	UPROPERTY(EditDefaultsOnly, Category = "UI")
+	TSubclassOf<class UUserWidget> CrosshairWidgetClass;
+	
+	// Crosshair 위젯
+	UPROPERTY()
+	class UUserWidget* CrosshairWidget;
+
+	// 크로스헤어 보이기/숨기기 함수
+	void UpdateCrosshairVisibility();
+	
 	// 무기 장착 해제 (1번 키)
 	void UnEquipWeapon();
 

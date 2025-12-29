@@ -1,29 +1,66 @@
 
 #include "GameMode/Manager/GameFlowManager.h"
+
+#include "PlayerSpawnManager.h"
 #include "GameState/Team10GameState.h"
+#include "EngineUtils.h"
+#include "Gimmick/Actors/FuseBoxActor.h"
 
 void UGameFlowManager::BeginPlay()
 {
 	Super::BeginPlay();
-	
+
+	Team10GameState = GetWorld()->GetGameState<ATeam10GameState>();
+
+	Team10GameState->OnAreaChanged.AddDynamic(this, &UGameFlowManager::AreaChanged);
+
+	if (ATeam10GameMode* GameMode = Cast<ATeam10GameMode>(GetOwner()))
+	{
+		PlayerSpawnManager = GameMode->FindComponentByClass<UPlayerSpawnManager>();
+	}
 }
 
 void UGameFlowManager::InitializeRemainingFuseBoxes()
 {
-	if (Team10GameState)
+	// 기존 코드
+	/*if (Team10GameState)
 	{
 		Team10GameState->RemainingFuseBoxCount = TotalFuseBoxCount;
+	}*/
+
+	// 금성 - 새로 추가한 코드
+	if (!Team10GameState) return;
+
+	// 현재 구역에 해당하는 태그 결정
+	FGameplayTag TargetTag;
+	switch (Team10GameState->CurrentArea)
+	{
+	case EGameArea::Area1: TargetTag = GamePlayTags::AreaTag::Area_Area1; break;
+	case EGameArea::Area2: TargetTag = GamePlayTags::AreaTag::Area_Area2; break;
+	case EGameArea::Area3: TargetTag = GamePlayTags::AreaTag::Area_Area3; break;
+	default: return;
 	}
+
+	int32 Count = 0;
+	for (TActorIterator<AFuseBoxActor> It(GetWorld()); It; ++It)
+	{
+		// Enum이 아닌 Tag 비교로 개수를 셉니다.
+		if (It->GetBelongingArea().MatchesTagExact(TargetTag))
+		{
+			Count++;
+		}
+	}
+
+	Team10GameState->RemainingFuseBoxCount = Count;
+	UE_LOG(LogTemp, Warning, TEXT("Area Tag %s Initialized: %d Boxes"), *TargetTag.ToString(), Count);
 }
 
 void UGameFlowManager::StartGame()
 {
-	Team10GameState = GetWorld()->GetGameState<ATeam10GameState>();
-	
-	if (Team10GameState->CurrentPhase != EGamePhase::Lobby)
-	{
-		return;
-	}
+	// if (Team10GameState->CurrentPhase != EGamePhase::Lobby)
+	// {
+	// 	return;
+	// }
 	
 	UE_LOG(LogTemp, Warning, TEXT("Game Starting!"));
 	SetCurrentArea(EGameArea::Area1);
@@ -120,6 +157,20 @@ void UGameFlowManager::EndGame(EGameResult Result)
 	// 	}
 	// }, 5.0f, false);
 }
+
+void UGameFlowManager::AreaChanged(FGameplayTag AreaTag)
+{
+	if (PlayerSpawnManager)
+	{
+		PlayerSpawnManager->FoundPlayerSpawner(AreaTag);
+	}
+	
+	InitializeRemainingFuseBoxes();
+	ChangePhase(EGamePhase::DayPhase);
+
+	UE_LOG(LogTemp, Error, TEXT("Area Changed"));
+}
+
 void UGameFlowManager::StartPhaseTimer(float Duration)
 {
 	GetWorld()->GetTimerManager().ClearTimer(PhaseTimerHandle);
@@ -150,10 +201,8 @@ void UGameFlowManager::SetCurrentArea(EGameArea NewArea)
 {
 	if (Team10GameState)
 	{
-		Team10GameState->CurrentArea = NewArea;
-		OnCurrentAreaChangedDelegate.Broadcast(NewArea);
-		InitializeRemainingFuseBoxes();
-		ChangePhase(EGamePhase::DayPhase);
+		Team10GameState->SetCurrentArea(NewArea);
+		
 	}
 }
 

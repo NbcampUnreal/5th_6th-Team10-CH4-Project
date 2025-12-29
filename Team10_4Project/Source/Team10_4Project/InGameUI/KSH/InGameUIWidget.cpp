@@ -5,6 +5,7 @@
 #include "Components/ProgressBar.h"
 #include "InGameUI/KSH/HealthBarWidget.h" // 체력바
 #include "InGameUI/KSH/StaminaBarWidget.h" // 스테미나바
+#include "InGameUI/KSH/InventoryWidget.h" // 인벤토리
 #include "AbilitySystemComponent.h" // ASC 사용을 위해 포함
 
 void UInGameUIWidget::InitializeUI(UAbilitySystemComponent* ASC)
@@ -16,23 +17,22 @@ void UInGameUIWidget::InitializeUI(UAbilitySystemComponent* ASC)
     }
 
     // 1. HealthBar 초기화
-    if (HealthBar)
-    {
-        HealthBar->InitWithASC(ASC);
-    }
-    else
-    {
-        UE_LOG(LogTemp, Warning, TEXT("InGameUIWidget: HealthBar is not bound or invalid."));
-    }
-
+    if (HealthBar) HealthBar->InitWithASC(ASC);
     // 2. StaminaBar 초기화
-    if (StaminaBar)
+    if (StaminaBar) StaminaBar->InitWithASC(ASC);
+    // 3. 인벤토리 초기화
+    if (Inventory)
     {
-        StaminaBar->InitWithASC(ASC);
-    }
-    else
-    {
-        UE_LOG(LogTemp, Warning, TEXT("InGameUIWidget: StaminaBar is not bound or invalid."));
+        // ASC를 소유한 Owner(캐릭터)로부터 인벤토리 컴포넌트를 찾아 가져오기
+        AActor* Owner = ASC->GetOwner();
+        if (Owner)
+        {
+           /* UInventoryComponent* InvComp = Owner->FindComponentByClass<UInventoryComponent>();
+            if (InvComp)
+            {
+                Inventory->InitWithInventory(InvComp);
+            }*/
+        }
     }
 }
 

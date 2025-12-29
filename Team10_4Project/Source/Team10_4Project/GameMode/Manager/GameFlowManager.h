@@ -3,11 +3,13 @@
 #pragma once
 
 #include "CoreMinimal.h"
+#include "GameplayTagContainer.h"
 #include "Components/ActorComponent.h"
 #include "GameMode/GameTypes/GameTypes.h"
 #include "GameFlowManager.generated.h"
 
 
+class UPlayerSpawnManager;
 DECLARE_MULTICAST_DELEGATE_OneParam(FOnCurrentAreaChangedDelegate, EGameArea)
 
 class ATeam10GameState;
@@ -35,6 +37,8 @@ public:
 	UFUNCTION(BlueprintCallable, Category = "GameFlow")
 	void EndGame(EGameResult Result);
 
+	UFUNCTION(BlueprintCallable, Category = "GameFlow")
+	void AreaChanged(FGameplayTag AreaTag);
 protected:
 	// 낮/밤 페이즈 시간
 	UPROPERTY(EditDefaultsOnly, BlueprintReadOnly, Category = "GameFlow")
@@ -73,6 +77,9 @@ private:
 	// 현재 구역 설정
 	void SetCurrentArea(EGameArea NewArea);
 
+	UPROPERTY()
+	TObjectPtr<UPlayerSpawnManager> PlayerSpawnManager;
+	
 public:
 	FOnCurrentAreaChangedDelegate OnCurrentAreaChangedDelegate;
 };

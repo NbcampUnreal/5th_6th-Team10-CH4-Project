@@ -9,7 +9,9 @@
 #include "Team10GameMode.generated.h"
 
 
-
+class ACivilianPlayerState;
+class ACivilian;
+class ACivilianPlayerController;
 struct FGameplayTag;
 class APlayerSpawn;
 class UGameFlowManager;
@@ -37,19 +39,27 @@ public:
 	void CheckWinCondition();
 	
 	// 플레이어 사망 처리
-	UFUNCTION(BlueprintCallable, Category = "Player")
-	void HandlePlayerDeath(APlayerController* DeadPlayer);
+	UFUNCTION(BlueprintCallable, Category = "Dead")
+	void HandlePlayerDeath(APlayerController* DeadPlayer, APlayerController* AttackPlayer);
+
+	// 부활이 가능한 사망
+	UFUNCTION(BlueprintCallable, Category = "Dead")
+	void RespawnDeath(APlayerController* DeadPlayer);
+	
+	// 부활이 불가능한 사망
+	UFUNCTION(BlueprintCallable, Category = "Dead")
+	void EternalDeath(APlayerController* DeadPlayer);
 	
 	// 감염자 결정
 	UFUNCTION(BlueprintCallable, Category = "GameFlow")
 	void AssignInfectedPlayers();
 
+	// 퓨즈 활성화 하면 호출
 	UFUNCTION(BlueprintCallable, Category = "GameFlow")
 	void OnFuseBoxActivated();
-
-	UFUNCTION(BlueprintCallable, Category = "GameFlow")
-	void InitializeRemainingFuseBoxes();
-
+	
+	// 감염자가 변신이 가능한 상태인지 체크
+	bool CanInfectedTransform(APlayerState* PlayerState);
 protected:
 	
 	// 감염자 수
@@ -63,7 +73,14 @@ protected:
 	// 현재 맵 로딩을 완료한 플레이어 수
 	// 지금은 GameMode에 선언 했지만 UI가 필요할 경우 GameState에서 Replicate 예정
 	UPROPERTY(VisibleAnywhere, BlueprintReadOnly, Category = "GameFlow")
-	int32 LoadedPlayerCount  = 0; 
+	int32 LoadedPlayerCount  = 0;
+
+	// 감염자가 변신에 필요한 최소 혈액량
+	UPROPERTY(EditDefaultsOnly, BlueprintReadOnly, Category = "GameFlow")
+	int32 MinBloodForTransformation = 100; // 임시로 설정
+	
+	UPROPERTY(VisibleAnywhere, BlueprintReadOnly, Category = "GameFlow")
+	bool CanRespawn;
 
 	// GameState 레퍼런스
 	UPROPERTY()
@@ -86,7 +103,9 @@ public:
 	// 플레이어가 투표 상태가 되면 호출
 	UFUNCTION(BlueprintCallable, Category = "Vote")
 	void UpdateKillPlayerVotesCount();
-	
+
+	UFUNCTION(BlueprintCallable, Category = "Vote")
+	void StartVote(ACivilianPlayerState* VoteTarget, ACivilianPlayerState* VotePlayer);
 protected:
 	UPROPERTY(EditDefaultsOnly, BlueprintReadOnly, Category = "Vote")
 	int32 Area1VoteCount = 4;
@@ -106,16 +125,6 @@ public:
 	
 #pragma endregion
 
-#pragma region Delegate
-
-public:
-	
-
-private:
-	UFUNCTION()
-	void OnCurrentAreaChanged(EGameArea GameArea);
-	
-#pragma endregion
 	
 #pragma region Manager
 

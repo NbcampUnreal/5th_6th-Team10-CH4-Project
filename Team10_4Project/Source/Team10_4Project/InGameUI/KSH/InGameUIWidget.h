@@ -8,7 +8,7 @@
 
 // 전방 선언
 class UHealthBarWidget;
-class UStaminaBarWidget;
+class USanityBarWidget;
 class UAbilitySystemComponent;
 class UInventoryWidget;
 
@@ -25,7 +25,7 @@ public:
     UPROPERTY(meta = (BindWidget))
     TObjectPtr<UHealthBarWidget> HealthBar; // 체력바 위젯
     UPROPERTY(meta = (BindWidget))
-    TObjectPtr<UStaminaBarWidget> StaminaBar; // 스태미나바 위젯
+    TObjectPtr<USanityBarWidget> SanityBar; // 스태미나바 위젯
     UPROPERTY(meta = (BindWidget))
     TObjectPtr<UInventoryWidget> Inventory; // 인벤토리 위젯 바인딩
 

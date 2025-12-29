@@ -18,6 +18,7 @@ class USpringArmComponent;
 class UInputMappingContext;
 class UInputAction;
 class UAnimMontage;
+class UInGameUIWidget;
 
 UCLASS()
 class TEAM10_4PROJECT_API ACivilian : public ACharacter, public IAbilitySystemInterface
@@ -60,6 +61,13 @@ protected:
 	
 	UPROPERTY(VisibleAnywhere, BlueprintReadOnly, Category = "PlayerCharacter|Components", meta = (AllowPrivateAccess = "true"))
 	TObjectPtr<USkeletalMeshComponent> FirstPersonMeshComponent;
+
+	// 에디터에서 WBP_InGameUI를 할당하기 위한 변수
+	UPROPERTY(EditAnywhere, BlueprintReadOnly, Category = "UI")
+	TSubclassOf<UInGameUIWidget> InGameUIClass;
+	// 생성된 UI 인스턴스 저장용
+	UPROPERTY()
+	TObjectPtr<UInGameUIWidget> InGameUIInstance;
 
 #pragma endregion
 	

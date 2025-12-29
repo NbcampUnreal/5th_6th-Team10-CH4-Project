@@ -20,6 +20,7 @@
 #include "Net/UnrealNetwork.h"
 #include "Gimmick/Interfaces/Interactable.h"
 #include "Kismet/KismetSystemLibrary.h"
+#include "Weapon/WeaponBase.h"
 
 
 ACivilian::ACivilian()
@@ -195,6 +196,17 @@ void ACivilian::SetupPlayerInputComponent(class UInputComponent* PlayerInputComp
 		// 변신
 		EnhancedInputComponent->BindAction(MorphAction, ETriggerEvent::Started,
 			this, &ACivilian::Morph);
+		
+		if (IA_Slot1)
+		{
+			EnhancedInputComponent->BindAction(IA_Slot1, ETriggerEvent::Started,
+				this, &ACivilian::OnInput_Slot1);
+		}
+		if (IA_Slot2)
+		{
+			EnhancedInputComponent->BindAction(IA_Slot2, ETriggerEvent::Started,
+				this, &ACivilian::OnInput_Slot2);
+		}
 	}
 }
 
@@ -204,6 +216,13 @@ void ACivilian::OnRep_PlayerState()
 	
 	// 클라이언트에서 실행
 	InitializeAbilitySystem();
+}
+
+void ACivilian::GetLifetimeReplicatedProps(TArray<FLifetimeProperty>& OutLifetimeProps) const
+{
+	Super::GetLifetimeReplicatedProps(OutLifetimeProps);
+	
+	DOREPLIFETIME(ACivilian, CurrentWeapon);
 }
 
 float ACivilian::PlayAnimMontage(UAnimMontage* AnimMontage, float InPlayRate, FName StartSectionName)
@@ -445,9 +464,10 @@ void ACivilian::HandleFatalDamage(AActor* Attacker, bool bAttackerIsTransformed)
 		{
 			// [CASE C] 시민 투표 대기 (Civilian Voting)
 			UE_LOG(LogTemp, Warning, TEXT("Start Voting....."));
-			FGameplayTagContainer TagContainer;
+			
+			/*FGameplayTagContainer TagContainer;
 			TagContainer.AddTag(GamePlayTags::Ability::Civilian::Stun); // 태그 새로 정의 필요
-			ASC->TryActivateAbilitiesByTag(TagContainer);
+			ASC->TryActivateAbilitiesByTag(TagContainer);*/
 		}
 	}
 }
@@ -533,6 +553,118 @@ void ACivilian::MulticastHandleDeath()
 	OnDeath();
 }
 
+void ACivilian::OnRep_CurrentWeapon(class AWeaponBase* OldWeapon)
+{
+	// 1. 기존 무기가 있었다면 제거 (혹은 숨김)
+	if (OldWeapon)
+	{
+		OldWeapon->Destroy(); // 혹은 DetachFromActor 등
+	}
+
+	// 2. 새 무기가 들어왔다면 손에 부착!
+	if (CurrentWeapon)
+	{
+		// 3인칭 메쉬에 부착 (다른 사람이 볼 때 중요)
+		CurrentWeapon->AttachToComponent(GetMesh(), FAttachmentTransformRules::SnapToTargetNotIncludingScale, FName("WeaponSocket"));
+
+		// [중요] 만약 '내 화면(IsLocallyControlled)'이라면 1인칭 팔에도 붙여줘야 함
+		if (IsLocallyControlled() && FirstPersonMeshComponent) 
+		{
+			if (USkeletalMeshComponent* WeaponMesh1P = CurrentWeapon->GetWeaponMesh1P())
+			{
+				WeaponMesh1P->AttachToComponent(FirstPersonMeshComponent, FAttachmentTransformRules::SnapToTargetNotIncludingScale, FName("WeaponSocket"));
+			}
+		}
+	}
+}
+
+void ACivilian::Server_EquipWeapon_Implementation(TSubclassOf<class AWeaponBase> NewWeaponClass)
+{
+	EquipWeapon(NewWeaponClass);
+}
+
+void ACivilian::Server_UnEquipWeapon_Implementation()
+{
+	UnEquipWeapon();
+}
+
+void ACivilian::UnEquipWeapon()
+{
+	if (CurrentWeapon)
+	{
+		CurrentWeapon->Destroy(); // 액터 파괴 (1인칭/3인칭 메쉬 모두 사라짐)
+		CurrentWeapon = nullptr;
+        
+		UE_LOG(LogTemp, Log, TEXT("Weapon Unequipped (Unarmed Mode)"));
+	}
+}
+
+void ACivilian::EquipWeapon(TSubclassOf<class AWeaponBase> NewWeaponClass)
+{
+	if (!NewWeaponClass || !GetWorld()) return;
+
+	// 서버 권한 확인 (멀티플레이라면 서버 RPC로 처리해야 함. 싱글이면 바로 실행)
+	if (!HasAuthority()) return;
+
+	FActorSpawnParameters Params;
+	Params.Owner = this;
+	Params.Instigator = this;
+
+	// 무기 생성
+	AWeaponBase* NewWeapon = GetWorld()->SpawnActor<AWeaponBase>(NewWeaponClass, GetActorLocation(), GetActorRotation(), Params);
+
+	if (NewWeapon)
+	{
+		// 3인칭 부착
+		NewWeapon->AttachToComponent(GetMesh(), FAttachmentTransformRules::SnapToTargetNotIncludingScale, FName("WeaponSocket"));
+
+		CurrentWeapon = NewWeapon;
+		UE_LOG(LogTemp, Log, TEXT("Pistol Equipped!"));
+	}
+}
+
+void ACivilian::OnInput_Slot1()
+{
+	UE_LOG(LogTemp, Log, TEXT("Input Slot 1"));
+	
+	if (HasAuthority()) UnEquipWeapon();
+	else Server_UnEquipWeapon();
+}
+
+void ACivilian::OnInput_Slot2()
+{
+	UE_LOG(LogTemp, Log, TEXT("Input Slot 2"));
+	
+	ACivilianPlayerState* PS = GetPlayerState<ACivilianPlayerState>();
+	if (!PS) return;
+	
+	AbilitySystemComponent = PS->GetAbilitySystemComponent();
+	if (!AbilitySystemComponent.IsValid()) return;
+	
+	if (AbilitySystemComponent->HasMatchingGameplayTag(GamePlayTags::InfectedState::Transformed))
+	{
+		UE_LOG(LogTemp, Warning, TEXT("Cannot equip weapon while transformed!"));
+		return; 
+	}
+	
+	// 이미 권총을 들고 있거나, 설정된 권총 클래스가 없으면 무시
+	if (!StartingWeaponClass) return;
+	if (CurrentWeapon && CurrentWeapon->IsA(StartingWeaponClass)) return;
+
+	if (HasAuthority())
+	{
+		// 내가 서버라면 바로 실행
+		if (CurrentWeapon) UnEquipWeapon();
+		EquipWeapon(StartingWeaponClass);
+	}
+	else
+	{
+		// 클라이언트라면 서버에게 부탁 (RPC)
+		Server_UnEquipWeapon(); // 기존 무기 해제 요청
+		Server_EquipWeapon(StartingWeaponClass); // 권총 장착 요청
+	}
+}
+
 void ACivilian::Server_SetRole_Implementation(int32 RoleID)
 {
 	if (ACivilianPlayerState* PS = GetPlayerState<ACivilianPlayerState>())
@@ -566,6 +698,9 @@ void ACivilian::MulticastMorph_Implementation(bool bToInfected)
 {
 	if (bToInfected)
 	{
+		// 변신 전 들고 있는 무기가 있다면 강제 해제
+		UnEquipWeapon();
+		
 		if (MorphMesh && GetMesh())
 		{
 			// 3인칭 메쉬 교체
@@ -653,39 +788,42 @@ void ACivilian::TryAttack()
 	FGameplayTag AbilityTagToActivate;
 
 	// 현재 플레이어 역할 확인 (태그 기반)
-	if (PS->IsPlayerRole(GamePlayTags::PlayerRole::Civilian))
+	bool bIsMonsterForm = ASC->HasMatchingGameplayTag(GamePlayTags::InfectedState::Transformed);
+
+	if (bIsMonsterForm)
 	{
-		// 시민일 경우: 총기 발사 태그 (또는 Primary)
-		AbilityTagToActivate = GamePlayTags::CivilianAbility::Primary; 
+		// [상태: 괴물] 무조건 감염자 전용 근접 공격 실행
+		AbilityTagToActivate = GamePlayTags::InfectedAbility::Primary;
         
-		UE_LOG(LogTemp, Log, TEXT("[Attack] Role: Civilian | Tag: %s"), *AbilityTagToActivate.ToString());
+		UE_LOG(LogTemp, Log, TEXT("[Attack] Monster Form - Melee Attack"));
 	}
-	else if (PS->IsPlayerRole(GamePlayTags::PlayerRole::Infected))
+	else
 	{
-		// ASC가 'Transformed' 태그를 가지고 있는지 확인 (변신 중인가?)
-		if (ASC->HasMatchingGameplayTag(GamePlayTags::InfectedState::Transformed))
+		// [상태: 인간] (시민이거나, 인간으로 위장한 감염자)
+        
+		// 무기를 들고 있는지 확인 (CurrentWeapon이 null이 아니면 총을 든 것)
+		if (CurrentWeapon)
 		{
-			// 변신 상태 -> 감염자 전용 공격 (Claw)
-			AbilityTagToActivate = GamePlayTags::InfectedAbility::Primary;
-			UE_LOG(LogTemp, Log, TEXT("[Attack] Role: Infected (Transformed) | Tag: %s"), *AbilityTagToActivate.ToString());
+			// 무기 있음 -> 사격 어빌리티 실행
+			AbilityTagToActivate = GamePlayTags::CivilianAbility::Shoot;
+			UE_LOG(LogTemp, Log, TEXT("[Attack] Human Form - Fire Gun (Shoot)"));
 		}
 		else
 		{
-			// 인간 위장 상태 -> 시민 공격 (Shoot/Knife)
+			// 무기 없음 -> 맨손 공격 실행
 			AbilityTagToActivate = GamePlayTags::CivilianAbility::Primary;
-			UE_LOG(LogTemp, Log, TEXT("[Attack] Role: Infected (Human Form) | Tag: %s"), *AbilityTagToActivate.ToString());
+			UE_LOG(LogTemp, Log, TEXT("[Attack] Human Form - Punch (Primary)"));
 		}
 	}
 
-	// 어빌리티 실행
+	// 3. 결정된 어빌리티 실행 요청
 	if (AbilityTagToActivate.IsValid())
 	{
-		// 해당 태그를 가진 어빌리티를 찾아서 실행 시도
 		ASC->TryActivateAbilitiesByTag(FGameplayTagContainer(AbilityTagToActivate));
 	}
 	else
 	{
-		UE_LOG(LogTemp, Warning, TEXT("[Attack] No Valid Role or Ability Tag Found!"));
+		UE_LOG(LogTemp, Warning, TEXT("[Attack] Invalid Ability Tag!"));
 	}
 }
 

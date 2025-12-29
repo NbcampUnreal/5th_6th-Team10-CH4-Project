@@ -60,4 +60,12 @@ protected:
 	// 이동 방향
 	UPROPERTY(VisibleAnywhere, BlueprintReadOnly, Category = "Movement")
 	float Direction;
+	
+	// 총을 들고 있는지 여부 
+	UPROPERTY(BlueprintReadOnly, Category = "Character State")
+	uint8 bHasWeapon : 1;
+
+	// 에임 오프셋 회전값
+	UPROPERTY(BlueprintReadOnly, Category = "Character State")
+	FRotator ControlRotation;
 };

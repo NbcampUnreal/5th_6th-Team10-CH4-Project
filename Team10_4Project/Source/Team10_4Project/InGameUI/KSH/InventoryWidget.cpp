@@ -34,7 +34,13 @@ void UInventoryWidget::InitWithInventory(UInventoryComponent* InventoryComp)
 
 void UInventoryWidget::CreateSlots(int32 NumSlots)
 {
-    if (!SlotContainer || !SlotWidgetClass) return;
+    UE_LOG(LogTemp, Warning, TEXT("CreateSlots Called! NumSlots: %d"), NumSlots); // 로그 1
+
+    if (!SlotContainer || !SlotWidgetClass)
+    {
+        UE_LOG(LogTemp, Warning, TEXT("SlotContainer or SlotWidgetClass is NULL!")); // 로그 2
+        return;
+    }
 
     SlotWidgets.Empty();
     SlotContainer->ClearChildren();

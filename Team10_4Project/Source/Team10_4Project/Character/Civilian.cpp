@@ -21,7 +21,8 @@
 #include "Gimmick/Interfaces/Interactable.h"
 #include "Kismet/KismetSystemLibrary.h"
 #include "Weapon/WeaponBase.h"
-
+#include "InGameUI/KSH/InGameUIWidget.h"
+#include "Blueprint/UserWidget.h"
 
 ACivilian::ACivilian()
 {
@@ -95,7 +96,22 @@ UAbilitySystemComponent* ACivilian::GetAbilitySystemComponent() const
 void ACivilian::BeginPlay()
 {
 	Super::BeginPlay();
-	
+
+	// 클라이언트 컨트롤러에서만 UI 생성
+	if (IsLocallyControlled() && InGameUIClass)
+	{
+		APlayerController* PC = Cast<APlayerController>(GetController());
+		if (PC)
+		{
+			// 위젯 생성 및 화면 추가
+			InGameUIInstance = CreateWidget<UInGameUIWidget>(PC, InGameUIClass);
+			if (InGameUIInstance)
+			{
+				InGameUIInstance->AddToViewport();
+			}
+		}
+	}
+
 	InitialSpawnLocation = GetActorLocation(); // 처음 시작 시 스폰 위치 저장
 	
 	UAbilitySystemComponent* ASC = GetAbilitySystemComponent();
@@ -243,6 +259,18 @@ void ACivilian::OnRep_PlayerState()
 	
 	// 클라이언트에서 실행
 	InitializeAbilitySystem();
+
+	// UI가 생성되어 있다면 초기화 시도
+	if (InGameUIInstance)
+	{
+		UAbilitySystemComponent* ASC = GetAbilitySystemComponent();
+		if (ASC)
+		{
+			// 이 함수 안에서 ASC->GetOwnerActor()를 통해 PlayerState의 인벤토리를 찾음
+			InGameUIInstance->InitializeUI(ASC);
+			UE_LOG(LogTemp, Warning, TEXT("Civilian: InitializeUI Called in OnRep_PlayerState"));
+		}
+	}
 }
 
 void ACivilian::GetLifetimeReplicatedProps(TArray<FLifetimeProperty>& OutLifetimeProps) const

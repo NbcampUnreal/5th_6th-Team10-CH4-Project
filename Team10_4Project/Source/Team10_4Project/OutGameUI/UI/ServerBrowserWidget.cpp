@@ -21,10 +21,9 @@ void UServerBrowserWidget::OnClick_Refresh()
 
 void UServerBrowserWidget::OnClick_Back()
 {
-    if (AMenuPlayerController* MenuPC =
-        Cast<AMenuPlayerController>(GetOwningPlayer()))
+    if (auto* PC = Cast<AMenuPlayerController>(GetOwningPlayer()))
     {
-        MenuPC->ShowMainMenu();
+        PC->ShowMainMenu();
     }
 }
 

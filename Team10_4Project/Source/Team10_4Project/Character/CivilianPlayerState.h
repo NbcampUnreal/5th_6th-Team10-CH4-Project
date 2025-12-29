@@ -5,11 +5,12 @@
 #include "CoreMinimal.h"
 #include "GameFramework/PlayerState.h"
 #include "AbilitySystemInterface.h"
-
+#include "InGameUI/KSH/InventoryItemData.h" // 인벤토리 컴포넌트
 #include "CivilianPlayerState.generated.h"
 
 class UAbilitySystemComponent;
 class UCivilianAttributeSet;
+class UInventoryComponent; // 인벤토리 컴포넌트
 
 UENUM(BlueprintType)
 enum class EPlayerRole : uint8
@@ -48,6 +49,10 @@ protected:
 	// 감염자 역할 할당 GE
 	UPROPERTY(EditDefaultsOnly, Category = "GAS|Role")
 	TSubclassOf<class UGameplayEffect> InfectedRoleEffectClass;
+
+	// 인벤토리 컴포넌트 변수 선언
+	UPROPERTY(VisibleAnywhere, BlueprintReadOnly, Category = "Inventory", meta = (AllowPrivateAccess = "true"))
+	TObjectPtr<UInventoryComponent> InventoryComponent;
 	
 private:
 	UPROPERTY(VisibleAnywhere, Category = "GAS")

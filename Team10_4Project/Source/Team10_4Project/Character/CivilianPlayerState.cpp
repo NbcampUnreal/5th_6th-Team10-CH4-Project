@@ -8,6 +8,10 @@
 #include "GamePlayTag/GamePlayTags.h"
 #include "Net/UnrealNetwork.h"
 
+#include "InGameUI/KSH/InventoryComponent.h" // 인벤토리컴포넌트
+#include "InGameUI/KSH/InGameUIWidget.h" // UI위젯
+#include "Blueprint/UserWidget.h"
+
 ACivilianPlayerState::ACivilianPlayerState()
 {
 	SetNetUpdateFrequency(100.0f);
@@ -17,6 +21,10 @@ ACivilianPlayerState::ACivilianPlayerState()
 	AbilitySystemComponent->SetReplicationMode(EGameplayEffectReplicationMode::Mixed); // ReplicationMode 설정
 	
 	AttributeSet = CreateDefaultSubobject<UCivilianAttributeSet>(TEXT("AttributeSet"));
+
+	// 인벤토리 컴포넌트 생성 및 등록
+	InventoryComponent = CreateDefaultSubobject<UInventoryComponent>(TEXT("InventoryComponent"));
+	bReplicates = true;
 }
 
 UAbilitySystemComponent* ACivilianPlayerState::GetAbilitySystemComponent() const

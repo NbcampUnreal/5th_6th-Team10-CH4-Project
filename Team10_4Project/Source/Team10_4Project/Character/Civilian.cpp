@@ -475,7 +475,7 @@ void ACivilian::HandleFatalDamage(AActor* Attacker, bool bAttackerIsTransformed)
 		// [CASE A] 감염자 리스폰 (Infected Stun)
 		UE_LOG(LogTemp, Warning, TEXT("Infected Groggy....."));
 		FGameplayTagContainer TagContainer;
-		TagContainer.AddTag(GamePlayTags::Ability::Infected::Stun); // 태그 새로 정의 필요
+		TagContainer.AddTag(GamePlayTags::Ability::Infected::Stun); 
 		ASC->TryActivateAbilitiesByTag(TagContainer);
 	}
 	else
@@ -485,16 +485,16 @@ void ACivilian::HandleFatalDamage(AActor* Attacker, bool bAttackerIsTransformed)
 		{
 			// [CASE B] 즉사 (Death)
 			UE_LOG(LogTemp, Warning, TEXT("Player Dead."));
-			MulticastHandleDeath();
+			MulticastHandleDeath(); // GameMode - 사망처리로 대체 예정
 		}
 		else
 		{
 			// [CASE C] 시민 투표 대기 (Civilian Voting)
 			UE_LOG(LogTemp, Warning, TEXT("Start Voting....."));
 			
-			/*FGameplayTagContainer TagContainer;
-			TagContainer.AddTag(GamePlayTags::Ability::Civilian::Stun); // 태그 새로 정의 필요
-			ASC->TryActivateAbilitiesByTag(TagContainer);*/
+			FGameplayTagContainer TagContainer;
+			TagContainer.AddTag(GamePlayTags::Ability::Civilian::Stun); 
+			ASC->TryActivateAbilitiesByTag(TagContainer);
 		}
 	}
 }

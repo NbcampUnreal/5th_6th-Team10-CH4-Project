@@ -20,6 +20,17 @@ public:
     void ShowServerBrowser();
     void ShowLobby();
 
+    UFUNCTION(Server, Reliable)
+    void Server_ToggleReady();
+
+    void RequestToggleReady();
+
+    void RequestStartGame();
+
+    // 실제 서버에서 실행될 RPC
+    UFUNCTION(Server, Reliable, WithValidation)
+    void Server_StartGame();
+
 protected:
     UPROPERTY()
     UUserWidget* CurrentWidget;

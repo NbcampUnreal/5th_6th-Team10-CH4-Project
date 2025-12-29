@@ -24,5 +24,7 @@ void UAnimNotify_SendGameplayEvent::Notify(USkeletalMeshComponent* MeshComp, UAn
 	Payload.Instigator = OwnerActor;
 	Payload.Target = OwnerActor;
 	
+	UE_LOG(LogTemp, Warning, TEXT("[AnimNotify] Activate SendGamePlayEvent.!!!"));
+	
 	UAbilitySystemBlueprintLibrary::SendGameplayEventToActor(OwnerActor, EventTag, Payload);
 }

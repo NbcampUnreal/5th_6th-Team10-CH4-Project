@@ -106,6 +106,13 @@ public:
 
 	UFUNCTION(BlueprintCallable, Category = "Vote")
 	void StartVote(ACivilianPlayerState* VoteTarget, ACivilianPlayerState* VotePlayer);
+
+	UFUNCTION(BlueprintCallable, Category = "Vote")
+	void Vote(ACivilianPlayerState* VoteTarget, ACivilianPlayerState* VotePlayer);
+
+	UFUNCTION(BlueprintCallable, Category = "Vote")
+	void EndVote(ACivilianPlayerState* VoteTarget);
+	
 protected:
 	UPROPERTY(EditDefaultsOnly, BlueprintReadOnly, Category = "Vote")
 	int32 Area1VoteCount = 4;

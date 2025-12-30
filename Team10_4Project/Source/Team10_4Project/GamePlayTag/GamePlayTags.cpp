@@ -8,6 +8,7 @@ namespace GamePlayTags
 		UE_DEFINE_GAMEPLAY_TAG(Area_Area1, "Area.Area1");
 		UE_DEFINE_GAMEPLAY_TAG(Area_Area2, "Area.Area2");
 		UE_DEFINE_GAMEPLAY_TAG(Area_Area3, "Area.Area3");
+		UE_DEFINE_GAMEPLAY_TAG(Area_Exit, "Area.Exit");
 	}
 	
 	namespace PlayerRole

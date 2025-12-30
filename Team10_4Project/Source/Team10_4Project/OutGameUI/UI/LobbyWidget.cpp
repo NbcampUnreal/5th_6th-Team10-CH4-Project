@@ -28,33 +28,27 @@ void ULobbyWidget::NativeOnInitialized()
         StartButton->OnClicked.AddDynamic(this, &ULobbyWidget::OnStartButtonClicked);
     }
 
-    // [수정] 실제 플레이어 리스트 업데이트 호출
     UpdatePlayerList();
 
     UE_LOG(LogTemp, Log, TEXT("LobbyWidget Initialized and PlayerList Updated"));
 }
 
-// [신규] 실제 플레이어 데이터를 UI에 반영하는 함수
 void ULobbyWidget::UpdatePlayerList()
 {
     if (!PlayerListWidget) return;
 
-    // UI 리스트 초기화
     PlayerListWidget->ClearPlayers();
 
-    // GameState의 PlayerArray를 순회하며 접속자 정보 추가
-    AGameStateBase* GS = GetWorld()->GetGameState();
-    if (GS)
+    if (AGameStateBase* GS = GetWorld()->GetGameState())
     {
         for (APlayerState* PS : GS->PlayerArray)
         {
-            if (!PS) continue;
-
-            // MenuPlayerState로 캐스팅하여 준비 상태 확인
-            AMenuPlayerState* MPS = Cast<AMenuPlayerState>(PS);
-            bool bIsReady = MPS ? MPS->IsReady() : false;
-
-            PlayerListWidget->AddPlayer(PS->GetPlayerName(), bIsReady);
+            if (PS)
+            {
+                AMenuPlayerState* MPS = Cast<AMenuPlayerState>(PS);
+                bool bIsReady = MPS ? MPS->IsReady() : false;
+                PlayerListWidget->AddPlayer(PS->GetPlayerName(), bIsReady);
+            }
         }
     }
 }

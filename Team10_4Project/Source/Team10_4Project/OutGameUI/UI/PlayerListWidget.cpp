@@ -18,28 +18,19 @@ void UPlayerListWidget::ClearPlayers()
 
 void UPlayerListWidget::AddPlayer(const FString& PlayerName, bool bIsReady)
 {
-    if (!PlayerListScrollBox || !PlayerEntryWidgetClass)
-        return;
+    if (!PlayerListScrollBox || !PlayerEntryWidgetClass) return;
 
     UUserWidget* EntryWidget = CreateWidget<UUserWidget>(GetWorld(), PlayerEntryWidgetClass);
+    if (!EntryWidget) return;
 
-    if (!EntryWidget)
-        return;
-
-    // 1. 이름 설정
-    UTextBlock* NameText = Cast<UTextBlock>(EntryWidget->GetWidgetFromName(TEXT("PlayerNameText")));
-    if (NameText)
+    if (UTextBlock* NameText = Cast<UTextBlock>(EntryWidget->GetWidgetFromName(TEXT("PlayerNameText"))))
     {
         NameText->SetText(FText::FromString(PlayerName));
     }
 
-    UTextBlock* ReadyText = Cast<UTextBlock>(EntryWidget->GetWidgetFromName(TEXT("ReadyText")));
-    if (ReadyText)
+    if (UTextBlock* ReadyText = Cast<UTextBlock>(EntryWidget->GetWidgetFromName(TEXT("ReadyText"))))
     {
-        FText Status = bIsReady ? FText::FromString(TEXT("READY")) : FText::FromString(TEXT("NOT READY"));
-        ReadyText->SetText(Status);
-
-        // 시각적 피드백: 준비 완료 시 초록색
+        ReadyText->SetText(bIsReady ? FText::FromString(TEXT("READY")) : FText::FromString(TEXT("NOT READY")));
         ReadyText->SetColorAndOpacity(bIsReady ? FLinearColor::Green : FLinearColor::White);
     }
 

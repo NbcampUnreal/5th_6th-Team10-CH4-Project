@@ -60,18 +60,18 @@ void AMenuPlayerController::ShowLobby()
 {
     ClearCurrentWidget();
 
-    if (!LobbyWidgetClass) return;
-
-    //if (MainMenuWidget)
-    //{
-    //    MainMenuWidget->RemoveFromParent();
-    //    MainMenuWidget = nullptr;
-    //}
-
-    CurrentWidget = CreateWidget<ULobbyWidget>(this, LobbyWidgetClass);
-    if (CurrentWidget)
+    if (!LobbyWidgetClass)
     {
+        UE_LOG(LogTemp, Error, TEXT("LobbyWidgetClass is NOT assigned in Blueprint!"));
+        return;
+    }
+
+    ULobbyWidget* LobbyWidget = CreateWidget<ULobbyWidget>(this, LobbyWidgetClass);
+    if (LobbyWidget)
+    {
+        CurrentWidget = LobbyWidget; // 변수에 반드시 저장
         CurrentWidget->AddToViewport();
+        UE_LOG(LogTemp, Log, TEXT("LobbyWidget Created and Assigned to CurrentWidget"));
     }
 }
 
@@ -86,11 +86,19 @@ void AMenuPlayerController::Server_ToggleReady_Implementation()
     if (PS)
     {
         bool bNewReadyStatus = !PS->IsReady();
-        PS->SetReady(bNewReadyStatus);
+        PS->SetReady(bNewReadyStatus); // 여기서 PlayerState의 OnRep_Ready가 실행됨
+
+        // [추가] 서버(방장) 본인의 화면도 즉시 업데이트하기 위해 호출
+        if (IsLocalController())
+        {
+            if (ULobbyWidget* LobbyUI = Cast<ULobbyWidget>(GetCurrentWidget()))
+            {
+                LobbyUI->UpdatePlayerList();
+            }
+        }
 
         UE_LOG(LogTemp, Warning, TEXT("SERVER: Player [%s] changed Ready Status to: %s"),
-            *PS->GetPlayerName(),
-            bNewReadyStatus ? TEXT("READY") : TEXT("NOT READY"));
+            *PS->GetPlayerName(), bNewReadyStatus ? TEXT("READY") : TEXT("NOT READY"));
 
         // 서버에서 모든 플레이어가 준비되었는지 체크
         if (AMenuGameMode* GM = Cast<AMenuGameMode>(GetWorld()->GetAuthGameMode()))

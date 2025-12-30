@@ -250,6 +250,17 @@ protected:
 	UFUNCTION()
 	void OnRep_CurrentWeapon(class AWeaponBase* OldWeapon);
 	
+	// Crosshair
+	UPROPERTY(EditDefaultsOnly, Category = "UI")
+	TSubclassOf<class UUserWidget> CrosshairWidgetClass;
+	
+	// Crosshair 위젯
+	UPROPERTY()
+	class UUserWidget* CrosshairWidget;
+
+	// 크로스헤어 보이기/숨기기 함수
+	void UpdateCrosshairVisibility();
+	
 	// 무기 장착 해제 (1번 키)
 	void UnEquipWeapon();
 
@@ -299,4 +310,21 @@ private:
 	UPROPERTY(EditDefaultsOnly, Category = "Interaction")
 	float InteractDistance = 200.0f;
 #pragma endregion
+
+#pragma region Inventory Logic - 인벤토리 로직
+public:
+	// [테스트용]
+	UFUNCTION(Exec)
+	void Cheat_AddItem(FName ItemID);
+	UFUNCTION(Exec)
+	void Cheat_AddStackItem(FName ItemID, int32 Count);
+protected:
+	// [테스트용]
+	UFUNCTION(Server, Reliable)
+	void Server_AddItem(FName ItemID);
+	UFUNCTION(Server, Reliable)
+	void Server_AddStackItem(FName ItemID, int32 Count);
+
+#pragma endregion
+
 };

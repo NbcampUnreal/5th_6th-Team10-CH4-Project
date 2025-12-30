@@ -58,11 +58,23 @@ public:
 	UPROPERTY(BlueprintReadOnly, Category = "Attributes", ReplicatedUsing = OnRep_MoveSpeed)
 	FGameplayAttributeData MoveSpeed;
 	ATTRIBUTE_ACCESSORS(UCivilianAttributeSet, MoveSpeed)
-
+	
+	// 현재 탄창에 장전된 탄약
+	UPROPERTY(BlueprintReadOnly, Category = "Attributes", ReplicatedUsing = OnRep_CurrentAmmo)
+	FGameplayAttributeData CurrentAmmo;
+	ATTRIBUTE_ACCESSORS(UCivilianAttributeSet, CurrentAmmo);
+	
+	// 탄창 최대 크기 
+	UPROPERTY(BlueprintReadOnly, Category = "Attributes", ReplicatedUsing = OnRep_MaxClipAmmo)
+	FGameplayAttributeData MaxClipAmmo;
+	ATTRIBUTE_ACCESSORS(UCivilianAttributeSet, MaxClipAmmo);
+	
+	// 현재 보유 여분 탄약
 	UPROPERTY(BlueprintReadOnly, Category = "Attributes", ReplicatedUsing = OnRep_Ammo)
-	FGameplayAttributeData Ammo;
+	FGameplayAttributeData Ammo; 
 	ATTRIBUTE_ACCESSORS(UCivilianAttributeSet, Ammo)
-
+	
+	// 최대 보유 여분 탄약
 	UPROPERTY(BlueprintReadOnly, Category = "Attributes", ReplicatedUsing = OnRep_Ammo)
 	FGameplayAttributeData MaxAmmo;
 	ATTRIBUTE_ACCESSORS(UCivilianAttributeSet, MaxAmmo)
@@ -81,6 +93,12 @@ protected:
 	UFUNCTION()
 	void OnRep_MoveSpeed(const FGameplayAttributeData& OldMoveSpeed);
 
+	UFUNCTION()
+	void OnRep_CurrentAmmo(const FGameplayAttributeData& OldCurrentAmmo);
+	
+	UFUNCTION()
+	void OnRep_MaxClipAmmo(const FGameplayAttributeData& OldMaxClipAmmo);
+	
 	UFUNCTION()
 	void OnRep_Ammo(const FGameplayAttributeData& OldAmmo);
 

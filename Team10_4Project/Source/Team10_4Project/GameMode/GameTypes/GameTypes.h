@@ -14,6 +14,7 @@ enum class EGameArea : uint8
 	Area1 UMETA(DisplayName = "Area1"),
 	Area2 UMETA(DisplayName = "Area2"),
 	Area3 UMETA(DisplayName = "Area3"),
+	Exit UMETA(DisplayName = "Exit"),
 
 };
 

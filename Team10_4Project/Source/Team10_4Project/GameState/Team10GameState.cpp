@@ -41,6 +41,8 @@ void ATeam10GameState::OnRep_ChangedArea()
 		case EGameArea::Area3:
 			OnAreaChanged.Broadcast(GamePlayTags::AreaTag::Area_Area3);
 			break;
+		case EGameArea::Exit:
+			OnAreaChanged.Broadcast(GamePlayTags::AreaTag::Area_Exit);
 			default:
 			break;
 		}
@@ -59,12 +61,29 @@ void ATeam10GameState::OnRep_CurrentVotesCount()
 
 void ATeam10GameState::OnRep_CurrentPhase()
 {
-	// UI 설정
-
-	// for (ACivilianPlayerController* CivilianPlayerController : AllPlayers)
-	// {
-	// 	CivilianPlayerController->
-	// }
+	if (OnGamePhaseChanged.IsBound())
+	{
+		switch(CurrentPhase)
+		{
+		case EGamePhase::Lobby:
+			OnGamePhaseChanged.Broadcast(EGamePhase::Lobby);
+			break;
+		case EGamePhase::DayPhase:
+			OnGamePhaseChanged.Broadcast(EGamePhase::DayPhase);
+			break;
+		case EGamePhase::NightPhase:
+			OnGamePhaseChanged.Broadcast(EGamePhase::NightPhase);
+			break;
+		case EGamePhase::TrapIn:
+			OnGamePhaseChanged.Broadcast(EGamePhase::TrapIn);
+		case EGamePhase::GameEnd:
+			OnGamePhaseChanged.Broadcast(EGamePhase::GameEnd);
+			break;
+			default:
+			break;
+		}
+	}
+	
 }
 
 void ATeam10GameState::OnRep_PhaseTimeRemaining()

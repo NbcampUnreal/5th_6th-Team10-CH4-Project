@@ -37,6 +37,7 @@ public:
 	 */
 	UFUNCTION(BlueprintCallable, Category = "Attack")
 	void ApplyDamageToTarget(AActor* TargetActor);
+
 protected:
 	// --- [Settings] 에디터에서 설정할 변수들 ---
 

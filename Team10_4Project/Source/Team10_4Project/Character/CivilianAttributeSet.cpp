@@ -16,8 +16,10 @@ UCivilianAttributeSet::UCivilianAttributeSet()
 	InitMaxHealth(100.0f);
 	InitSanity(0.0f);
 	InitMoveSpeed(300.0f);
+	InitCurrentAmmo(10.0f);
+	InitMaxClipAmmo(30.0f);
 	InitAmmo(15.0f);
-	InitMaxAmmo(200.0f);
+	InitMaxAmmo(100.0f);
 }
 
 void UCivilianAttributeSet::GetLifetimeReplicatedProps(TArray<class FLifetimeProperty>& OutLifetimeProps) const
@@ -52,6 +54,12 @@ void UCivilianAttributeSet::PreAttributeChange(const FGameplayAttribute& Attribu
 	if (Attribute == GetAmmoAttribute())
 	{
 		NewValue = FMath::Clamp(NewValue, 0.0f, GetMaxAmmo());
+	}
+
+	// [추가] 현재 탄약(CurrentAmmo)은 MaxClipAmmo(탄창 크기)를 넘을 수 없음
+	if (Attribute == GetCurrentAmmoAttribute())
+	{
+		NewValue = FMath::Clamp(NewValue, 0.0f, GetMaxClipAmmo());
 	}
 }
 
@@ -114,7 +122,6 @@ void UCivilianAttributeSet::OnRep_MaxHealth(const FGameplayAttributeData& OldMax
 	GAMEPLAYATTRIBUTE_REPNOTIFY(UCivilianAttributeSet, MaxHealth, OldMaxHealth);
 }
 
-
 void UCivilianAttributeSet::OnRep_Sanity(const FGameplayAttributeData& OldSanity)
 {
 	GAMEPLAYATTRIBUTE_REPNOTIFY(UCivilianAttributeSet, Sanity, OldSanity);
@@ -123,6 +130,16 @@ void UCivilianAttributeSet::OnRep_Sanity(const FGameplayAttributeData& OldSanity
 void UCivilianAttributeSet::OnRep_MoveSpeed(const FGameplayAttributeData& OldMoveSpeed)
 {
 	GAMEPLAYATTRIBUTE_REPNOTIFY(UCivilianAttributeSet, MoveSpeed, OldMoveSpeed);
+}
+
+void UCivilianAttributeSet::OnRep_CurrentAmmo(const FGameplayAttributeData& OldCurrentAmmo)
+{
+	GAMEPLAYATTRIBUTE_REPNOTIFY(UCivilianAttributeSet, CurrentAmmo, OldCurrentAmmo);
+}
+
+void UCivilianAttributeSet::OnRep_MaxClipAmmo(const FGameplayAttributeData& OldMaxClipAmmo)
+{
+	GAMEPLAYATTRIBUTE_REPNOTIFY(UCivilianAttributeSet, MaxClipAmmo, OldMaxClipAmmo);
 }
 
 void UCivilianAttributeSet::OnRep_Ammo(const FGameplayAttributeData& OldAmmo)

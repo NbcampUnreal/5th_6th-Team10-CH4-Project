@@ -19,6 +19,7 @@ namespace GamePlayTags
 	namespace CivilianState
 	{
 		UE_DEFINE_GAMEPLAY_TAG_COMMENT(Idle, "CivilianState.Idle", "Tag for Character CivilianState Info");
+		UE_DEFINE_GAMEPLAY_TAG_COMMENT(Reloading, "CivilianState.Reloading", "Tag for Character CivilianState Info");
 		UE_DEFINE_GAMEPLAY_TAG_COMMENT(Stun, "CivilianState.Stun", "Tag for Character CivilianState Info");
 		UE_DEFINE_GAMEPLAY_TAG_COMMENT(Dead, "CivilianState.Dead", "Tag for Character CivilianState Info");
 	}
@@ -50,6 +51,11 @@ namespace GamePlayTags
 	{
 		UE_DEFINE_GAMEPLAY_TAG_COMMENT(Damage, "Data.Damage", "Tag for Data Format");
 		UE_DEFINE_GAMEPLAY_TAG_COMMENT(HealAmount, "Data.HealAmount", "Tag for Data Format");
+		namespace Reload
+		{
+			UE_DEFINE_GAMEPLAY_TAG_COMMENT(Add, "Data.Reload.Add", "Tag for Data Format");
+			UE_DEFINE_GAMEPLAY_TAG_COMMENT(Sub, "Data.Reload.Sub", "Tag for Data Format");
+		}
 	}
 	
 	namespace Effect
@@ -61,6 +67,7 @@ namespace GamePlayTags
 	{
 		namespace Civilian
 		{
+			UE_DEFINE_GAMEPLAY_TAG_COMMENT(Reload, "Ability.Civilian.Reload", "Ability for Civilian Player");
 			UE_DEFINE_GAMEPLAY_TAG_COMMENT(Stun, "Ability.Civilian.Stun", "Ability for Civilian Player");
 		}
 		namespace Infected

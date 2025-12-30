@@ -267,6 +267,11 @@ void ACivilian::SetupPlayerInputComponent(class UInputComponent* PlayerInputComp
 			EnhancedInputComponent->BindAction(IA_Slot2, ETriggerEvent::Started,
 				this, &ACivilian::OnInput_Slot2);
 		}
+		if (IA_Reload)
+		{
+			EnhancedInputComponent->BindAction(IA_Reload, ETriggerEvent::Started,
+				this, &ACivilian::OnInput_Reload);
+		}
 	}
 }
 
@@ -753,6 +758,17 @@ void ACivilian::OnInput_Slot2()
 		// 클라이언트라면 서버에게 부탁 (RPC)
 		Server_UnEquipWeapon(); // 기존 무기 해제 요청
 		Server_EquipWeapon(StartingWeaponClass); // 권총 장착 요청
+	}
+}
+
+void ACivilian::OnInput_Reload()
+{
+	UAbilitySystemComponent* ASC = GetAbilitySystemComponent();
+	if (ASC)
+	{
+		FGameplayTagContainer ReloadTagContainer;
+		ReloadTagContainer.AddTag(FGameplayTag::RequestGameplayTag("Ability.Civilian.Reload"));
+		ASC->TryActivateAbilitiesByTag(ReloadTagContainer);
 	}
 }
 

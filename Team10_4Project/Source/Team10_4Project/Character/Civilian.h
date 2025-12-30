@@ -242,6 +242,9 @@ protected:
 	UPROPERTY(EditAnywhere, BlueprintReadOnly, Category = "Input")
 	class UInputAction* IA_Slot2;
 	
+	UPROPERTY(EditAnywhere, BlueprintReadOnly, Category = "Input")
+	class UInputAction* IA_Reload;
+	
 	// 무기 클래스
 	UPROPERTY(EditDefaultsOnly, Category = "Combat")
 	TSubclassOf<class AWeaponBase> StartingWeaponClass;
@@ -280,6 +283,7 @@ protected:
 	// 입력 바인딩 함수
 	void OnInput_Slot1(); // 비무장 전환
 	void OnInput_Slot2(); // 권총 전환
+	void OnInput_Reload(); // 장전
 	
 public:
 	

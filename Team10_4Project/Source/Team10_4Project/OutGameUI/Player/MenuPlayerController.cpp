@@ -14,12 +14,13 @@ void AMenuPlayerController::BeginPlay()
 {
     Super::BeginPlay();
 
-    bShowMouseCursor = true;
-    SetInputMode(FInputModeUIOnly());
-
-    ShowMainMenu();
+    if (IsLocalController())
+    {
+        bShowMouseCursor = true;
+        SetInputMode(FInputModeUIOnly());
+        ShowMainMenu();
+    }
 }
-
 void AMenuPlayerController::ClearCurrentWidget()
 {
     if (CurrentWidget)
@@ -60,6 +61,12 @@ void AMenuPlayerController::ShowLobby()
     ClearCurrentWidget();
 
     if (!LobbyWidgetClass) return;
+
+    //if (MainMenuWidget)
+    //{
+    //    MainMenuWidget->RemoveFromParent();
+    //    MainMenuWidget = nullptr;
+    //}
 
     CurrentWidget = CreateWidget<ULobbyWidget>(this, LobbyWidgetClass);
     if (CurrentWidget)
@@ -113,7 +120,10 @@ bool AMenuPlayerController::Server_StartGame_Validate() { return true; }
 
 void AMenuPlayerController::Server_StartGame_Implementation()
 {
-    // 서버에서 GameMode를 통해 레벨 이동 명령
+    // 이동하기 전, 마우스를 끄고 입력 모드를 기본으로 돌려줍니다.
+    bShowMouseCursor = false;
+    SetInputMode(FInputModeGameOnly());
+
     if (AMenuGameMode* GM = Cast<AMenuGameMode>(GetWorld()->GetAuthGameMode()))
     {
         GM->StartGame();

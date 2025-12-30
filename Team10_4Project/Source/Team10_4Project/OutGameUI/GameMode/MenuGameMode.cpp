@@ -6,6 +6,7 @@
 #include "GameFramework/PlayerState.h"
 #include "OutGameUI/Player/MenuPlayerState.h"
 
+
 void AMenuGameMode::BeginPlay()
 {
     Super::BeginPlay();
@@ -67,9 +68,15 @@ void AMenuGameMode::StartGame()
         // bUseSeamlessTravel을 true로 설정하면 연결이 끊기지 않고 부드럽게 이동합니다.
         bUseSeamlessTravel = true;
 
-        // 이동할 맵 경로 (예: /Game/Maps/MainGameMap)
-        // ?listen 옵션은 이동한 맵에서도 서버 역할을 유지하겠다는 뜻입니다.
-        FString MapPath = TEXT("/Game/team10/Level/InGame");
+        FString MapPath = TEXT("/Game/team10/Level/InGame?listen");
         World->ServerTravel(MapPath);
     }
 }
+
+void AMenuGameMode::PostLogin(APlayerController* NewPlayer)
+{
+    Super::PostLogin(NewPlayer);
+
+    UE_LOG(LogTemp, Log, TEXT("Post Login Activate!"));
+}
+

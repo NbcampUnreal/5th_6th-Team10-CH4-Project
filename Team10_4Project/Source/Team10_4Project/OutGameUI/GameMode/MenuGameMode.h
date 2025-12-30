@@ -16,6 +16,8 @@ public:
 
     void StartGame();
 
+    virtual void PostLogin(APlayerController* NewPlayer) override;
+
 protected:
     // 메인 메뉴 위젯 클래스
     UPROPERTY(EditDefaultsOnly, Category = "UI")
@@ -25,3 +27,4 @@ protected:
     UPROPERTY(EditDefaultsOnly, Category = "Game")
     FName GamePlayLevelName;
 };
+

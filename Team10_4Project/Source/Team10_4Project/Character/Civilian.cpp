@@ -73,6 +73,12 @@ ACivilian::ACivilian()
 	FirstPersonCamera->SetRelativeLocation(FVector(-10.0f, 0.0f, 60.0f));
 	FirstPersonCamera->bUsePawnControlRotation = true; // 마우스 회전에 따라 카메라 회전
 	
+	WerewolfCameraComponent = CreateDefaultSubobject<UCameraComponent>(TEXT("WerewolfCameraComponent"));
+	WerewolfCameraComponent->SetupAttachment(GetCapsuleComponent()); 
+	WerewolfCameraComponent->SetRelativeLocation(FVector(20.f, 0.f, 100.f)); 
+	WerewolfCameraComponent->bUsePawnControlRotation = true;
+	WerewolfCameraComponent->SetActive(false); 
+	
 	FirstPersonMeshComponent = CreateDefaultSubobject<USkeletalMeshComponent>(TEXT("FirstPersonMesh"));
 	FirstPersonMeshComponent->SetupAttachment(FirstPersonCamera);
 	FirstPersonMeshComponent->SetOnlyOwnerSee(true); // 로컬(나)에게만 보이도록 설정
@@ -751,6 +757,15 @@ void ACivilian::OnInput_Slot2()
 	}
 }
 
+float ACivilian::PlayMontage1P(UAnimMontage* MontageToPlay)
+{
+	if (FirstPersonMeshComponent && FirstPersonMeshComponent->GetAnimInstance() && MontageToPlay)
+	{
+		return FirstPersonMeshComponent->GetAnimInstance()->Montage_Play(MontageToPlay);
+	}
+	return 0.0f;
+}
+
 void ACivilian::Server_SetRole_Implementation(int32 RoleID)
 {
 	if (ACivilianPlayerState* PS = GetPlayerState<ACivilianPlayerState>())
@@ -786,6 +801,9 @@ void ACivilian::MulticastMorph_Implementation(bool bToInfected)
 	{
 		// 변신 전 들고 있는 무기가 있다면 강제 해제
 		UnEquipWeapon();
+		
+		if (FirstPersonCamera) FirstPersonCamera->SetActive(false);
+		if (WerewolfCameraComponent) WerewolfCameraComponent->SetActive(true);
 		
 		if (MorphMesh && GetMesh())
 		{
@@ -829,6 +847,9 @@ void ACivilian::MulticastMorph_Implementation(bool bToInfected)
 	}
 	else
 	{
+		if (WerewolfCameraComponent) WerewolfCameraComponent->SetActive(false);
+		if (FirstPersonCamera) FirstPersonCamera->SetActive(true);
+		
 		// 3인칭 복구
 		if (GetMesh())
 		{

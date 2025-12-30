@@ -60,6 +60,9 @@ protected:
 	TObjectPtr<UCameraComponent> FirstPersonCamera;
 	
 	UPROPERTY(VisibleAnywhere, BlueprintReadOnly, Category = "PlayerCharacter|Components", meta = (AllowPrivateAccess = "true"))
+	TObjectPtr<UCameraComponent> WerewolfCameraComponent;
+	
+	UPROPERTY(VisibleAnywhere, BlueprintReadOnly, Category = "PlayerCharacter|Components", meta = (AllowPrivateAccess = "true"))
 	TObjectPtr<USkeletalMeshComponent> FirstPersonMeshComponent;
 
 	// 에디터에서 WBP_InGameUI를 할당하기 위한 변수
@@ -279,6 +282,9 @@ protected:
 	void OnInput_Slot2(); // 권총 전환
 	
 public:
+	
+	UFUNCTION(BlueprintCallable, Category = "Animation")
+	float PlayMontage1P(UAnimMontage* MontageToPlay);
 	// Getter
 	AWeaponBase* GetCurrentWeapon() const { return CurrentWeapon; }
 	

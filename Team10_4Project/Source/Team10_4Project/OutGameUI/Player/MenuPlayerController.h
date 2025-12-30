@@ -31,6 +31,8 @@ public:
     UFUNCTION(Server, Reliable, WithValidation)
     void Server_StartGame();
 
+    UUserWidget* GetCurrentWidget() const { return CurrentWidget; }
+
 protected:
     UPROPERTY()
     UUserWidget* CurrentWidget;

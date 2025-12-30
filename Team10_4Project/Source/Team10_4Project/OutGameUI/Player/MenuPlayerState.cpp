@@ -1,4 +1,4 @@
-// MenuPlayerState.cpp
+ï»¿// MenuPlayerState.cpp
 #include "MenuPlayerState.h"
 #include "Net/UnrealNetwork.h"
 #include "OutGameUI/Player/MenuPlayerController.h"
@@ -6,12 +6,12 @@
 
 AMenuPlayerState::AMenuPlayerState()
 {
-    bReplicates = true; // ¼­¹ö¿Í Å¬¶óÀÌ¾ğÆ® °£ º¹Á¦ È°¼ºÈ­
+    bReplicates = true; // ì„œë²„ì™€ í´ë¼ì´ì–¸íŠ¸ ê°„ ë³µì œ í™œì„±í™”
 }
 
 void AMenuPlayerState::SetReady(bool bNewReady)
 {
-    if (HasAuthority()) // ¼­¹ö¿¡¼­¸¸ °ªÀ» ¹Ù²Ü ¼ö ÀÖÀ½
+    if (HasAuthority()) // ì„œë²„ì—ì„œë§Œ ê°’ì„ ë°”ê¿€ ìˆ˜ ìˆìŒ
     {
         bIsReady = bNewReady;
         OnRep_Ready();
@@ -20,11 +20,16 @@ void AMenuPlayerState::SetReady(bool bNewReady)
 
 void AMenuPlayerState::OnRep_Ready()
 {
-    // ³» »óÅÂ°¡ ¹Ù²î¾úÀ¸´Ï ³» È­¸éÀÇ ·Îºñ UI¸¦ »õ·Î°íÄ§ÇÏ¶ó°í ¸í·É
-    if (AMenuPlayerController* PC = Cast<AMenuPlayerController>(GetWorld()->GetFirstPlayerController()))
+    // ë¡œì»¬ í™”ë©´ì˜ ì»¨íŠ¸ë¡¤ëŸ¬ë¥¼ ì°¾ìŒ
+    AMenuPlayerController* PC = Cast<AMenuPlayerController>(GetWorld()->GetFirstPlayerController());
+    if (PC)
     {
-        // PC->GetCurrentWidget()À» ÅëÇØ ÇöÀç ¿­·ÁÀÖ´Â ·Îºñ À§Á¬À» °¡Á®¿Í¼­ ¸®½ºÆ® °»½Å
-        // (LobbyWidget¿¡ UpdatePlayerList ÇÔ¼ö°¡ ÀÖ´Ù°í °¡Á¤)
+        // ì»¨íŠ¸ë¡¤ëŸ¬ê°€ ë“¤ê³  ìˆëŠ” LobbyWidgetì„ ì°¾ì•„ ë¦¬ìŠ¤íŠ¸ ê°±ì‹  í˜¸ì¶œ
+        ULobbyWidget* LobbyUI = Cast<ULobbyWidget>(PC->GetCurrentWidget());
+        if (LobbyUI)
+        {
+            LobbyUI->UpdatePlayerList();
+        }
     }
 }
 

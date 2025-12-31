@@ -11,6 +11,8 @@
 #include "GamePlayTag/GamePlayTags.h"
 #include "InGameUI/JKH/ChatSubsystem.h"
 #include "Manager/PlayerSpawnManager.h"
+#include "AbilitySystemComponent.h"
+#include "Character/CivilianAttributeSet.h"
 
 ATeam10GameMode::ATeam10GameMode()
 {
@@ -236,14 +238,37 @@ void ATeam10GameMode::HandlePlayerDeath(APlayerController* DeadPlayer, APlayerCo
 void ATeam10GameMode::RespawnDeath(APlayerController* DeadPlayer)
 {
 	APawn* Pawn = DeadPlayer->GetPawn();
-
+	
+	ACivilianPlayerState* TargetPS = DeadPlayer->GetPlayerState<ACivilianPlayerState>();
+	if (!TargetPS) return;
+	
+	if (TargetPS)
+	{
+		UCivilianAttributeSet* AttribSet = TargetPS->GetAttributeSet();
+		if (AttribSet)
+		{
+			const_cast<UCivilianAttributeSet*>(AttribSet)->SetHealth(AttribSet->GetMaxHealth());
+		}
+	}
+	
+	// Stun 태그 제거
+	UAbilitySystemComponent* ASC = TargetPS->GetAbilitySystemComponent();
+	if (ASC)
+	{
+		FGameplayTagContainer StunTags;
+		StunTags.AddTag(GamePlayTags::CivilianState::Stun);
+		StunTags.AddTag(GamePlayTags::InfectedState::Stun);
+		
+		ASC->RemoveActiveEffectsWithGrantedTags(StunTags);
+	}
+	
 	if (Pawn)
 	{
 		//UE_LOG(LogTemp, Error, TEXT("Pawn Valid"));
 		DeadPlayer->UnPossess();
 		Pawn->Destroy();
 	}
-
+	
 	ReSpawnPlayer(DeadPlayer);
 }
 

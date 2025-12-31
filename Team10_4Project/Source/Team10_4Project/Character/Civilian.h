@@ -119,6 +119,9 @@ public:
 	UFUNCTION(BlueprintCallable, Category = "Combat")
 	void TryAttack();
 	
+	// 태그 변경 시 호출될 콜백 함수
+	virtual void OnGameplayTagChanged(const FGameplayTag CallbackTag, int32 NewCount);
+	
 protected:
 	// Enhanced Input (UE 5.6)
 	UPROPERTY(EditAnywhere, BlueprintReadOnly, Category = "Input")
@@ -291,6 +294,19 @@ public:
 	float PlayMontage1P(UAnimMontage* MontageToPlay);
 	// Getter
 	AWeaponBase* GetCurrentWeapon() const { return CurrentWeapon; }
+	
+#pragma endregion
+	
+#pragma region Test
+public:
+	// [테스트용] 리스폰 로직 테스트 명령어
+	UFUNCTION(Exec)
+	void Cheat_TestRespawn();
+
+protected:
+	// 서버에게 리스폰을 요청하는 RPC
+	UFUNCTION(Server, Reliable)
+	void Server_TestRespawn();
 	
 #pragma endregion
 	

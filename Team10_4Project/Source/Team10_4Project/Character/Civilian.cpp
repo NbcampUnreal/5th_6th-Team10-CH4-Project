@@ -23,6 +23,7 @@
 #include "InGameUI/JKH/VoteWidgetComponent.h"
 #include "Components/WidgetComponent.h"
 #include "Kismet/GameplayStatics.h"
+#include "Components/WidgetComponent.h"
 
 ACivilian::ACivilian()
 {
@@ -149,6 +150,10 @@ void ACivilian::PossessedBy(AController* NewController)
 	{
 		InitializeAbilitySystem();
 	}
+
+	FGameplayTag TargetTag = FGameplayTag::RequestGameplayTag(FName("CivilianState.Votabled"));
+	AbilitySystemComponent->RegisterGameplayTagEvent(TargetTag, EGameplayTagEventType::NewOrRemoved)
+		.AddUObject(this, &ThisClass::VoteWidgetActive);
 }
 
 void ACivilian::Tick(float DeltaTime)
@@ -254,6 +259,19 @@ void ACivilian::OnRep_PlayerState()
 	
 	// 클라이언트에서 실행
 	InitializeAbilitySystem();
+	FGameplayTag TargetTag = FGameplayTag::RequestGameplayTag(FName("CivilianState.Votabled"));
+	AbilitySystemComponent->RegisterGameplayTagEvent(TargetTag, EGameplayTagEventType::NewOrRemoved)
+		.AddUObject(this, &ThisClass::VoteWidgetActive);
+
+	if (UUserWidget* InWidget = VoteWidgetComponent->GetWidget())
+	{
+		if (UVoteWidgetComponent* InVoteWidget = Cast<UVoteWidgetComponent>(InWidget))
+		{
+			InVoteWidget->SetOwnerPawn(this);
+			InVoteWidget->BindToWidget();
+			VoteWidgetComponent->SetVisibility(false);
+		}
+	}
 }
 
 float ACivilian::PlayAnimMontage(UAnimMontage* AnimMontage, float InPlayRate, FName StartSectionName)
@@ -668,7 +686,7 @@ void ACivilian::ServerRPC_Interact_Implementation(AActor* TargetActor)
 // 상호작용 가능한 액터를 찾는 Line Trace (클라이언트 전용)
 AActor* ACivilian::GetInteractableActor()
 {
-	UE_LOG(LogTemp, Warning, TEXT("Perform Trace"));
+	//UE_LOG(LogTemp, Warning, TEXT("Perform Trace"));
 
 	// 1인칭 카메라 컴포넌트 사용
 	if (!FirstPersonCamera)
@@ -702,3 +720,27 @@ AActor* ACivilian::GetInteractableActor()
 	return nullptr;
 }
 #pragma endregion
+
+void ACivilian::VoteWidgetActive(const FGameplayTag CallbackTag, int32 NewCount)
+{
+	ACivilianPlayerState* CivilianPlayerState = GetPlayerState<ACivilianPlayerState>();
+	if (!IsValid(CivilianPlayerState)) return;
+	if (NewCount > 0)	// 태그가 있다면 보이는 상태
+	{
+		if (HasAuthority())
+		{
+			CivilianPlayerState->VoteTimer = CivilianPlayerState->MaxVoteTimer;
+			GetWorldTimerManager().ClearTimer(CivilianPlayerState->VoteTimerHandle);
+			GetWorldTimerManager().SetTimer(CivilianPlayerState->VoteTimerHandle, CivilianPlayerState, &ACivilianPlayerState::UpdateVoteTimer, 1.0f, true, 1.0f);
+		}
+		VoteWidgetComponent->SetVisibility(true);
+	}
+	else
+	{	// 태그가 없다면, 보이지 않는 상태
+		if (HasAuthority())
+		{
+			GetWorldTimerManager().ClearTimer(CivilianPlayerState->VoteTimerHandle);
+		}
+		VoteWidgetComponent->SetVisibility(false);
+	}
+}

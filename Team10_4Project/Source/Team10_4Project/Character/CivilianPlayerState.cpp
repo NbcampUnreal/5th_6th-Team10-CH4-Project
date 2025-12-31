@@ -7,6 +7,8 @@
 #include "Character/CivilianAttributeSet.h"
 #include "GamePlayTag/GamePlayTags.h"
 #include "Net/UnrealNetwork.h"
+#include "AbilitySystemBlueprintLibrary.h"
+#include "GameMode/Team10GameMode.h"
 
 ACivilianPlayerState::ACivilianPlayerState()
 {
@@ -29,6 +31,8 @@ void ACivilianPlayerState::GetLifetimeReplicatedProps(TArray<class FLifetimeProp
 	Super::GetLifetimeReplicatedProps(OutLifetimeProps);
 	
 	DOREPLIFETIME(ThisClass, VoterList);	// Vote
+	DOREPLIFETIME(ThisClass, VoteTimer);	// Vote
+
 }
 
 void ACivilianPlayerState::SetPlayerRoleTag(FGameplayTag NewRoleTag)
@@ -80,4 +84,41 @@ void ACivilianPlayerState::OnRep_Voters()
 	{
 		OnVoterListChanged.Broadcast();
 	}
+}
+
+void ACivilianPlayerState::OnRep_VoterTimer()
+{
+	if (OnVoteTimerChanged.IsBound())
+	{
+		OnVoteTimerChanged.Broadcast(VoteTimer);
+	}
+}
+
+void ACivilianPlayerState::UpdateVoteTimer()
+{
+	if (VoteTimer < 0)
+	{
+
+	}
+	else
+	{
+		UE_LOG(LogTemp, Log, TEXT("VoteTimer [%s] : %d"), *GetPlayerName(), VoteTimer);
+		VoteTimer--;
+	}
+}
+
+void ACivilianPlayerState::ServerRPCTryVote_Implementation(ACivilianPlayerState* TargetState)
+{
+	UWorld* World = GetWorld();
+	if (!IsValid(World)) return;
+
+	ATeam10GameMode* GameMode = World->GetAuthGameMode<ATeam10GameMode>();
+	if (!IsValid(GameMode)) return;
+
+	GameMode->ProcessVote(this, TargetState);
+	/*FGameplayEventData Payload;
+	Payload.Instigator = this;
+	Payload.Target = TargetState;
+
+	UAbilitySystemBlueprintLibrary::SendGameplayEventToActor(this, FGameplayTag::RequestGameplayTag("UI.Vote.Try.Event"), Payload);*/
 }

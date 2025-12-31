@@ -295,18 +295,24 @@ void ATeam10GameMode::EternalDeath(APlayerController* DeadPlayer)
 }
 
 
-void ATeam10GameMode::StartVote(ACivilianPlayerState* VoteTarget, ACivilianPlayerState* VotePlayer)
+void ATeam10GameMode::ProcessVote(ACivilianPlayerState* VoteTarget, ACivilianPlayerState* VotePlayer)
 {
-	if (!VoteTarget)
-	{
-		return;
-	}
+	if (!IsValid(VoteTarget)) return;
+	if (!IsValid(VotePlayer)) return;
 
-	if (!VotePlayer)
-	{
-		return;
-	}
+	TArray<APlayerState*> VoterList = VoteTarget->VoterList;
 	
+	bool IsAleadyVote = false;
+	int32 foundIndex = VoterList.Find(VoteTarget);
+
+	if (foundIndex == -1)	// not found
+	{
+		VoteTarget->VoterList.Add(VotePlayer);
+	}
+	else
+	{
+		// found
+	}
 	// if (VoteTarget->IsPlayerRole(GamePlayTags::PlayerRole::Infected))
 	// {
 	// 	VoteTarget->SetCivilianStateTag(GamePlayTags::InfectedState::Stun);

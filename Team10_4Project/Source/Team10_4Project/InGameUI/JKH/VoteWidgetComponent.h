@@ -14,16 +14,23 @@ class TEAM10_4PROJECT_API UVoteWidgetComponent : public UUserWidget
 	
 public:
 	UVoteWidgetComponent(const FObjectInitializer& ObjectInitializer);
-	virtual bool Initialize() override;
+	virtual void NativeConstruct() override;
 	virtual void NativeDestruct() override;
-	
-	bool InitWidget();
-	void RefreshWidget();
-	void OnUpdateWidget();
-	void ApplyVoteHighlight(int32 Index);
-	void OnVoteReceived();
 
+	void BindToWidget();
+
+	UFUNCTION()
+	void InitWidget();
+	void RefreshWidget();
+	UFUNCTION()
+	void UpdateWidget();
+	void ApplyVoteHighlight(int32 Index);
+	UFUNCTION()
+	void UpdateTimer(int32 NewTime);
+	void SetOwnerPawn(APawn* InPawn) { OwnerPawn = InPawn; };
 protected:
+	UPROPERTY(BlueprintReadOnly, Category = "Owner")
+	TObjectPtr<APawn> OwnerPawn;
 	UPROPERTY(meta = (BindWidget))
 	TObjectPtr<UHorizontalBox> VoteHorizontalBox;
 	UPROPERTY(meta = (BindWidget))
@@ -34,12 +41,12 @@ protected:
 	TArray<TObjectPtr<UUserWidget>> VoteBoxWidgets;
 
 	UPROPERTY(EditDefaultsOnly, BlueprintReadOnly, Category = "Widgets|Design")
-	FLinearColor DefaultVoteBoxColor;
+	FLinearColor DefaultBoxColor;
 	UPROPERTY(EditDefaultsOnly, BlueprintReadOnly, Category = "Widgets|Design")
-	float DefaultVoteBoxOpacity;
+	float DefaultBoxOpacity;
 
 	UPROPERTY(EditDefaultsOnly, BlueprintReadOnly, Category = "Widgets|Design")
-	FLinearColor ActivateVoteBoxColor;
+	FLinearColor HighlightedBoxColor;
 	UPROPERTY(EditDefaultsOnly, BlueprintReadOnly, Category = "Widgets|Design")
-	float ActivateVoteBoxOpacity;
+	float HighlightedBoxOpacity;
 };

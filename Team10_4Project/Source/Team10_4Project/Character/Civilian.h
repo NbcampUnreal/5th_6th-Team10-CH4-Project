@@ -234,4 +234,10 @@ private:
 	UPROPERTY(EditDefaultsOnly, Category = "Interaction")
 	float InteractDistance = 200.0f;
 #pragma endregion
+
+#pragma region Vote
+public:
+	UFUNCTION()
+	void VoteWidgetActive(const FGameplayTag CallbackTag, int32 NewCount);
+#pragma endregion
 };

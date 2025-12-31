@@ -2,77 +2,95 @@
 #include "Components/HorizontalBox.h"
 #include "Components/Spacer.h"
 #include "Components/Border.h"
+#include "Components/TextBlock.h"
 #include "GameState/Team10GameState.h"
 #include "Character/CivilianPlayerState.h"
+#include "Components/WidgetComponent.h"
 
 UVoteWidgetComponent::UVoteWidgetComponent(const FObjectInitializer& ObjectInitializer)
 	: Super(ObjectInitializer)
 {
-	if (IsValid(VoteBoxWidgetClass))
-	{
-		UUserWidget* VoteBoxWidget = CreateWidget<UUserWidget>(this, VoteBoxWidgetClass);
-		UBorder* VoteBorder = Cast<UBorder>(VoteBoxWidget->GetWidgetFromName(TEXT("VoteBorder")));
-		if (!IsValid(VoteBorder)) return;
-		
-		DefaultVoteBoxColor = VoteBorder->GetBrushColor();
-		DefaultVoteBoxOpacity = VoteBorder->GetRenderOpacity();
-	}
-	else
-	{
-		DefaultVoteBoxColor = FLinearColor::Black;
-		DefaultVoteBoxOpacity = 100.0f;
-	}
+	DefaultBoxColor = FLinearColor::Black;
+	DefaultBoxOpacity = 0.0f;
+
+	HighlightedBoxColor = FLinearColor::Green;
+	HighlightedBoxOpacity = 0.0f;
 }
 
-bool UVoteWidgetComponent::Initialize()
+void UVoteWidgetComponent::NativeConstruct()
 {
-	bool bReturn = Super::Initialize();
+	Super::NativeConstruct();
+	InitWidget();
+}
 
-	if (!InitWidget()) return bReturn;
+void UVoteWidgetComponent::BindToWidget()
+{
+	if (!IsValid(OwnerPawn)) return;
+	if (OwnerPawn->GetPlayerState())
+	{
+		UE_LOG(LogTemp, Error, TEXT("PlayerState Enabled"));
+	}
+	ACivilianPlayerState* PlayerState = OwnerPawn->GetPlayerState<ACivilianPlayerState>();
 
-	ACivilianPlayerState* PlayerState = GetOwningPlayerState<ACivilianPlayerState>();
 	if (IsValid(PlayerState))
 	{
-		if (!PlayerState->OnVoterListChanged.IsAlreadyBound(this, &ThisClass::OnUpdateWidget))
+		UE_LOG(LogTemp, Error, TEXT("NativeConstruct VoteWidgetCompoents %s"), *PlayerState->GetPlayerName());
+		if (!PlayerState->InitializeWidget.IsAlreadyBound(this, &ThisClass::InitWidget))
 		{
-			PlayerState->OnVoterListChanged.AddDynamic(this, &ThisClass::OnUpdateWidget);
+			PlayerState->InitializeWidget.AddDynamic(this, &ThisClass::InitWidget);
+		}
+		if (!PlayerState->OnVoterListChanged.IsAlreadyBound(this, &ThisClass::UpdateWidget))
+		{
+			PlayerState->OnVoterListChanged.AddDynamic(this, &ThisClass::UpdateWidget);
+		}
+		if (!PlayerState->OnVoteTimerChanged.IsAlreadyBound(this, &ThisClass::UpdateTimer))
+		{
+			PlayerState->OnVoteTimerChanged.AddDynamic(this, &ThisClass::UpdateTimer);
 		}
 	}
-
-	return bReturn;
 }
 
 void UVoteWidgetComponent::NativeDestruct()
 {
 	VoteBoxWidgets.Empty();
 
-	ACivilianPlayerState* PlayerState = GetOwningPlayerState<ACivilianPlayerState>();
-	if (IsValid(PlayerState))
+
+	if (IsValid(OwnerPawn))
 	{
-		if (PlayerState->OnVoterListChanged.IsAlreadyBound(this, &ThisClass::OnUpdateWidget))
+		if (ACivilianPlayerState* PlayerState = OwnerPawn->GetPlayerState<ACivilianPlayerState>())
 		{
-			PlayerState->OnVoterListChanged.RemoveDynamic(this, &ThisClass::OnUpdateWidget);
+			if (PlayerState->InitializeWidget.IsAlreadyBound(this, &ThisClass::InitWidget))
+			{
+				PlayerState->InitializeWidget.RemoveDynamic(this, &ThisClass::InitWidget);
+			}
+			if (PlayerState->OnVoterListChanged.IsAlreadyBound(this, &ThisClass::UpdateWidget))
+			{
+				PlayerState->OnVoterListChanged.RemoveDynamic(this, &ThisClass::UpdateWidget);
+			}
+			if (PlayerState->OnVoteTimerChanged.IsAlreadyBound(this, &ThisClass::UpdateTimer))
+			{
+				PlayerState->OnVoteTimerChanged.RemoveDynamic(this, &ThisClass::UpdateTimer);
+			}
 		}
 	}
-
 	Super::NativeDestruct();
 }
 
-bool UVoteWidgetComponent::InitWidget()
+void UVoteWidgetComponent::InitWidget()
 {
-	if (!IsValid(VoteBoxWidgetClass)) return false;
+	if (!IsValid(VoteBoxWidgetClass)) return;
 
 	UWorld* World = GetWorld();
-	if (!IsValid(World)) return false;
+	if (!IsValid(World)) return;
 
 	ATeam10GameState* GameState = World->GetGameState<ATeam10GameState>();
-	if (!IsValid(GameState)) return false;
+	if (!IsValid(GameState)) return;
 	int32 BorderCount = GameState->KillPlayerVotesCount;
 
 	for (int32 i = 0; i < BorderCount; ++i)
 	{
 		UUserWidget* VoteBoxWidget = CreateWidget<UUserWidget>(this, VoteBoxWidgetClass);
-		if (!IsValid(VoteBoxWidget)) return false;
+		if (!IsValid(VoteBoxWidget)) return;
 
 		if (i > 0)
 		{
@@ -84,13 +102,11 @@ bool UVoteWidgetComponent::InitWidget()
 		VoteHorizontalBox->AddChildToHorizontalBox(VoteBoxWidget);
 		VoteBoxWidgets.Add(VoteBoxWidget);
 	}
-
-	return true;
 }
 
 void UVoteWidgetComponent::RefreshWidget()
 {
-	if (!InitWidget()) return;		// 초기화 실패
+	InitWidget();
 
 	UWorld* World = GetWorld();
 	if (!IsValid(World)) return;
@@ -98,11 +114,12 @@ void UVoteWidgetComponent::RefreshWidget()
 	ATeam10GameState* GameState = World->GetGameState<ATeam10GameState>();
 	if (!IsValid(GameState)) return;
 
-	APlayerState* PlayerState = GetOwningPlayerState();
+	if (!IsValid(OwnerPawn)) return;
+	APlayerState* PlayerState = OwnerPawn->GetPlayerState();
 	if (!PlayerState) return;
 }
 
-void UVoteWidgetComponent::OnUpdateWidget()
+void UVoteWidgetComponent::UpdateWidget()
 {
 	UWorld* World = GetWorld();
 	if (!IsValid(World)) return;
@@ -110,15 +127,9 @@ void UVoteWidgetComponent::OnUpdateWidget()
 	ATeam10GameState* GameState = World->GetGameState<ATeam10GameState>();
 	if (!IsValid(GameState)) return;
 
-	ACivilianPlayerState* PlayerState = GetOwningPlayerState<ACivilianPlayerState>();
+	if (!IsValid(OwnerPawn)) return;
+	ACivilianPlayerState* PlayerState = OwnerPawn->GetPlayerState<ACivilianPlayerState>();
 	if (!IsValid(PlayerState)) return;
-
-	TArray<TObjectPtr<APlayerState>> VotersList = PlayerState->GetVoterList();
-	
-	if (VotersList.Num() != VoteBoxWidgets.Num())	// 플레이어 수와 투명 가능 수가 다르면
-	{
-		InitWidget();
-	}
 
 	// 위젯 업데이트
 	for (int32 i = 0; i < VoteBoxWidgets.Num(); ++i)
@@ -141,19 +152,9 @@ void UVoteWidgetComponent::ApplyVoteHighlight(int32 Index)
 	VoteBorder->SetBrushColor(FLinearColor::Green);
 }
 
-void UVoteWidgetComponent::OnVoteReceived()
+void UVoteWidgetComponent::UpdateTimer(int32 NewTime)
 {
-	UWorld* World = GetWorld();
-	if (!IsValid(World)) return;
-
-	ATeam10GameState* GameState = World->GetGameState<ATeam10GameState>();
-	if (!IsValid(GameState)) return;
-
-	ACivilianPlayerState* PlayerState = GetOwningPlayerState<ACivilianPlayerState>();
-	if (!IsValid(PlayerState)) return;
-
-	TArray<TObjectPtr<APlayerState>> VotersList = PlayerState->GetVoterList();
-	ApplyVoteHighlight(VotersList.Num() - 1);
+	if (!VoteTimerText) return;
+	FText TextTime = FText::FromString(FString::FromInt(NewTime));
+	VoteTimerText->SetText(TextTime);
 }
-
-

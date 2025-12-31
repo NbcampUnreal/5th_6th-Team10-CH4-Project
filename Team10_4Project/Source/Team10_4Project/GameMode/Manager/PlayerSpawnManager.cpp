@@ -32,7 +32,7 @@ void UPlayerSpawnManager::FoundPlayerSpawner(FGameplayTag AreaTag)
 	
 	for (TActorIterator<APlayerSpawn> It(GetWorld()); It; ++It)
 	{
-		if(It->AreaTag == AreaTag)
+		if(It->AreaTag.MatchesTagExact(AreaTag))
 		{
 			PlayerSpawners.Add(*It);
 		}

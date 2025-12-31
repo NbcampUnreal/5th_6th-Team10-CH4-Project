@@ -14,6 +14,7 @@ class APlayerController;
 
 DECLARE_DYNAMIC_MULTICAST_DELEGATE_OneParam(FOnPhaseTimeChanged, int32, ChangedTime);
 DECLARE_DYNAMIC_MULTICAST_DELEGATE_OneParam(FOnAreaChanged, FGameplayTag, AreaTag);
+DECLARE_DYNAMIC_MULTICAST_DELEGATE_OneParam(FOnGamePhaseChanged, EGamePhase, GamePhase);
 
 UCLASS()
 class TEAM10_4PROJECT_API ATeam10GameState : public AGameStateBase
@@ -56,6 +57,9 @@ public:
 
 	UFUNCTION()
 	void OnRep_CurrentPhase();
+
+	UPROPERTY(BlueprintAssignable, Category = "Events")
+	FOnGamePhaseChanged OnGamePhaseChanged;
 
 	// 현재 페이즈 남은 시간
 	UPROPERTY(ReplicatedUsing = OnRep_PhaseTimeRemaining, BlueprintReadOnly, Category = "GameState")

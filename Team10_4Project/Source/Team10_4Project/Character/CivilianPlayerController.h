@@ -28,4 +28,7 @@ public:
 	UFUNCTION(Client, Reliable)
 	void ClientRPC_ReceiveMessage(const FChatMessage& ChatMessage);
 	// ----------------
+	
+	UFUNCTION(Client, Reliable)
+	void ClientRPC_Spectator(APawn* TargetPawn);
 };

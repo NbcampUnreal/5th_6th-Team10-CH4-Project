@@ -22,6 +22,10 @@ protected:
 	// 1인칭용 메쉬 (내가 보는 내 총)
 	UPROPERTY(VisibleAnywhere, BlueprintReadOnly, Category = "Components")
 	USkeletalMeshComponent* WeaponMesh1P;
+	
+	// 효과음
+	UPROPERTY(EditDefaultsOnly, Category = "Effects")
+	USoundBase* FireSound;
 
 public:
 	// 총기 스펙 (사거리, 데미지 등)
@@ -30,7 +34,14 @@ public:
 
 	UPROPERTY(EditDefaultsOnly, Category = "Stats")
 	float Damage = 20.0f;
-
+	
+	// 발사 소리 재생
+	UFUNCTION(BlueprintCallable, Category = "Combat")
+	void PlayFireEffects();
+	
+	UFUNCTION(NetMulticast, Unreliable) // 모두에게 전파
+	void MulticastPlayFireEffects();
+	
 	// Getter
 	USkeletalMeshComponent* GetWeaponMesh3P() const { return WeaponMesh3P; }
 	USkeletalMeshComponent* GetWeaponMesh1P() const { return WeaponMesh1P; }

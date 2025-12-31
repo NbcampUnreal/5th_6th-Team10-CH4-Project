@@ -18,4 +18,9 @@ public:
 	
 	UFUNCTION(BlueprintCallable, Category = "GAS|Morph")
 	void SetCharacterMorphState(bool bToInfected);
+
+protected:
+	// 변신 시 재생할 사운드 큐
+	UPROPERTY(EditDefaultsOnly, BlueprintReadOnly, Category = "Audio")
+	TObjectPtr<USoundBase> MorphSound;
 };

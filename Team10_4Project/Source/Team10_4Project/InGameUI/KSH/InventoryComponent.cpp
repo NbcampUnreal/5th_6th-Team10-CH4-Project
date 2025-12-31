@@ -49,6 +49,25 @@ bool UInventoryComponent::AddItem(const FInventoryItemData& NewItem, int32 Count
     return false; // 인벤토리가 가득 참
 }
 
+void UInventoryComponent::AddItemByID(FName ItemID, int32 Count)
+{
+    if (!ItemDataTable) return; // 데이터 테이블이 에디터에서 할당되어 있어야 함
+
+    // 1. ID를 가지고 데이터 테이블에서 구조체 정보를 찾음
+    static const FString ContextString(TEXT("Item Search"));
+    FInventoryItemData* FoundData = ItemDataTable->FindRow<FInventoryItemData>(ItemID, ContextString);
+
+    if (FoundData)
+    {
+        // 2. 찾은 구조체를 기존 AddItem 함수에 그대로 전달
+        AddItem(*FoundData, Count);
+    }
+    else
+    {
+        UE_LOG(LogTemp, Warning, TEXT("ID [%s] 에 해당하는 아이템을 찾을 수 없습니다!"), *ItemID.ToString());
+    }
+}
+
 void UInventoryComponent::RemoveItem(int32 SlotIndex)
 {
     if (InventorySlots.IsValidIndex(SlotIndex))

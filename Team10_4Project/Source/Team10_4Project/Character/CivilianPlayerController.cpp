@@ -2,6 +2,8 @@
 
 
 #include "Character/CivilianPlayerController.h"
+
+#include "GameMode/SpectatorCamera.h"
 #include "GameMode/Team10GameMode.h"
 #include "InGameUI/JKH/ChatSubsystem.h"
 #include "Team10_4Project/InGameUI/JKH/ChatWidget.h"
@@ -40,7 +42,6 @@ void ACivilianPlayerController::EndPlay(const EEndPlayReason::Type EndPlayReason
 }
 
 
-
 void ACivilianPlayerController::ServerRPC_SendChatMessage_Implementation(const FChatMessage& ChatMessage)
 {
 	ATeam10GameMode* Team10GameMode = GetWorld()->GetAuthGameMode<ATeam10GameMode>();
@@ -53,4 +54,31 @@ void ACivilianPlayerController::ClientRPC_ReceiveMessage_Implementation(const FC
 	UChatSubsystem* ChatSubSystem = GetGameInstance()->GetSubsystem<UChatSubsystem>();
 	if (IsValid(ChatSubSystem) == false) return;
 	ChatSubSystem->ReceiveChatMessage(ChatMessage);
+}
+
+void ACivilianPlayerController::ClientRPC_Spectator_Implementation(APawn* TargetPawn)
+{
+	ChangeState(NAME_Spectating);
+	
+	if (!GetSpectatorPawn())
+	{
+		SpawnSpectatorPawn();
+
+		UE_LOG(LogTemp, Error, TEXT("SpawnSpectatorPawn"));
+	}
+
+	if (GetSpectatorPawn())
+	{
+		UE_LOG(LogTemp, Error, TEXT("SpawnSpectatorPawn is valid"));
+	}
+	
+	ASpectatorCamera* SpectatorCamera = Cast<ASpectatorCamera>(GetSpectatorPawn());
+	
+	if (SpectatorCamera)
+	{
+		UE_LOG(LogTemp, Error, TEXT("Spectator Camera is valid"));
+		
+		SpectatorCamera->SetFollowTargetPawn(TargetPawn);
+		SetViewTarget(SpectatorCamera);
+	}
 }

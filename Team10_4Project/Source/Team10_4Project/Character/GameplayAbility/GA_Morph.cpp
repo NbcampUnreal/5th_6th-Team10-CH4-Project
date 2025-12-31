@@ -5,6 +5,7 @@
 
 #include "Character/Civilian.h"
 #include "GamePlayTag/GamePlayTags.h"
+#include "Kismet/GameplayStatics.h"
 
 UGA_Morph::UGA_Morph()
 {

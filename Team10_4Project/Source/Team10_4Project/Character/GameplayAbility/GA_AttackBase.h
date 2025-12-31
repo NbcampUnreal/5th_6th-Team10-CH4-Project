@@ -37,12 +37,18 @@ public:
 	 */
 	UFUNCTION(BlueprintCallable, Category = "Attack")
 	void ApplyDamageToTarget(AActor* TargetActor);
+
 protected:
 	// --- [Settings] 에디터에서 설정할 변수들 ---
 
 	// 재생할 공격 애니메이션 몽타주
-	UPROPERTY(EditDefaultsOnly, BlueprintReadOnly, Category = "Attack")
-	TObjectPtr<UAnimMontage> AttackMontage;
+	// 3인칭용 몽타주
+	UPROPERTY(EditDefaultsOnly, BlueprintReadOnly, Category = "Animation")
+	TObjectPtr<UAnimMontage> AttackMontage3P;
+
+	// 1인칭용 몽타주
+	UPROPERTY(EditDefaultsOnly, BlueprintReadOnly, Category = "Animation")
+	TObjectPtr<UAnimMontage> AttackMontage1P;
 
 	// 공격 사거리 
 	UPROPERTY(EditDefaultsOnly, BlueprintReadOnly, Category = "Attack")

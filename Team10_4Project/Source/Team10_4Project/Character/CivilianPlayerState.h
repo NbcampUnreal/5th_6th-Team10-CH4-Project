@@ -41,6 +41,9 @@ public:
 	UFUNCTION(BlueprintCallable, Category = "GAS|Role")
 	bool IsPlayerRole(FGameplayTag RoleTag) const;
 	
+	// 인벤토리 컴포넌트 변수 선언
+	UPROPERTY(VisibleAnywhere, BlueprintReadOnly, Category = "Inventory", meta = (AllowPrivateAccess = "true"))
+	TObjectPtr<UInventoryComponent> InventoryComponent;
 protected:
 	// 시민 역할 할당 GE
 	UPROPERTY(EditDefaultsOnly, Category = "GAS|Role")
@@ -50,10 +53,6 @@ protected:
 	UPROPERTY(EditDefaultsOnly, Category = "GAS|Role")
 	TSubclassOf<class UGameplayEffect> InfectedRoleEffectClass;
 
-	// 인벤토리 컴포넌트 변수 선언
-	UPROPERTY(VisibleAnywhere, BlueprintReadOnly, Category = "Inventory", meta = (AllowPrivateAccess = "true"))
-	TObjectPtr<UInventoryComponent> InventoryComponent;
-	
 private:
 	UPROPERTY(VisibleAnywhere, Category = "GAS")
 	TObjectPtr<UAbilitySystemComponent> AbilitySystemComponent;

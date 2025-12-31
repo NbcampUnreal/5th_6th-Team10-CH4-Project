@@ -24,6 +24,7 @@
 #include "InGameUI/KSH/InGameUIWidget.h"
 #include "Blueprint/UserWidget.h"
 #include "GameMode/Team10GameMode.h"
+#include "InGameUI/KSH/InventoryComponent.h"
 
 ACivilian::ACivilian()
 {
@@ -135,16 +136,6 @@ void ACivilian::BeginPlay()
 		{
 			GetCharacterMovement()->MaxWalkSpeed = AttributeSet->GetMoveSpeed();
 		}
-		
-		ASC->RegisterGameplayTagEvent(
-			GamePlayTags::CivilianState::Stun, 
-			EGameplayTagEventType::NewOrRemoved
-		).AddUObject(this, &ACivilian::OnGameplayTagChanged);
-		
-		ASC->RegisterGameplayTagEvent(
-			GamePlayTags::InfectedState::Stun, 
-			EGameplayTagEventType::NewOrRemoved
-		).AddUObject(this, &ACivilian::OnGameplayTagChanged);
 	}
 	
 	// 3인칭 (Full Body) 백업
@@ -792,26 +783,6 @@ float ACivilian::PlayMontage1P(UAnimMontage* MontageToPlay)
 	return 0.0f;
 }
 
-void ACivilian::Cheat_TestRespawn()
-{
-	Server_TestRespawn();
-}
-
-void ACivilian::Server_TestRespawn_Implementation()
-{
-	if (HasAuthority())
-	{
-		ATeam10GameMode* GM = GetWorld()->GetAuthGameMode<ATeam10GameMode>();
-		if (GM)
-		{
-			UE_LOG(LogTemp, Warning, TEXT("[Test] Force Respawn Requested via Cheat"));
-            
-			// 컨트롤러를 넘겨주며 리스폰 함수 호출
-			GM->RespawnDeath(Cast<APlayerController>(GetController()));
-		}
-	}
-}
-
 void ACivilian::Server_SetRole_Implementation(int32 RoleID)
 {
 	if (ACivilianPlayerState* PS = GetPlayerState<ACivilianPlayerState>())
@@ -977,29 +948,6 @@ void ACivilian::TryAttack()
 	else
 	{
 		UE_LOG(LogTemp, Warning, TEXT("[Attack] Invalid Ability Tag!"));
-	}
-}
-
-void ACivilian::OnGameplayTagChanged(const FGameplayTag CallbackTag, int32 NewCount)
-{
-	// 스턴 태그가 새로 추가되었다면 (NewCount > 0)
-	if (NewCount > 0)
-	{
-		// 즉시 이동 정지 (관성 제거)
-		if (GetCharacterMovement())
-		{
-			GetCharacterMovement()->StopMovementImmediately();
-			GetCharacterMovement()->DisableMovement(); // 아예 이동 컴포넌트 비활성화
-		}
-	}
-	// 스턴 태그가 사라졌다면 (NewCount == 0)
-	else
-	{
-		// 이동 컴포넌트 다시 활성화
-		if (GetCharacterMovement())
-		{
-			GetCharacterMovement()->SetMovementMode(MOVE_Walking);
-		}
 	}
 }
 

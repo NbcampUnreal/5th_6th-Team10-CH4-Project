@@ -11,6 +11,7 @@ class UHealthBarWidget;
 class USanityBarWidget;
 class UAbilitySystemComponent;
 class UInventoryWidget;
+class UAmmoWidget;
 
 /**
  * 
@@ -28,9 +29,8 @@ public:
     TObjectPtr<USanityBarWidget> SanityBar; // 스태미나바 위젯
     UPROPERTY(meta = (BindWidget))
     TObjectPtr<UInventoryWidget> Inventory; // 인벤토리 위젯 바인딩
-
-
-    // 기타 UI 요소들 (예: 인벤토리 등) 추가
+    UPROPERTY(meta = (BindWidget))
+    TObjectPtr<UAmmoWidget> AmmoWidget; // 탄약 위젯 바인딩
 
     // ASC를 받아 하위 위젯들을 초기화하는 핵심 함수
     void InitializeUI(UAbilitySystemComponent* ASC);

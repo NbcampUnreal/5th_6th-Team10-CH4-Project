@@ -60,6 +60,9 @@ protected:
 	TObjectPtr<UCameraComponent> FirstPersonCamera;
 	
 	UPROPERTY(VisibleAnywhere, BlueprintReadOnly, Category = "PlayerCharacter|Components", meta = (AllowPrivateAccess = "true"))
+	TObjectPtr<UCameraComponent> WerewolfCameraComponent;
+	
+	UPROPERTY(VisibleAnywhere, BlueprintReadOnly, Category = "PlayerCharacter|Components", meta = (AllowPrivateAccess = "true"))
 	TObjectPtr<USkeletalMeshComponent> FirstPersonMeshComponent;
 
 	// 에디터에서 WBP_InGameUI를 할당하기 위한 변수
@@ -115,6 +118,9 @@ public:
 	// 공격
 	UFUNCTION(BlueprintCallable, Category = "Combat")
 	void TryAttack();
+	
+	// 태그 변경 시 호출될 콜백 함수
+	virtual void OnGameplayTagChanged(const FGameplayTag CallbackTag, int32 NewCount);
 	
 protected:
 	// Enhanced Input (UE 5.6)
@@ -239,6 +245,9 @@ protected:
 	UPROPERTY(EditAnywhere, BlueprintReadOnly, Category = "Input")
 	class UInputAction* IA_Slot2;
 	
+	UPROPERTY(EditAnywhere, BlueprintReadOnly, Category = "Input")
+	class UInputAction* IA_Reload;
+	
 	// 무기 클래스
 	UPROPERTY(EditDefaultsOnly, Category = "Combat")
 	TSubclassOf<class AWeaponBase> StartingWeaponClass;
@@ -249,6 +258,17 @@ protected:
 	
 	UFUNCTION()
 	void OnRep_CurrentWeapon(class AWeaponBase* OldWeapon);
+	
+	// Crosshair
+	UPROPERTY(EditDefaultsOnly, Category = "UI")
+	TSubclassOf<class UUserWidget> CrosshairWidgetClass;
+	
+	// Crosshair 위젯
+	UPROPERTY()
+	class UUserWidget* CrosshairWidget;
+
+	// 크로스헤어 보이기/숨기기 함수
+	void UpdateCrosshairVisibility();
 	
 	// 무기 장착 해제 (1번 키)
 	void UnEquipWeapon();
@@ -266,10 +286,27 @@ protected:
 	// 입력 바인딩 함수
 	void OnInput_Slot1(); // 비무장 전환
 	void OnInput_Slot2(); // 권총 전환
+	void OnInput_Reload(); // 장전
 	
 public:
+	
+	UFUNCTION(BlueprintCallable, Category = "Animation")
+	float PlayMontage1P(UAnimMontage* MontageToPlay);
 	// Getter
 	AWeaponBase* GetCurrentWeapon() const { return CurrentWeapon; }
+	
+#pragma endregion
+	
+#pragma region Test
+public:
+	// [테스트용] 리스폰 로직 테스트 명령어
+	UFUNCTION(Exec)
+	void Cheat_TestRespawn();
+
+protected:
+	// 서버에게 리스폰을 요청하는 RPC
+	UFUNCTION(Server, Reliable)
+	void Server_TestRespawn();
 	
 #pragma endregion
 	
@@ -299,4 +336,21 @@ private:
 	UPROPERTY(EditDefaultsOnly, Category = "Interaction")
 	float InteractDistance = 200.0f;
 #pragma endregion
+
+#pragma region Inventory Logic - 인벤토리 로직
+public:
+	// [테스트용]
+	UFUNCTION(Exec)
+	void Cheat_AddItem(FName ItemID);
+	UFUNCTION(Exec)
+	void Cheat_AddStackItem(FName ItemID, int32 Count);
+protected:
+	// [테스트용]
+	UFUNCTION(Server, Reliable)
+	void Server_AddItem(FName ItemID);
+	UFUNCTION(Server, Reliable)
+	void Server_AddStackItem(FName ItemID, int32 Count);
+
+#pragma endregion
+
 };

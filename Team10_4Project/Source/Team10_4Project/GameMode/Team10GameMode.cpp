@@ -4,6 +4,7 @@
 #include "GameMode/Team10GameMode.h"
 
 #include "PlayerSpawn.h"
+#include "SpectatorCamera.h"
 #include "Character/CivilianPlayerController.h"
 #include "Character/CivilianPlayerState.h"
 #include "GameState/Team10GameState.h"
@@ -11,6 +12,8 @@
 #include "GamePlayTag/GamePlayTags.h"
 #include "InGameUI/JKH/ChatSubsystem.h"
 #include "Manager/PlayerSpawnManager.h"
+#include "AbilitySystemComponent.h"
+#include "Character/CivilianAttributeSet.h"
 
 ATeam10GameMode::ATeam10GameMode()
 {
@@ -19,6 +22,7 @@ ATeam10GameMode::ATeam10GameMode()
 	GameStateClass = ATeam10GameState::StaticClass();
 	PlayerControllerClass = ACivilianPlayerController::StaticClass();
 	PlayerStateClass = ACivilianPlayerState::StaticClass();
+	SpectatorClass = ASpectatorCamera::StaticClass();
 	
 	GameFlowManager = CreateDefaultSubobject<UGameFlowManager>(TEXT("GameFlowManager"));
 	PlayerSpawnManager = CreateDefaultSubobject<UPlayerSpawnManager>(TEXT("PlayerSpawnManager"));
@@ -105,12 +109,12 @@ void ATeam10GameMode::HandleStartingNewPlayer_Implementation(APlayerController* 
 		GameFlowManager->StartGame();
 
 
-		// 사망 시 관전 및 리스폰 테스트
-		// FTimerHandle TimerHandle;
-		//
+		//사망 시 관전 및 리스폰 테스트
+		FTimerHandle TimerHandle;
+		
 		// GetWorldTimerManager().SetTimer(TimerHandle, FTimerDelegate::CreateLambda([this, CivilianPlayerController]()
 		// {
-		// 	HandlePlayerDeath(CivilianPlayerController);
+		// 	EternalDeath(CivilianPlayerController);
 		// }), 10.f, false);
 	
 	}
@@ -207,7 +211,7 @@ void ATeam10GameMode::HandlePlayerDeath(APlayerController* DeadPlayer, APlayerCo
 		return;
 	}
 	
-	// // 감염자가 변신 상태에서 사망 시 리스폰 
+	// 감염자가 변신 상태에서 사망 시 리스폰 
 	// if (DeadPlayerState->IsPlayerRole(GamePlayTags::PlayerRole::Infected))
 	// {
 	// 	if (DeadPlayerState->IsInfectedState(GamePlayTags::InfectedState::Transformed))
@@ -225,10 +229,10 @@ void ATeam10GameMode::HandlePlayerDeath(APlayerController* DeadPlayer, APlayerCo
 	// 		return;
 	// 	}
 	// }
-	//
-	// // 위의 두가지 경우를 제외하고 모두 투표 상태로 전환
-	// StartVote(DeadPlayerState, AttackPlayerState);
-	//
+	
+	// 위의 두가지 경우를 제외하고 모두 투표 상태로 전환
+	//StartVote(DeadPlayerState, AttackPlayerState);
+	
 	// UE_LOG(LogTemp, Error, TEXT("Player Dead"));
 	
 }
@@ -236,14 +240,37 @@ void ATeam10GameMode::HandlePlayerDeath(APlayerController* DeadPlayer, APlayerCo
 void ATeam10GameMode::RespawnDeath(APlayerController* DeadPlayer)
 {
 	APawn* Pawn = DeadPlayer->GetPawn();
-
+	
+	ACivilianPlayerState* TargetPS = DeadPlayer->GetPlayerState<ACivilianPlayerState>();
+	if (!TargetPS) return;
+	
+	if (TargetPS)
+	{
+		UCivilianAttributeSet* AttribSet = TargetPS->GetAttributeSet();
+		if (AttribSet)
+		{
+			const_cast<UCivilianAttributeSet*>(AttribSet)->SetHealth(AttribSet->GetMaxHealth());
+		}
+	}
+	
+	// Stun 태그 제거
+	UAbilitySystemComponent* ASC = TargetPS->GetAbilitySystemComponent();
+	if (ASC)
+	{
+		FGameplayTagContainer StunTags;
+		StunTags.AddTag(GamePlayTags::CivilianState::Stun);
+		StunTags.AddTag(GamePlayTags::InfectedState::Stun);
+		
+		ASC->RemoveActiveEffectsWithGrantedTags(StunTags);
+	}
+	
 	if (Pawn)
 	{
 		//UE_LOG(LogTemp, Error, TEXT("Pawn Valid"));
 		DeadPlayer->UnPossess();
 		Pawn->Destroy();
 	}
-
+	
 	ReSpawnPlayer(DeadPlayer);
 }
 
@@ -256,22 +283,28 @@ void ATeam10GameMode::EternalDeath(APlayerController* DeadPlayer)
 		return;
 	}
 	
-	// if (CivilianPlayerState)
-	// {
-	// 	if (CivilianPlayerState->IsPlayerRole(GamePlayTags::PlayerRole::Civilian))
-	// 	{
-	// 		CivilianPlayerState->SetCivilianState(GamePlayTags::CivilianState::Dead);
-	// 		Team10GameState->AliveCitizenCount--;
-	// 		
-	// 	}
-	// 	else if(CivilianPlayerState->IsPlayerRole(GamePlayTags::PlayerRole::Infected))
-	// 	{
-	// 		CivilianPlayerState->SetInfectedState(GamePlayTags::InfectedState::Dead);
-	// 		Team10GameState->AliveInfectedCount--;
-	// 	}
-	//
-	// 	CheckWinCondition();
-	// }
+	if (!DeadPlayer)
+	{
+		return;
+	}
+	
+	if (CivilianPlayerState)
+	{
+		if (CivilianPlayerState->IsPlayerRole(GamePlayTags::PlayerRole::Civilian))
+		{
+			//CivilianPlayerState->SetCivilianState(GamePlayTags::CivilianState::Dead);
+			Team10GameState->AliveCitizenCount--;
+			
+		}
+		else if(CivilianPlayerState->IsPlayerRole(GamePlayTags::PlayerRole::Infected))
+		{
+			//CivilianPlayerState->SetInfectedState(GamePlayTags::InfectedState::Dead);
+			Team10GameState->AliveInfectedCount--;
+		}
+	
+		CheckWinCondition();
+	}
+
 
 	APawn* Pawn = DeadPlayer->GetPawn();
 
@@ -281,17 +314,25 @@ void ATeam10GameMode::EternalDeath(APlayerController* DeadPlayer)
 		DeadPlayer->UnPossess();
 		Pawn->Destroy();
 	}
-	
-	for (ACivilianPlayerController* CivilianPlayerController : Team10GameState->AllPlayers)
+
+	GetWorldTimerManager().SetTimerForNextTick([this, DeadPlayer]()
 	{
-		APawn* TargetPawn = CivilianPlayerController->GetPawn();
-		if (TargetPawn)
+		for (ACivilianPlayerController* CivilianPlayerController : Team10GameState->AllPlayers)
 		{
-			// 클라에서 실행
-			DeadPlayer->SetViewTargetWithBlend(TargetPawn);
-			return;
+			if (CivilianPlayerController != DeadPlayer)
+			{
+				APawn* TargetPawn = CivilianPlayerController->GetPawn();
+				if (TargetPawn)
+				{
+					UE_LOG(LogTemp, Warning, TEXT("Camera changed"));
+					ACivilianPlayerController* DeadPlayerController = Cast<ACivilianPlayerController>(DeadPlayer);
+					
+					DeadPlayerController->ClientRPC_Spectator(TargetPawn);
+					break;
+				}
+			}
 		}
-	}
+	});
 }
 
 
@@ -306,6 +347,7 @@ void ATeam10GameMode::StartVote(ACivilianPlayerState* VoteTarget, ACivilianPlaye
 	{
 		return;
 	}
+	// 플레이어 투표 가능한 상태로 변경
 	
 	// if (VoteTarget->IsPlayerRole(GamePlayTags::PlayerRole::Infected))
 	// {
@@ -316,8 +358,41 @@ void ATeam10GameMode::StartVote(ACivilianPlayerState* VoteTarget, ACivilianPlaye
 	// 	VoteTarget->SetInfectedStateTag(GamePlayTags::CivilianState::Stun);
 	// }
 
-	// 투표한 플레이어 저장해서 중복 투표 불가능하게 설정
-	//VoteTarget->
+	
+	Vote(VoteTarget, VotePlayer);
+
+	// playerstate의 저장된 timerhandle을 사용해 독립적인 타이머 
+	//FTimerHandle VoteTimerHandle = VoteTarget->VoteTimerHandle;
+	FTimerHandle VoteTimerHandle;
+	GetWorldTimerManager().SetTimer(VoteTimerHandle, FTimerDelegate::CreateLambda([this, VoteTarget]()
+	{
+		EndVote(VoteTarget);
+	}), 10.f, false);
+	
+	// 타이머로 일정 시간이 지나도 투표가 완료되지 않으면 캐릭터 리스폰
+	// 플레이어마다 개별적으로 타이머 적용?
+}
+
+void ATeam10GameMode::Vote(ACivilianPlayerState* VoteTarget, ACivilianPlayerState* VotePlayer)
+{
+	// 투표 상태일때 맞으면 호출
+	if (!VoteTarget)
+	{
+		return;
+	}
+
+	if (!VotePlayer)
+	{
+		return;
+	}
+	// 중복 체크 후 중복이 아니라면 투표 플레이어 추가
+	
+	// 투표 플레이어 수와 UpdateKillPlayerVotesCount() 값을 비교해 사망 판정 
+}
+
+void ATeam10GameMode::EndVote(ACivilianPlayerState* VoteTarget)
+{
+	// 투표 상태가 끝나면 playerstate의 timer, 투표한 플레이어 초기화 후 리스폰
 }
 
 void ATeam10GameMode::UpdateKillPlayerVotesCount()
@@ -349,6 +424,7 @@ void ATeam10GameMode::UpdateKillPlayerVotesCount()
 	int32 AlivePlayerCount = (Team10GameState->AliveInfectedCount + Team10GameState->AliveCitizenCount) / 2 + 1;
 	
 	Team10GameState->KillPlayerVotesCount = AlivePlayerCount >= AreaVoteCount ? AreaVoteCount : AlivePlayerCount;
+	
 }
 
 

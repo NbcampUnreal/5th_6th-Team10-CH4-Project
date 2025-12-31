@@ -368,10 +368,9 @@ void ATeam10GameMode::ProcessVote(ACivilianPlayerState* VoteTarget, ACivilianPla
 	// 	VoteTarget->SetInfectedStateTag(GamePlayTags::CivilianState::Stun);
 	// }
 
-	
-	Vote(VoteTarget, VotePlayer);
-
 	// 확인필요
+	//Vote(VoteTarget, VotePlayer);
+	
 	// playerstate의 저장된 timerhandle을 사용해 독립적인 타이머 
 	//FTimerHandle VoteTimerHandle = VoteTarget->VoteTimerHandle;
 	//FTimerHandle VoteTimerHandle;

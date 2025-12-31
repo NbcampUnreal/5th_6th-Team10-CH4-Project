@@ -4,6 +4,7 @@
 #include "GameMode/Team10GameMode.h"
 
 #include "PlayerSpawn.h"
+#include "SpectatorCamera.h"
 #include "Character/CivilianPlayerController.h"
 #include "Character/CivilianPlayerState.h"
 #include "GameState/Team10GameState.h"
@@ -19,6 +20,7 @@ ATeam10GameMode::ATeam10GameMode()
 	GameStateClass = ATeam10GameState::StaticClass();
 	PlayerControllerClass = ACivilianPlayerController::StaticClass();
 	PlayerStateClass = ACivilianPlayerState::StaticClass();
+	SpectatorClass = ASpectatorCamera::StaticClass();
 	
 	GameFlowManager = CreateDefaultSubobject<UGameFlowManager>(TEXT("GameFlowManager"));
 	PlayerSpawnManager = CreateDefaultSubobject<UPlayerSpawnManager>(TEXT("PlayerSpawnManager"));
@@ -298,9 +300,9 @@ void ATeam10GameMode::EternalDeath(APlayerController* DeadPlayer)
 				if (TargetPawn)
 				{
 					UE_LOG(LogTemp, Warning, TEXT("Camera changed"));
-			
-					//DeadPlayer->ClientSetViewTarget(TargetPawn);
-					DeadPlayer->SetViewTargetWithBlend(TargetPawn);
+					ACivilianPlayerController* DeadPlayerController = Cast<ACivilianPlayerController>(DeadPlayer);
+					
+					DeadPlayerController->ClientRPC_Spectator(TargetPawn);
 					break;
 				}
 			}

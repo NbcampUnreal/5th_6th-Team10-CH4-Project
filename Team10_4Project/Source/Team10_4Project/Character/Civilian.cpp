@@ -25,6 +25,9 @@
 #include "Blueprint/UserWidget.h"
 #include "GameMode/Team10GameMode.h"
 #include "InGameUI/KSH/InventoryComponent.h"
+#include "InGameUI/JKH/VoteWidgetComponent.h"
+#include "Kismet/GameplayStatics.h"
+#include "Components/WidgetComponent.h"
 
 ACivilian::ACivilian()
 {
@@ -94,6 +97,12 @@ ACivilian::ACivilian()
 		FName("neck_01"),
 		FName("head")
 	};
+
+	// 투표 위젯
+	VoteWidgetComponent = CreateDefaultSubobject<UWidgetComponent>(TEXT("VoteWidget"));
+	VoteWidgetComponent->SetWidgetClass(UVoteWidgetComponent::StaticClass());
+	VoteWidgetComponent->SetWidgetSpace(EWidgetSpace::World);
+	VoteWidgetComponent->SetupAttachment(RootComponent);
 }
 
 UAbilitySystemComponent* ACivilian::GetAbilitySystemComponent() const
@@ -189,6 +198,10 @@ void ACivilian::PossessedBy(AController* NewController)
 	{
 		InitializeAbilitySystem();
 	}
+
+	FGameplayTag TargetTag = FGameplayTag::RequestGameplayTag(FName("CivilianState.Votabled"));
+	AbilitySystemComponent->RegisterGameplayTagEvent(TargetTag, EGameplayTagEventType::NewOrRemoved)
+		.AddUObject(this, &ThisClass::VoteWidgetActive);
 }
 
 void ACivilian::Tick(float DeltaTime)
@@ -222,6 +235,23 @@ void ACivilian::Tick(float DeltaTime)
 
 		// 기존 CurrentInteractableActor 변수 업데이트 (필요 시)
 		CurrentInteractableActor = HitActor;
+	}
+
+	// 투표
+	if (VoteWidgetComponent->IsVisible())
+	{
+		// 다른 캐릭터 투표 위젯은 보이도록 설정
+		if(!IsLocallyControlled())
+		{
+			// 캐릭터에 위젯이 플로팅되어 자연스럽게 보이도록 지정
+			APlayerCameraManager* CameraManager = UGameplayStatics::GetPlayerCameraManager(GetWorld(), 0);
+			if (IsValid(CameraManager))
+			{
+				FRotator TargetRot = CameraManager->GetCameraRotation();
+				TargetRot.Yaw += 180.f;
+				VoteWidgetComponent->SetWorldRotation(TargetRot);
+			}
+		}
 	}
 }
 
@@ -303,6 +333,20 @@ void ACivilian::OnRep_PlayerState()
 			// 이 함수 안에서 ASC->GetOwnerActor()를 통해 PlayerState의 인벤토리를 찾음
 			InGameUIInstance->InitializeUI(ASC);
 			UE_LOG(LogTemp, Warning, TEXT("Civilian: InitializeUI Called in OnRep_PlayerState"));
+		}
+	}
+	
+	FGameplayTag TargetTag = FGameplayTag::RequestGameplayTag(FName("CivilianState.Votabled"));
+	AbilitySystemComponent->RegisterGameplayTagEvent(TargetTag, EGameplayTagEventType::NewOrRemoved)
+		.AddUObject(this, &ThisClass::VoteWidgetActive);
+
+	if (UUserWidget* InWidget = VoteWidgetComponent->GetWidget())
+	{
+		if (UVoteWidgetComponent* InVoteWidget = Cast<UVoteWidgetComponent>(InWidget))
+		{
+			InVoteWidget->SetOwnerPawn(this);
+			InVoteWidget->BindToWidget();
+			VoteWidgetComponent->SetVisibility(false);
 		}
 	}
 }
@@ -528,7 +572,10 @@ void ACivilian::Cheat_SetSanity(float Amount)
 
 void ACivilian::HandleFatalDamage(AActor* Attacker, bool bAttackerIsTransformed)
 {
-	UAbilitySystemComponent* ASC = GetAbilitySystemComponent();
+	ACivilianPlayerState* PS = GetPlayerState<ACivilianPlayerState>();
+	if (!PS) return;
+	
+	UAbilitySystemComponent* ASC = PS->GetAbilitySystemComponent();
 	if (!ASC) return;
 
 	// 내가 변신한 괴물인가?
@@ -660,6 +707,11 @@ void ACivilian::OnRep_CurrentWeapon(class AWeaponBase* OldWeapon)
 				WeaponMesh1P->AttachToComponent(FirstPersonMeshComponent, FAttachmentTransformRules::SnapToTargetNotIncludingScale, FName("WeaponSocket"));
 			}
 		}
+		
+		if (USkeletalMeshComponent* WeaponMesh3P = CurrentWeapon->GetWeaponMesh3P())
+		{
+			WeaponMesh3P->AttachToComponent(GetMesh(), FAttachmentTransformRules::SnapToTargetNotIncludingScale, FName("WeaponSocket_3P"));
+		}
 	}
 	
 	if (IsLocallyControlled())
@@ -723,8 +775,9 @@ void ACivilian::EquipWeapon(TSubclassOf<class AWeaponBase> NewWeaponClass)
 	{
 		// 3인칭 부착
 		NewWeapon->AttachToComponent(GetMesh(), FAttachmentTransformRules::SnapToTargetNotIncludingScale, FName("WeaponSocket"));
-
+		
 		CurrentWeapon = NewWeapon;
+		
 		UE_LOG(LogTemp, Log, TEXT("Pistol Equipped!"));
 		
 		if (IsLocallyControlled()) UpdateCrosshairVisibility();
@@ -817,12 +870,36 @@ void ACivilian::Server_SetRole_Implementation(int32 RoleID)
 {
 	if (ACivilianPlayerState* PS = GetPlayerState<ACivilianPlayerState>())
 	{
+		UAbilitySystemComponent* ASC = PS->GetAbilitySystemComponent();
+		if (!ASC) return;
+		
 		// 0: Civilian, 1: Infected
-		FGameplayTag NewTag = (RoleID == 1) ? 
-			GamePlayTags::PlayerRole::Infected : 
-			GamePlayTags::PlayerRole::Civilian;
-            
-		PS->SetPlayerRoleTag(NewTag);
+		if (RoleID == 1)
+		{
+			// 이펙트 컨테스트 생성
+			FGameplayEffectContextHandle EffectContext = AbilitySystemComponent->MakeEffectContext();
+			EffectContext.AddSourceObject(this);
+	
+			// 이펙트 적용
+			FGameplayEffectSpecHandle SpecHandle = AbilitySystemComponent->MakeOutgoingSpec(GrantInfected, 1, EffectContext);
+			if (SpecHandle.IsValid())
+			{
+				AbilitySystemComponent->ApplyGameplayEffectSpecToSelf(*SpecHandle.Data.Get());
+			}
+		}
+		else
+		{
+			// 이펙트 컨테스트 생성
+			FGameplayEffectContextHandle EffectContext = AbilitySystemComponent->MakeEffectContext();
+			EffectContext.AddSourceObject(this);
+	
+			// 이펙트 적용
+			FGameplayEffectSpecHandle SpecHandle = AbilitySystemComponent->MakeOutgoingSpec(GrantCivilian, 1, EffectContext);
+			if (SpecHandle.IsValid())
+			{
+				AbilitySystemComponent->ApplyGameplayEffectSpecToSelf(*SpecHandle.Data.Get());
+			}
+		}
 	}
 }
 
@@ -1058,7 +1135,7 @@ void ACivilian::ServerRPC_Interact_Implementation(AActor* TargetActor)
 // 상호작용 가능한 액터를 찾는 Line Trace (클라이언트 전용)
 AActor* ACivilian::GetInteractableActor()
 {
-	UE_LOG(LogTemp, Warning, TEXT("Perform Trace"));
+	//UE_LOG(LogTemp, Warning, TEXT("Perform Trace"));
 
 	// 1인칭 카메라 컴포넌트 사용
 	if (!FirstPersonCamera)
@@ -1091,6 +1168,7 @@ AActor* ACivilian::GetInteractableActor()
 	}
 	return nullptr;
 }
+
 void ACivilian::Cheat_AddItem(FName ItemID)
 {
 	Server_AddItem(ItemID);
@@ -1121,3 +1199,27 @@ void ACivilian::Server_AddStackItem_Implementation(FName ItemID, int32 Count)
 }
 
 #pragma endregion
+
+void ACivilian::VoteWidgetActive(const FGameplayTag CallbackTag, int32 NewCount)
+{
+	ACivilianPlayerState* CivilianPlayerState = GetPlayerState<ACivilianPlayerState>();
+	if (!IsValid(CivilianPlayerState)) return;
+	if (NewCount > 0)	// 태그가 있다면 보이는 상태
+	{
+		if (HasAuthority())
+		{
+			CivilianPlayerState->VoteTimer = CivilianPlayerState->MaxVoteTimer;
+			GetWorldTimerManager().ClearTimer(CivilianPlayerState->VoteTimerHandle);
+			GetWorldTimerManager().SetTimer(CivilianPlayerState->VoteTimerHandle, CivilianPlayerState, &ACivilianPlayerState::UpdateVoteTimer, 1.0f, true, 1.0f);
+		}
+		VoteWidgetComponent->SetVisibility(true);
+	}
+	else
+	{	// 태그가 없다면, 보이지 않는 상태
+		if (HasAuthority())
+		{
+			GetWorldTimerManager().ClearTimer(CivilianPlayerState->VoteTimerHandle);
+		}
+		VoteWidgetComponent->SetVisibility(false);
+	}
+}

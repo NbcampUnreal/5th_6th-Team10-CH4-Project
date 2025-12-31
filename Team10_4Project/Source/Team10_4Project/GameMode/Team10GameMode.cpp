@@ -336,19 +336,29 @@ void ATeam10GameMode::EternalDeath(APlayerController* DeadPlayer)
 }
 
 
-void ATeam10GameMode::StartVote(ACivilianPlayerState* VoteTarget, ACivilianPlayerState* VotePlayer)
+void ATeam10GameMode::ProcessVote(ACivilianPlayerState* VoteTarget, ACivilianPlayerState* VotePlayer)
 {
-	if (!VoteTarget)
-	{
-		return;
-	}
+	if (!IsValid(VoteTarget)) return;
+	if (!IsValid(VotePlayer)) return;
 
 	if (!VotePlayer)
 	{
 		return;
 	}
 	// 플레이어 투표 가능한 상태로 변경
+	TArray<APlayerState*> VoterList = VoteTarget->VoterList;
 	
+	bool IsAleadyVote = false;
+	int32 foundIndex = VoterList.Find(VoteTarget);
+
+	if (foundIndex == -1)	// not found
+	{
+		VoteTarget->VoterList.Add(VotePlayer);
+	}
+	else
+	{
+		// found
+	}
 	// if (VoteTarget->IsPlayerRole(GamePlayTags::PlayerRole::Infected))
 	// {
 	// 	VoteTarget->SetCivilianStateTag(GamePlayTags::InfectedState::Stun);
@@ -361,13 +371,14 @@ void ATeam10GameMode::StartVote(ACivilianPlayerState* VoteTarget, ACivilianPlaye
 	
 	Vote(VoteTarget, VotePlayer);
 
+	// 확인필요
 	// playerstate의 저장된 timerhandle을 사용해 독립적인 타이머 
 	//FTimerHandle VoteTimerHandle = VoteTarget->VoteTimerHandle;
-	FTimerHandle VoteTimerHandle;
-	GetWorldTimerManager().SetTimer(VoteTimerHandle, FTimerDelegate::CreateLambda([this, VoteTarget]()
-	{
-		EndVote(VoteTarget);
-	}), 10.f, false);
+	//FTimerHandle VoteTimerHandle;
+	//GetWorldTimerManager().SetTimer(VoteTimerHandle, FTimerDelegate::CreateLambda([this, VoteTarget]()
+	//{
+	// 	EndVote(VoteTarget);
+	// }), 10.f, false);
 	
 	// 타이머로 일정 시간이 지나도 투표가 완료되지 않으면 캐릭터 리스폰
 	// 플레이어마다 개별적으로 타이머 적용?

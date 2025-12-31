@@ -6,7 +6,6 @@
 #include "InGameUI/KSH/HealthBarWidget.h" // 체력바
 #include "InGameUI/KSH/SanityBarWidget.h" // 감염도바
 #include "InGameUI/KSH/InventoryWidget.h" // 인벤토리
-#include "InGameUI/KSH/AmmoWidget.h" // 탄약
 #include "AbilitySystemComponent.h" // ASC 사용을 위해 포함
 #include "InGameUI/KSH/InventoryComponent.h" // 인벤토리컴포넌트
 
@@ -43,7 +42,6 @@ void UInGameUIWidget::InitializeUI(UAbilitySystemComponent* ASC)
             }
         }
     }
-    if (AmmoWidget) AmmoWidget->InitWithASC(ASC);
 }
 
 bool UInGameUIWidget::Initialize()

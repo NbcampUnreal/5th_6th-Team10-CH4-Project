@@ -93,13 +93,7 @@ public:
 	// 기본 효과 목록
 	UPROPERTY(EditDefaultsOnly, BlueprintReadOnly, Category = "GAS|Effects")
 	TArray<TSubclassOf<class UGameplayEffect>> DefaultEffects;
-	
-	UPROPERTY(EditDefaultsOnly, BlueprintReadOnly, Category = "GAS|Effects")
-	TSubclassOf<class UGameplayEffect> GrantCivilian;
-	
-	UPROPERTY(EditDefaultsOnly, BlueprintReadOnly, Category = "GAS|Effects")
-	TSubclassOf<class UGameplayEffect> GrantInfected;
-	
+
 protected:
 	// GAS 초기화 - ASC 초기화 로직 분리
 	void InitializeAbilitySystem();

@@ -1,23 +1,21 @@
 ﻿#include "OutGameUI/Player/MenuPlayerController.h"
-
 #include "Blueprint/UserWidget.h"
 #include "OutGameUI/UI/MainMenuWidget.h"
 #include "OutGameUI/UI/ServerBrowserWidget.h"
 #include "OutGameUI/UI/LobbyWidget.h"
-
-#include "MenuPlayerController.h"
 #include "MenuPlayerState.h"
-
-#include "OutGameUI/GameMode/MenuGameMode.h"
+#include "OutGameUI/GameMode/MenuLobbyGameMode.h"
+#include "OutGameUI/UI/HostGuestWidget.h"
 
 void AMenuPlayerController::BeginPlay()
 {
     Super::BeginPlay();
-
-    bShowMouseCursor = true;
-    SetInputMode(FInputModeUIOnly());
-
-    ShowMainMenu();
+    if (IsLocalController())
+    {
+        bShowMouseCursor = true;
+        SetInputMode(FInputModeUIOnly());
+        ShowMainMenu();
+    }
 }
 
 void AMenuPlayerController::ClearCurrentWidget()
@@ -32,90 +30,106 @@ void AMenuPlayerController::ClearCurrentWidget()
 void AMenuPlayerController::ShowMainMenu()
 {
     ClearCurrentWidget();
-
-    if (!MainMenuWidgetClass) return;
-
-    CurrentWidget = CreateWidget<UMainMenuWidget>(this, MainMenuWidgetClass);
-    if (CurrentWidget)
+    if (MainMenuWidgetClass)
     {
-        CurrentWidget->AddToViewport();
+        CurrentWidget = CreateWidget<UMainMenuWidget>(this, MainMenuWidgetClass);
+        if (CurrentWidget) CurrentWidget->AddToViewport();
     }
 }
 
 void AMenuPlayerController::ShowServerBrowser()
 {
     ClearCurrentWidget();
-
-    if (!ServerBrowserWidgetClass) return;
-
-    CurrentWidget = CreateWidget<UServerBrowserWidget>(this, ServerBrowserWidgetClass);
-    if (CurrentWidget)
+    if (ServerBrowserWidgetClass)
     {
-        CurrentWidget->AddToViewport();
+        CurrentWidget = CreateWidget<UServerBrowserWidget>(this, ServerBrowserWidgetClass);
+        if (CurrentWidget) CurrentWidget->AddToViewport();
     }
 }
 
 void AMenuPlayerController::ShowLobby()
 {
     ClearCurrentWidget();
-
     if (!LobbyWidgetClass) return;
 
-    CurrentWidget = CreateWidget<ULobbyWidget>(this, LobbyWidgetClass);
-    if (CurrentWidget)
+    ULobbyWidget* LobbyWidget = CreateWidget<ULobbyWidget>(this, LobbyWidgetClass);
+    if (LobbyWidget)
     {
+        CurrentWidget = LobbyWidget;
         CurrentWidget->AddToViewport();
+
+        // 마우스 커서 활성화
+        bShowMouseCursor = true;
+
+        // 위젯의 포커스 가능 여부를 코드에서도 명시적으로 확인/설정 가능
+        LobbyWidget->SetIsFocusable(true);
+
+        // 입력 모드 설정
+        FInputModeUIOnly InputMode;
+        InputMode.SetWidgetToFocus(LobbyWidget->GetCachedWidget()); // TakeWidget() 대신 GetCachedWidget() 시도
+        InputMode.SetLockMouseToViewportBehavior(EMouseLockMode::DoNotLock);
+
+        SetInputMode(InputMode);
     }
 }
 
-void AMenuPlayerController::RequestToggleReady()
+void AMenuPlayerController::JoinLobbyLevel()
 {
-    Server_ToggleReady();
-}
-
-void AMenuPlayerController::Server_ToggleReady_Implementation()
-{
-    AMenuPlayerState* PS = GetPlayerState<AMenuPlayerState>();
-    if (PS)
+    if (HasAuthority())
     {
-        bool bNewReadyStatus = !PS->IsReady();
-        PS->SetReady(bNewReadyStatus);
+        // 1. 경로가 실제 Content 폴더 기준 경로와 일치하는지 확인하세요
+        FString LobbyPath = TEXT("/Game/Team10/OutGameUI/L_Lobby");
 
-        UE_LOG(LogTemp, Warning, TEXT("SERVER: Player [%s] changed Ready Status to: %s"),
-            *PS->GetPlayerName(),
-            bNewReadyStatus ? TEXT("READY") : TEXT("NOT READY"));
+        UE_LOG(LogTemp, Warning, TEXT("Attempting ServerTravel to: %s"), *LobbyPath);
 
-        // 서버에서 모든 플레이어가 준비되었는지 체크
-        if (AMenuGameMode* GM = Cast<AMenuGameMode>(GetWorld()->GetAuthGameMode()))
+        // 2. 월드 포인터 확인 후 실행
+        if (UWorld* World = GetWorld())
         {
-            if (GM->AreAllPlayersReady())
-            {
-                // 모두 준비되었다면 게임 시작 (레벨 이동)
-                // GetWorld()->ServerTravel(TEXT("/Game/Maps/GameLevelName?listen"));
-            }
+            World->ServerTravel(LobbyPath);
         }
     }
 }
 
-void AMenuPlayerController::RequestStartGame()
+void AMenuPlayerController::RequestToggleReady() { Server_ToggleReady(); }
+
+void AMenuPlayerController::Server_ToggleReady_Implementation()
 {
-    if (HasAuthority())
+    if (AMenuPlayerState* PS = GetPlayerState<AMenuPlayerState>())
     {
-        Server_StartGame(); // 서버라면 즉시 실행
-    }
-    else
-    {
-        Server_StartGame(); // 클라이언트라면 서버에 요청
+        PS->SetReady(!PS->IsReady());
+        if (AMenuLobbyGameMode* LobbyGM = Cast<AMenuLobbyGameMode>(GetWorld()->GetAuthGameMode()))
+        {
+            // 전원 준비 시 로직은 필요에 따라 추가
+        }
     }
 }
 
+void AMenuPlayerController::RequestStartGame() { Server_StartGame(); }
 bool AMenuPlayerController::Server_StartGame_Validate() { return true; }
-
 void AMenuPlayerController::Server_StartGame_Implementation()
 {
-    // 서버에서 GameMode를 통해 레벨 이동 명령
-    if (AMenuGameMode* GM = Cast<AMenuGameMode>(GetWorld()->GetAuthGameMode()))
+    if (AMenuLobbyGameMode* LobbyGM = Cast<AMenuLobbyGameMode>(GetWorld()->GetAuthGameMode()))
     {
-        GM->StartGame();
+        LobbyGM->StartGame();
+    }
+}
+
+void AMenuPlayerController::ShowHostGuestMenu()
+{
+    ClearCurrentWidget();
+
+    if (HostGuestWidgetClass)
+    {
+        UHostGuestWidget* HostGuestWidget = CreateWidget<UHostGuestWidget>(this, HostGuestWidgetClass);
+        if (HostGuestWidget)
+        {
+            CurrentWidget = HostGuestWidget;
+            CurrentWidget->AddToViewport();
+
+            FInputModeUIOnly InputMode;
+            InputMode.SetWidgetToFocus(CurrentWidget->TakeWidget());
+            SetInputMode(InputMode);
+            bShowMouseCursor = true;
+        }
     }
 }

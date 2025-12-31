@@ -19,6 +19,7 @@ class UInputMappingContext;
 class UInputAction;
 class UAnimMontage;
 class UInGameUIWidget;
+class UWidgetComponent;
 
 UCLASS()
 class TEAM10_4PROJECT_API ACivilian : public ACharacter, public IAbilitySystemInterface
@@ -41,7 +42,6 @@ public:
 	virtual void OnRep_PlayerState() override;
 	virtual void GetLifetimeReplicatedProps(TArray<FLifetimeProperty>& OutLifetimeProps) const override;
 	virtual float PlayAnimMontage(class UAnimMontage* AnimMontage, float InPlayRate = 1.f, FName StartSectionName = NAME_None) override;
-	
 #pragma endregion
 	
 #pragma region Civilian Components
@@ -71,6 +71,9 @@ protected:
 	// 생성된 UI 인스턴스 저장용
 	UPROPERTY()
 	TObjectPtr<UInGameUIWidget> InGameUIInstance;
+
+	UPROPERTY(VisibleAnywhere, BlueprintReadOnly, Category = "PlayerCharacter|Components", meta = (AllowPrivateAccess = "true"))
+	TObjectPtr<UWidgetComponent> VoteWidgetComponent;
 
 #pragma endregion
 	
@@ -357,6 +360,12 @@ protected:
 	UFUNCTION(Server, Reliable)
 	void Server_AddStackItem(FName ItemID, int32 Count);
 
+#pragma endregion
+
+#pragma region Vote
+public:
+	UFUNCTION()
+	void VoteWidgetActive(const FGameplayTag CallbackTag, int32 NewCount);
 #pragma endregion
 
 };

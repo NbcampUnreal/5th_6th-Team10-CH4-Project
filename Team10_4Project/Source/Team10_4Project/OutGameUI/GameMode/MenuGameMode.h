@@ -10,18 +10,15 @@ class TEAM10_4PROJECT_API AMenuGameMode : public AGameModeBase
     GENERATED_BODY()
 
 public:
+    AMenuGameMode();
+
     virtual void BeginPlay() override;
 
-    bool AreAllPlayersReady() const;
-
-    void StartGame();
-
 protected:
-    // 메인 메뉴 위젯 클래스
-    UPROPERTY(EditDefaultsOnly, Category = "UI")
+    // 메인 메뉴와 서버 브라우저 위젯 클래스는 여기서 관리합니다 (유지)
+    UPROPERTY(EditAnywhere, BlueprintReadWrite, Category = "UI")
     TSubclassOf<class UUserWidget> MainMenuWidgetClass;
 
-    /** Ready 완료 시 이동할 레벨 */
-    UPROPERTY(EditDefaultsOnly, Category = "Game")
-    FName GamePlayLevelName;
+    UPROPERTY(EditAnywhere, BlueprintReadWrite, Category = "UI")
+    TSubclassOf<class UUserWidget> ServerBrowserWidgetClass;
 };

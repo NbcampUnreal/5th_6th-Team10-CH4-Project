@@ -96,9 +96,11 @@ void ATeam10GameMode::HandleStartingNewPlayer_Implementation(APlayerController* 
 	}
 	
 	LoadedPlayerCount++;
+	UE_LOG(LogTemp, Log, TEXT("Ready %d/%d"), LoadedPlayerCount,Team10GameState->PlayerArray.Num())
 	const int32 ExpectedPlayers = 2; // 크래시 나길래 추가한 크래시 방지용 임시 추가코드. - 금성
-	if (LoadedPlayerCount >= ExpectedPlayers)	// 크래시 나길래 추가한 크래시 방지용 임시 추가 코드. - 금성
-	//if (LoadedPlayerCount == Team10GameState->PlayerArray.Num())
+		// 크래시 나길래 추가한 크래시 방지용 임시 추가 코드. - 금성
+	//if (LoadedPlayerCount >= Team10GameState->PlayerArray.Num())
+	if (LoadedPlayerCount >= ExpectedPlayers)
 	{
 		// 모든 플레이어의 로딩이 끝나면 로딩 UI를 해제한다.
 		UE_LOG(LogTemp, Log, TEXT("All Player Loaded"));
@@ -112,13 +114,13 @@ void ATeam10GameMode::HandleStartingNewPlayer_Implementation(APlayerController* 
 		//사망 시 관전 및 리스폰 테스트
 		FTimerHandle TimerHandle;
 		
-		// GetWorldTimerManager().SetTimer(TimerHandle, FTimerDelegate::CreateLambda([this, CivilianPlayerController]()
-		// {
-		// 	EternalDeath(CivilianPlayerController);
-		// }), 10.f, false);
-	
+		GetWorldTimerManager().SetTimer(TimerHandle, FTimerDelegate::CreateLambda([this, CivilianPlayerController]()
+		{
+			EternalDeath(CivilianPlayerController);
+		}), 10.f, false);
 	}
 }
+
 void ATeam10GameMode::AssignInfectedPlayers()
 {
 	if (!Team10GameState)
@@ -142,20 +144,29 @@ void ATeam10GameMode::AssignInfectedPlayers()
 		//UE_LOG(LogTemp, Warning, TEXT("RandomInfectedIndex: %d"), j);
 		RandomInfectedArray.Swap(i, j);
 	}
-
-	// 인덱스를 랜덤으로 섞고 랜덤한 인덱스 값에 해당하는 플레이어를 찾아 감염자로 설정한다.
 	
+	// 인덱스를 랜덤으로 섞고 랜덤한 인덱스 값에 해당하는 플레이어를 찾아 감염자로 설정한다.
+	//for (int i = 0; i < InfectedCount; i++)
 	for (int i = 0; i < ActualInfectedCount; i++)	// 크래시 나길래 추가한 크래시 방지용 임시 추가 코드. - 금성
-		//for (int i = 0; i < InfectedCount; i++)
 	{
 		ACivilianPlayerState* CivilianPlayerState = Cast<ACivilianPlayerState>(Team10GameState->PlayerArray[RandomInfectedArray[i]]);
+
+		if (!CivilianPlayerState)
+		{
+			return;
+		}
+		
 		CivilianPlayerState->SetPlayerRoleTag(GamePlayTags::PlayerRole::Infected);
-		UE_LOG(LogTemp, Warning, TEXT("You're Infected"));
 	}
-	
 	for (int i = InfectedCount; i < PlayerCount; i++)
 	{
 		ACivilianPlayerState* CivilianPlayerState = Cast<ACivilianPlayerState>(Team10GameState->PlayerArray[RandomInfectedArray[i]]);
+		
+		if (!CivilianPlayerState)
+		{
+			return;
+		}
+		
 		CivilianPlayerState->SetPlayerRoleTag(GamePlayTags::PlayerRole::Civilian);
 	}
 

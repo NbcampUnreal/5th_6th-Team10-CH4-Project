@@ -110,10 +110,10 @@ void ATeam10GameMode::HandleStartingNewPlayer_Implementation(APlayerController* 
 		//사망 시 관전 및 리스폰 테스트
 		FTimerHandle TimerHandle;
 		
-		GetWorldTimerManager().SetTimer(TimerHandle, FTimerDelegate::CreateLambda([this, CivilianPlayerController]()
-		{
-			EternalDeath(CivilianPlayerController);
-		}), 10.f, false);
+		// GetWorldTimerManager().SetTimer(TimerHandle, FTimerDelegate::CreateLambda([this, CivilianPlayerController]()
+		// {
+		// 	EternalDeath(CivilianPlayerController);
+		// }), 10.f, false);
 	
 	}
 }

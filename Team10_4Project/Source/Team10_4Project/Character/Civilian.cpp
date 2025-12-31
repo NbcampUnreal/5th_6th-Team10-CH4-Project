@@ -594,7 +594,20 @@ void ACivilian::HandleFatalDamage(AActor* Attacker, bool bAttackerIsTransformed)
 		{
 			// [CASE B] 즉사 (Death)
 			UE_LOG(LogTemp, Warning, TEXT("[Dead] Player Dead."));
-			MulticastHandleDeath(); // GameMode - 사망처리로 대체 예정
+			
+			MulticastHandleDeath();
+			
+			if (HasAuthority())
+			{
+				ATeam10GameMode* GM = GetWorld()->GetAuthGameMode<ATeam10GameMode>();
+				APlayerController* PC = Cast<APlayerController>(GetController());
+                
+				if (GM && PC)
+				{
+					// GameMode의 영구 사망 처리 함수 호출
+					GM->EternalDeath(PC);
+				}
+			}
 		}
 		else
 		{

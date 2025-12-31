@@ -136,6 +136,16 @@ void ACivilian::BeginPlay()
 		{
 			GetCharacterMovement()->MaxWalkSpeed = AttributeSet->GetMoveSpeed();
 		}
+		
+		ASC->RegisterGameplayTagEvent(
+			GamePlayTags::CivilianState::Stun, 
+			EGameplayTagEventType::NewOrRemoved
+		).AddUObject(this, &ACivilian::OnGameplayTagChanged);
+		
+		ASC->RegisterGameplayTagEvent(
+			GamePlayTags::InfectedState::Stun, 
+			EGameplayTagEventType::NewOrRemoved
+		).AddUObject(this, &ACivilian::OnGameplayTagChanged);
 	}
 	
 	// 3인칭 (Full Body) 백업
@@ -518,7 +528,10 @@ void ACivilian::Cheat_SetSanity(float Amount)
 
 void ACivilian::HandleFatalDamage(AActor* Attacker, bool bAttackerIsTransformed)
 {
-	UAbilitySystemComponent* ASC = GetAbilitySystemComponent();
+	ACivilianPlayerState* PS = GetPlayerState<ACivilianPlayerState>();
+	if (!PS) return;
+	
+	UAbilitySystemComponent* ASC = PS->GetAbilitySystemComponent();
 	if (!ASC) return;
 
 	// 내가 변신한 괴물인가?
@@ -649,6 +662,11 @@ void ACivilian::OnRep_CurrentWeapon(class AWeaponBase* OldWeapon)
 			{
 				WeaponMesh1P->AttachToComponent(FirstPersonMeshComponent, FAttachmentTransformRules::SnapToTargetNotIncludingScale, FName("WeaponSocket"));
 			}
+			
+			if (USkeletalMeshComponent* WeaponMesh3P = CurrentWeapon->GetWeaponMesh3P())
+			{
+				WeaponMesh3P->AttachToComponent(GetMesh(), FAttachmentTransformRules::SnapToTargetNotIncludingScale, FName("WeaponSocket_3P"));
+			}
 		}
 	}
 	
@@ -713,8 +731,9 @@ void ACivilian::EquipWeapon(TSubclassOf<class AWeaponBase> NewWeaponClass)
 	{
 		// 3인칭 부착
 		NewWeapon->AttachToComponent(GetMesh(), FAttachmentTransformRules::SnapToTargetNotIncludingScale, FName("WeaponSocket"));
-
+		
 		CurrentWeapon = NewWeapon;
+		
 		UE_LOG(LogTemp, Log, TEXT("Pistol Equipped!"));
 		
 		if (IsLocallyControlled()) UpdateCrosshairVisibility();
@@ -783,16 +802,60 @@ float ACivilian::PlayMontage1P(UAnimMontage* MontageToPlay)
 	return 0.0f;
 }
 
+void ACivilian::Cheat_TestRespawn()
+{
+	Server_TestRespawn();
+}
+
+void ACivilian::Server_TestRespawn_Implementation()
+{
+	if (HasAuthority())
+	{
+		ATeam10GameMode* GM = GetWorld()->GetAuthGameMode<ATeam10GameMode>();
+		if (GM)
+		{
+			UE_LOG(LogTemp, Warning, TEXT("[Test] Force Respawn Requested via Cheat"));
+            
+			// 컨트롤러를 넘겨주며 리스폰 함수 호출
+			GM->RespawnDeath(Cast<APlayerController>(GetController()));
+		}
+	}
+}
+
 void ACivilian::Server_SetRole_Implementation(int32 RoleID)
 {
 	if (ACivilianPlayerState* PS = GetPlayerState<ACivilianPlayerState>())
 	{
+		UAbilitySystemComponent* ASC = PS->GetAbilitySystemComponent();
+		if (!ASC) return;
+		
 		// 0: Civilian, 1: Infected
-		FGameplayTag NewTag = (RoleID == 1) ? 
-			GamePlayTags::PlayerRole::Infected : 
-			GamePlayTags::PlayerRole::Civilian;
-            
-		PS->SetPlayerRoleTag(NewTag);
+		if (RoleID == 1)
+		{
+			// 이펙트 컨테스트 생성
+			FGameplayEffectContextHandle EffectContext = AbilitySystemComponent->MakeEffectContext();
+			EffectContext.AddSourceObject(this);
+	
+			// 이펙트 적용
+			FGameplayEffectSpecHandle SpecHandle = AbilitySystemComponent->MakeOutgoingSpec(GrantInfected, 1, EffectContext);
+			if (SpecHandle.IsValid())
+			{
+				AbilitySystemComponent->ApplyGameplayEffectSpecToSelf(*SpecHandle.Data.Get());
+			}
+		}
+		else
+		{
+			// 이펙트 컨테스트 생성
+			FGameplayEffectContextHandle EffectContext = AbilitySystemComponent->MakeEffectContext();
+			EffectContext.AddSourceObject(this);
+	
+			// 이펙트 적용
+			FGameplayEffectSpecHandle SpecHandle = AbilitySystemComponent->MakeOutgoingSpec(GrantCivilian, 1, EffectContext);
+			if (SpecHandle.IsValid())
+			{
+				AbilitySystemComponent->ApplyGameplayEffectSpecToSelf(*SpecHandle.Data.Get());
+			}
+		}
 	}
 }
 
@@ -951,6 +1014,29 @@ void ACivilian::TryAttack()
 	}
 }
 
+void ACivilian::OnGameplayTagChanged(const FGameplayTag CallbackTag, int32 NewCount)
+{
+	// 스턴 태그가 새로 추가되었다면 (NewCount > 0)
+	if (NewCount > 0)
+	{
+		// 즉시 이동 정지 (관성 제거)
+		if (GetCharacterMovement())
+		{
+			GetCharacterMovement()->StopMovementImmediately();
+			GetCharacterMovement()->DisableMovement(); // 아예 이동 컴포넌트 비활성화
+		}
+	}
+	// 스턴 태그가 사라졌다면 (NewCount == 0)
+	else
+	{
+		// 이동 컴포넌트 다시 활성화
+		if (GetCharacterMovement())
+		{
+			GetCharacterMovement()->SetMovementMode(MOVE_Walking);
+		}
+	}
+}
+
 #pragma region Interaction Logics - 상호작용 로직 구현
 // E 키 입력 처리
 void ACivilian::InteractInputPressed()
@@ -1038,4 +1124,33 @@ AActor* ACivilian::GetInteractableActor()
 	}
 	return nullptr;
 }
+void ACivilian::Cheat_AddItem(FName ItemID)
+{
+	Server_AddItem(ItemID);
+}
+void ACivilian::Cheat_AddStackItem(FName ItemID, int32 Count)
+{
+	Server_AddStackItem(ItemID, Count);
+}
+void ACivilian::Server_AddItem_Implementation(FName ItemID)
+{
+	if (ACivilianPlayerState* PS = GetPlayerState<ACivilianPlayerState>())
+	{
+		if (PS->InventoryComponent)
+		{
+			PS->InventoryComponent->AddItemByID(ItemID);
+		}
+	}
+}
+void ACivilian::Server_AddStackItem_Implementation(FName ItemID, int32 Count)
+{
+	if (ACivilianPlayerState* PS = GetPlayerState<ACivilianPlayerState>())
+	{
+		if (PS->InventoryComponent)
+		{
+			PS->InventoryComponent->AddItemByID(ItemID, Count);
+		}
+	}
+}
+
 #pragma endregion

@@ -572,7 +572,10 @@ void ACivilian::Cheat_SetSanity(float Amount)
 
 void ACivilian::HandleFatalDamage(AActor* Attacker, bool bAttackerIsTransformed)
 {
-	UAbilitySystemComponent* ASC = GetAbilitySystemComponent();
+	ACivilianPlayerState* PS = GetPlayerState<ACivilianPlayerState>();
+	if (!PS) return;
+	
+	UAbilitySystemComponent* ASC = PS->GetAbilitySystemComponent();
 	if (!ASC) return;
 
 	// 내가 변신한 괴물인가?
@@ -591,7 +594,20 @@ void ACivilian::HandleFatalDamage(AActor* Attacker, bool bAttackerIsTransformed)
 		{
 			// [CASE B] 즉사 (Death)
 			UE_LOG(LogTemp, Warning, TEXT("[Dead] Player Dead."));
-			MulticastHandleDeath(); // GameMode - 사망처리로 대체 예정
+			
+			MulticastHandleDeath();
+			
+			if (HasAuthority())
+			{
+				ATeam10GameMode* GM = GetWorld()->GetAuthGameMode<ATeam10GameMode>();
+				APlayerController* PC = Cast<APlayerController>(GetController());
+                
+				if (GM && PC)
+				{
+					// GameMode의 영구 사망 처리 함수 호출
+					GM->EternalDeath(PC);
+				}
+			}
 		}
 		else
 		{
@@ -704,6 +720,11 @@ void ACivilian::OnRep_CurrentWeapon(class AWeaponBase* OldWeapon)
 				WeaponMesh1P->AttachToComponent(FirstPersonMeshComponent, FAttachmentTransformRules::SnapToTargetNotIncludingScale, FName("WeaponSocket"));
 			}
 		}
+		
+		if (USkeletalMeshComponent* WeaponMesh3P = CurrentWeapon->GetWeaponMesh3P())
+		{
+			WeaponMesh3P->AttachToComponent(GetMesh(), FAttachmentTransformRules::SnapToTargetNotIncludingScale, FName("WeaponSocket_3P"));
+		}
 	}
 	
 	if (IsLocallyControlled())
@@ -767,8 +788,9 @@ void ACivilian::EquipWeapon(TSubclassOf<class AWeaponBase> NewWeaponClass)
 	{
 		// 3인칭 부착
 		NewWeapon->AttachToComponent(GetMesh(), FAttachmentTransformRules::SnapToTargetNotIncludingScale, FName("WeaponSocket"));
-
+		
 		CurrentWeapon = NewWeapon;
+		
 		UE_LOG(LogTemp, Log, TEXT("Pistol Equipped!"));
 		
 		if (IsLocallyControlled()) UpdateCrosshairVisibility();
@@ -861,12 +883,36 @@ void ACivilian::Server_SetRole_Implementation(int32 RoleID)
 {
 	if (ACivilianPlayerState* PS = GetPlayerState<ACivilianPlayerState>())
 	{
+		UAbilitySystemComponent* ASC = PS->GetAbilitySystemComponent();
+		if (!ASC) return;
+		
 		// 0: Civilian, 1: Infected
-		FGameplayTag NewTag = (RoleID == 1) ? 
-			GamePlayTags::PlayerRole::Infected : 
-			GamePlayTags::PlayerRole::Civilian;
-            
-		PS->SetPlayerRoleTag(NewTag);
+		if (RoleID == 1)
+		{
+			// 이펙트 컨테스트 생성
+			FGameplayEffectContextHandle EffectContext = AbilitySystemComponent->MakeEffectContext();
+			EffectContext.AddSourceObject(this);
+	
+			// 이펙트 적용
+			FGameplayEffectSpecHandle SpecHandle = AbilitySystemComponent->MakeOutgoingSpec(GrantInfected, 1, EffectContext);
+			if (SpecHandle.IsValid())
+			{
+				AbilitySystemComponent->ApplyGameplayEffectSpecToSelf(*SpecHandle.Data.Get());
+			}
+		}
+		else
+		{
+			// 이펙트 컨테스트 생성
+			FGameplayEffectContextHandle EffectContext = AbilitySystemComponent->MakeEffectContext();
+			EffectContext.AddSourceObject(this);
+	
+			// 이펙트 적용
+			FGameplayEffectSpecHandle SpecHandle = AbilitySystemComponent->MakeOutgoingSpec(GrantCivilian, 1, EffectContext);
+			if (SpecHandle.IsValid())
+			{
+				AbilitySystemComponent->ApplyGameplayEffectSpecToSelf(*SpecHandle.Data.Get());
+			}
+		}
 	}
 }
 

@@ -141,7 +141,8 @@ void UGameFlowManager::EndGame(EGameResult Result)
 	}
 	ChangePhase(EGamePhase::GameEnd);
 	Team10GameState->SetGameResult(Result);
-
+	
+	GetWorld()->GetTimerManager().ClearTimer(PhaseTimerHandle);
 	UE_LOG(LogTemp, Warning, TEXT("Game Ended! Result: %d"), (int32)Result);
 	// 나중에 수정
 	

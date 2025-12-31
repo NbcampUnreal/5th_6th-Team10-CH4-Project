@@ -706,11 +706,11 @@ void ACivilian::OnRep_CurrentWeapon(class AWeaponBase* OldWeapon)
 			{
 				WeaponMesh1P->AttachToComponent(FirstPersonMeshComponent, FAttachmentTransformRules::SnapToTargetNotIncludingScale, FName("WeaponSocket"));
 			}
-			
-			if (USkeletalMeshComponent* WeaponMesh3P = CurrentWeapon->GetWeaponMesh3P())
-			{
-				WeaponMesh3P->AttachToComponent(GetMesh(), FAttachmentTransformRules::SnapToTargetNotIncludingScale, FName("WeaponSocket_3P"));
-			}
+		}
+		
+		if (USkeletalMeshComponent* WeaponMesh3P = CurrentWeapon->GetWeaponMesh3P())
+		{
+			WeaponMesh3P->AttachToComponent(GetMesh(), FAttachmentTransformRules::SnapToTargetNotIncludingScale, FName("WeaponSocket_3P"));
 		}
 	}
 	

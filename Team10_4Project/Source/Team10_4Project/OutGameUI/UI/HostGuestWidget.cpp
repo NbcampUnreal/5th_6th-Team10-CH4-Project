@@ -6,7 +6,7 @@ void UHostGuestWidget::NativeConstruct()
 {
 	Super::NativeConstruct();
 
-	// ±×·¡ÇÁ¸¦ ¾²Áö ¾Ê°í ¼Ò½º¿¡¼­ ¹öÆ° Å¬¸¯ ÀÌº¥Æ®¸¦ Á÷Á¢ ¿¬°áÇÕ´Ï´Ù.
+	// ê·¸ë˜í”„ë¥¼ ì“°ì§€ ì•Šê³  ì†ŒìŠ¤ì—ì„œ ë²„íŠ¼ í´ë¦­ ì´ë²¤íŠ¸ë¥¼ ì§ì ‘ ì—°ê²°í•©ë‹ˆë‹¤.
 	if (Button_Host)
 	{
 		Button_Host->OnClicked.AddDynamic(this, &UHostGuestWidget::OnHostClicked);
@@ -22,14 +22,14 @@ void UHostGuestWidget::OnHostClicked()
 {
 	if (UEOSSubsystem* EOS = GetGameInstance()->GetSubsystem<UEOSSubsystem>())
 	{
-		// ´Ù¸¥ ´ã´çÀÚ°¡ ¸¸µç EOS ¼¼¼Ç »ı¼º È£Ãâ
+		// EOS ë¡œë¹„ ì„¸ì…˜ ìƒì„± â†’ ì™„ë£Œ ì‹œ ìë™ìœ¼ë¡œ ë¡œë¹„ ë ˆë²¨ë¡œ ì´ë™
 		EOS->CreateLobbySession(4, false);
 	}
 }
 
 void UHostGuestWidget::OnGuestClicked()
 {
-	// »ç¿ëÀÚ´ÔÀÇ ¼³°è´ë·Î ÄÁÆ®·Ñ·¯¸¦ ÅëÇØ À§Á¬ ÀüÈ¯
+	// ì‚¬ìš©ìë‹˜ì˜ ì„¤ê³„ëŒ€ë¡œ ì»¨íŠ¸ë¡¤ëŸ¬ë¥¼ í†µí•´ ìœ„ì ¯ ì „í™˜
 	if (AMenuPlayerController* PC = Cast<AMenuPlayerController>(GetOwningPlayer()))
 	{
 		PC->ShowServerBrowser();

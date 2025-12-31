@@ -1,6 +1,7 @@
 ﻿#include "OutGameUI/GameMode/MenuGameMode.h"
 #include "Blueprint/UserWidget.h"
 #include "OutGameUI/Player/MenuPlayerController.h"
+#include "InGameUI/JKH/EOSSubsystem.h"
 
 AMenuGameMode::AMenuGameMode()
 {
@@ -10,6 +11,15 @@ AMenuGameMode::AMenuGameMode()
 void AMenuGameMode::BeginPlay()
 {
     Super::BeginPlay();
+
+    // EOS 로그인 (DevAuthTool 사용)
+    if (UGameInstance* GI = GetGameInstance())
+    {
+        if (UEOSSubsystem* EOS = GI->GetSubsystem<UEOSSubsystem>())
+        {
+            EOS->LoginToEOS("localhost:8081", "dobal", "Developer");
+        }
+    }
 
     // 메인 메뉴 위젯 생성 (유지)
     if (MainMenuWidgetClass)

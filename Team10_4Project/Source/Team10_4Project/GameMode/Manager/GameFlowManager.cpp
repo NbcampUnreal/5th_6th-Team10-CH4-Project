@@ -121,7 +121,7 @@ void UGameFlowManager::OpenNextArea()
 		SetCurrentArea(EGameArea::Area3);
 		break;
 	case EGameArea::Area3:
-		ActivateExit();
+		SetCurrentArea(EGameArea::Exit);
 		break;
 	default:
 		break;
@@ -141,7 +141,8 @@ void UGameFlowManager::EndGame(EGameResult Result)
 	}
 	ChangePhase(EGamePhase::GameEnd);
 	Team10GameState->SetGameResult(Result);
-
+	
+	GetWorld()->GetTimerManager().ClearTimer(PhaseTimerHandle);
 	UE_LOG(LogTemp, Warning, TEXT("Game Ended! Result: %d"), (int32)Result);
 	// 나중에 수정
 	
@@ -168,7 +169,7 @@ void UGameFlowManager::AreaChanged(FGameplayTag AreaTag)
 	InitializeRemainingFuseBoxes();
 	ChangePhase(EGamePhase::DayPhase);
 
-	UE_LOG(LogTemp, Error, TEXT("Area Changed"));
+	UE_LOG(LogTemp, Log, TEXT("Area Changed"));
 }
 
 void UGameFlowManager::StartPhaseTimer(float Duration)

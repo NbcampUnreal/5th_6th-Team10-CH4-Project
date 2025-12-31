@@ -23,6 +23,7 @@
 #include "Weapon/WeaponBase.h"
 #include "InGameUI/KSH/InGameUIWidget.h"
 #include "Blueprint/UserWidget.h"
+#include "GameMode/Team10GameMode.h"
 #include "InGameUI/KSH/InventoryComponent.h"
 
 ACivilian::ACivilian()
@@ -72,6 +73,12 @@ ACivilian::ACivilian()
 	FirstPersonCamera->SetupAttachment(GetCapsuleComponent());
 	FirstPersonCamera->SetRelativeLocation(FVector(-10.0f, 0.0f, 60.0f));
 	FirstPersonCamera->bUsePawnControlRotation = true; // 마우스 회전에 따라 카메라 회전
+	
+	WerewolfCameraComponent = CreateDefaultSubobject<UCameraComponent>(TEXT("WerewolfCameraComponent"));
+	WerewolfCameraComponent->SetupAttachment(GetCapsuleComponent()); 
+	WerewolfCameraComponent->SetRelativeLocation(FVector(20.f, 0.f, 100.f)); 
+	WerewolfCameraComponent->bUsePawnControlRotation = true;
+	WerewolfCameraComponent->SetActive(false); 
 	
 	FirstPersonMeshComponent = CreateDefaultSubobject<USkeletalMeshComponent>(TEXT("FirstPersonMesh"));
 	FirstPersonMeshComponent->SetupAttachment(FirstPersonCamera);
@@ -129,6 +136,16 @@ void ACivilian::BeginPlay()
 		{
 			GetCharacterMovement()->MaxWalkSpeed = AttributeSet->GetMoveSpeed();
 		}
+		
+		ASC->RegisterGameplayTagEvent(
+			GamePlayTags::CivilianState::Stun, 
+			EGameplayTagEventType::NewOrRemoved
+		).AddUObject(this, &ACivilian::OnGameplayTagChanged);
+		
+		ASC->RegisterGameplayTagEvent(
+			GamePlayTags::InfectedState::Stun, 
+			EGameplayTagEventType::NewOrRemoved
+		).AddUObject(this, &ACivilian::OnGameplayTagChanged);
 	}
 	
 	// 3인칭 (Full Body) 백업
@@ -149,6 +166,17 @@ void ACivilian::BeginPlay()
 
 		// 애니메이션 블루프린트 클래스 저장
 		DefaultFirstPersonAnimClass = FirstPersonMeshComponent->GetAnimClass();
+	}
+	
+	// 로컬 플레이어(내 캐릭터)인 경우에만 Crosshair 생성
+	if (IsLocallyControlled() && CrosshairWidgetClass)
+	{
+		CrosshairWidget = CreateWidget<UUserWidget>(GetWorld(), CrosshairWidgetClass);
+		if (CrosshairWidget)
+		{
+			CrosshairWidget->AddToViewport();
+			CrosshairWidget->SetVisibility(ESlateVisibility::Hidden); 
+		}
 	}
 }
 
@@ -250,6 +278,11 @@ void ACivilian::SetupPlayerInputComponent(class UInputComponent* PlayerInputComp
 		{
 			EnhancedInputComponent->BindAction(IA_Slot2, ETriggerEvent::Started,
 				this, &ACivilian::OnInput_Slot2);
+		}
+		if (IA_Reload)
+		{
+			EnhancedInputComponent->BindAction(IA_Reload, ETriggerEvent::Started,
+				this, &ACivilian::OnInput_Reload);
 		}
 	}
 }
@@ -502,7 +535,7 @@ void ACivilian::HandleFatalDamage(AActor* Attacker, bool bAttackerIsTransformed)
 	if (ASC->HasMatchingGameplayTag(GamePlayTags::InfectedState::Transformed))
 	{
 		// [CASE A] 감염자 리스폰 (Infected Stun)
-		UE_LOG(LogTemp, Warning, TEXT("Infected Groggy....."));
+		UE_LOG(LogTemp, Warning, TEXT("[Groggy] Infected Groggy....."));
 		FGameplayTagContainer TagContainer;
 		TagContainer.AddTag(GamePlayTags::Ability::Infected::Stun); 
 		ASC->TryActivateAbilitiesByTag(TagContainer);
@@ -513,13 +546,13 @@ void ACivilian::HandleFatalDamage(AActor* Attacker, bool bAttackerIsTransformed)
 		if (bAttackerIsTransformed)
 		{
 			// [CASE B] 즉사 (Death)
-			UE_LOG(LogTemp, Warning, TEXT("Player Dead."));
+			UE_LOG(LogTemp, Warning, TEXT("[Dead] Player Dead."));
 			MulticastHandleDeath(); // GameMode - 사망처리로 대체 예정
 		}
 		else
 		{
 			// [CASE C] 시민 투표 대기 (Civilian Voting)
-			UE_LOG(LogTemp, Warning, TEXT("Start Voting....."));
+			UE_LOG(LogTemp, Warning, TEXT("[Voting] Start Voting....."));
 			
 			FGameplayTagContainer TagContainer;
 			TagContainer.AddTag(GamePlayTags::Ability::Civilian::Stun); 
@@ -611,19 +644,15 @@ void ACivilian::MulticastHandleDeath()
 
 void ACivilian::OnRep_CurrentWeapon(class AWeaponBase* OldWeapon)
 {
-	// 1. 기존 무기가 있었다면 제거 (혹은 숨김)
 	if (OldWeapon)
 	{
-		OldWeapon->Destroy(); // 혹은 DetachFromActor 등
+		OldWeapon->Destroy(); 
 	}
-
-	// 2. 새 무기가 들어왔다면 손에 부착!
+	
 	if (CurrentWeapon)
 	{
-		// 3인칭 메쉬에 부착 (다른 사람이 볼 때 중요)
 		CurrentWeapon->AttachToComponent(GetMesh(), FAttachmentTransformRules::SnapToTargetNotIncludingScale, FName("WeaponSocket"));
-
-		// [중요] 만약 '내 화면(IsLocallyControlled)'이라면 1인칭 팔에도 붙여줘야 함
+		
 		if (IsLocallyControlled() && FirstPersonMeshComponent) 
 		{
 			if (USkeletalMeshComponent* WeaponMesh1P = CurrentWeapon->GetWeaponMesh1P())
@@ -631,6 +660,11 @@ void ACivilian::OnRep_CurrentWeapon(class AWeaponBase* OldWeapon)
 				WeaponMesh1P->AttachToComponent(FirstPersonMeshComponent, FAttachmentTransformRules::SnapToTargetNotIncludingScale, FName("WeaponSocket"));
 			}
 		}
+	}
+	
+	if (IsLocallyControlled())
+	{
+		UpdateCrosshairVisibility();
 	}
 }
 
@@ -644,6 +678,20 @@ void ACivilian::Server_UnEquipWeapon_Implementation()
 	UnEquipWeapon();
 }
 
+void ACivilian::UpdateCrosshairVisibility()
+{
+	if (!CrosshairWidget) return;
+	
+	if (CurrentWeapon)
+	{
+		CrosshairWidget->SetVisibility(ESlateVisibility::HitTestInvisible); 
+	}
+	else
+	{
+		CrosshairWidget->SetVisibility(ESlateVisibility::Hidden);
+	}
+}
+
 void ACivilian::UnEquipWeapon()
 {
 	if (CurrentWeapon)
@@ -652,6 +700,8 @@ void ACivilian::UnEquipWeapon()
 		CurrentWeapon = nullptr;
         
 		UE_LOG(LogTemp, Log, TEXT("Weapon Unequipped (Unarmed Mode)"));
+		
+		if (IsLocallyControlled()) UpdateCrosshairVisibility();
 	}
 }
 
@@ -676,6 +726,8 @@ void ACivilian::EquipWeapon(TSubclassOf<class AWeaponBase> NewWeaponClass)
 
 		CurrentWeapon = NewWeapon;
 		UE_LOG(LogTemp, Log, TEXT("Pistol Equipped!"));
+		
+		if (IsLocallyControlled()) UpdateCrosshairVisibility();
 	}
 }
 
@@ -721,6 +773,46 @@ void ACivilian::OnInput_Slot2()
 	}
 }
 
+void ACivilian::OnInput_Reload()
+{
+	UAbilitySystemComponent* ASC = GetAbilitySystemComponent();
+	if (ASC)
+	{
+		FGameplayTagContainer ReloadTagContainer;
+		ReloadTagContainer.AddTag(FGameplayTag::RequestGameplayTag("Ability.Civilian.Reload"));
+		ASC->TryActivateAbilitiesByTag(ReloadTagContainer);
+	}
+}
+
+float ACivilian::PlayMontage1P(UAnimMontage* MontageToPlay)
+{
+	if (FirstPersonMeshComponent && FirstPersonMeshComponent->GetAnimInstance() && MontageToPlay)
+	{
+		return FirstPersonMeshComponent->GetAnimInstance()->Montage_Play(MontageToPlay);
+	}
+	return 0.0f;
+}
+
+void ACivilian::Cheat_TestRespawn()
+{
+	Server_TestRespawn();
+}
+
+void ACivilian::Server_TestRespawn_Implementation()
+{
+	if (HasAuthority())
+	{
+		ATeam10GameMode* GM = GetWorld()->GetAuthGameMode<ATeam10GameMode>();
+		if (GM)
+		{
+			UE_LOG(LogTemp, Warning, TEXT("[Test] Force Respawn Requested via Cheat"));
+            
+			// 컨트롤러를 넘겨주며 리스폰 함수 호출
+			GM->RespawnDeath(Cast<APlayerController>(GetController()));
+		}
+	}
+}
+
 void ACivilian::Server_SetRole_Implementation(int32 RoleID)
 {
 	if (ACivilianPlayerState* PS = GetPlayerState<ACivilianPlayerState>())
@@ -756,6 +848,9 @@ void ACivilian::MulticastMorph_Implementation(bool bToInfected)
 	{
 		// 변신 전 들고 있는 무기가 있다면 강제 해제
 		UnEquipWeapon();
+		
+		if (FirstPersonCamera) FirstPersonCamera->SetActive(false);
+		if (WerewolfCameraComponent) WerewolfCameraComponent->SetActive(true);
 		
 		if (MorphMesh && GetMesh())
 		{
@@ -799,6 +894,9 @@ void ACivilian::MulticastMorph_Implementation(bool bToInfected)
 	}
 	else
 	{
+		if (WerewolfCameraComponent) WerewolfCameraComponent->SetActive(false);
+		if (FirstPersonCamera) FirstPersonCamera->SetActive(true);
+		
 		// 3인칭 복구
 		if (GetMesh())
 		{
@@ -880,6 +978,29 @@ void ACivilian::TryAttack()
 	else
 	{
 		UE_LOG(LogTemp, Warning, TEXT("[Attack] Invalid Ability Tag!"));
+	}
+}
+
+void ACivilian::OnGameplayTagChanged(const FGameplayTag CallbackTag, int32 NewCount)
+{
+	// 스턴 태그가 새로 추가되었다면 (NewCount > 0)
+	if (NewCount > 0)
+	{
+		// 즉시 이동 정지 (관성 제거)
+		if (GetCharacterMovement())
+		{
+			GetCharacterMovement()->StopMovementImmediately();
+			GetCharacterMovement()->DisableMovement(); // 아예 이동 컴포넌트 비활성화
+		}
+	}
+	// 스턴 태그가 사라졌다면 (NewCount == 0)
+	else
+	{
+		// 이동 컴포넌트 다시 활성화
+		if (GetCharacterMovement())
+		{
+			GetCharacterMovement()->SetMovementMode(MOVE_Walking);
+		}
 	}
 }
 

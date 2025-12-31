@@ -3,6 +3,8 @@
 
 #include "WeaponBase.h"
 
+#include "Kismet/GameplayStatics.h"
+
 AWeaponBase::AWeaponBase()
 {
 	PrimaryActorTick.bCanEverTick = false;
@@ -23,6 +25,25 @@ AWeaponBase::AWeaponBase()
 	WeaponMesh1P->SetupAttachment(RootComponent);
 	WeaponMesh1P->SetOnlyOwnerSee(true); // 주인(나)에게만 보임
 	WeaponMesh1P->SetCastShadow(false); // 1인칭 팔 그림자는 보통 끕니다
+}
+
+void AWeaponBase::PlayFireEffects()
+{		
+	if (FireSound)
+	{
+		if (HasAuthority())
+		{
+			MulticastPlayFireEffects();
+		}
+	}
+}
+
+void AWeaponBase::MulticastPlayFireEffects_Implementation()
+{
+	if (FireSound && WeaponMesh3P)
+	{
+		UGameplayStatics::SpawnSoundAttached(FireSound, WeaponMesh3P, FName("muzzle_socket"));
+	}
 }
 
 

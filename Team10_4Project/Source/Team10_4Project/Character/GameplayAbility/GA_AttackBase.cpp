@@ -19,7 +19,7 @@ FHitResult UGA_AttackBase::PerformLineTrace()
 {
 	FHitResult HitResult;
 	
-	// 1. 시전자(Avatar)와 컨트롤러 가져오기
+	// 시전자(Avatar)와 컨트롤러 가져오기
 	AActor* AvatarActor = GetAvatarActorFromActorInfo();
 	ACharacter* Character = Cast<ACharacter>(AvatarActor);
 	if (!Character) return HitResult;
@@ -27,20 +27,20 @@ FHitResult UGA_AttackBase::PerformLineTrace()
 	APlayerController* PC = Cast<APlayerController>(Character->GetController());
 	if (!PC) return HitResult;
 
-	// 2. 카메라 위치와 방향 가져오기 (1인칭 시점 기준)
+	// 카메라 위치와 방향 가져오기 (1인칭 시점 기준)
 	FVector CamLoc;
 	FRotator CamRot;
 	PC->GetPlayerViewPoint(CamLoc, CamRot);
 
-	// 3. 트레이스 시작점과 끝점 계산
+	// 트레이스 시작점과 끝점 계산
 	FVector Start = CamLoc;
 	FVector End = Start + (CamRot.Vector() * AttackRange);
 
-	// 4. 트레이스 파라미터 설정 (자신은 무시)
+	// 트레이스 파라미터 설정 (자신은 무시)
 	FCollisionQueryParams Params;
 	Params.AddIgnoredActor(AvatarActor);
 
-	// 5. 실제 레이캐스트 발사
+	// 실제 레이캐스트 발사
 	GetWorld()->LineTraceSingleByChannel(
 		HitResult,
 		Start,
@@ -51,7 +51,7 @@ FHitResult UGA_AttackBase::PerformLineTrace()
 
 	// (디버그용) 빨간 선 그리기 - 개발 중에만 켜세요
 #if WITH_EDITOR
-	DrawDebugLine(GetWorld(), Start, End, FColor::Red, false, 2.0f, 0, 1.0f);
+	// DrawDebugLine(GetWorld(), Start, End, FColor::Red, false, 2.0f, 0, 1.0f);
 #endif
 
 	return HitResult;

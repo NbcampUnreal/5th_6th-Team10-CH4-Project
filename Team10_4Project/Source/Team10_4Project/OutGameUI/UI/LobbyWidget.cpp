@@ -5,13 +5,14 @@
 #include "OutGameUI/UI/PlayerListWidget.h"
 #include "OutGameUI/Player/MenuPlayerController.h"
 #include "OutGameUI/Player/MenuPlayerState.h"
-
-#include "Components/Button.h"
+#include "GameFramework/GameStateBase.h" // 추가
+#include "GameFramework/PlayerState.h"   // 추가
 
 void ULobbyWidget::NativeOnInitialized()
 {
     Super::NativeOnInitialized();
 
+    // 기존 버튼 바인딩 유지
     if (LeaveButton)
     {
         LeaveButton->OnClicked.AddDynamic(this, &ULobbyWidget::OnClick_Leave);
@@ -25,26 +26,31 @@ void ULobbyWidget::NativeOnInitialized()
     if (StartButton)
     {
         StartButton->OnClicked.AddDynamic(this, &ULobbyWidget::OnStartButtonClicked);
+    }
 
-        // 방장(Host)이 아닌 경우 버튼을 숨기거나 비활성화
-        APlayerController* PC = GetOwningPlayer();
-        if (PC && !PC->HasAuthority())
+    UpdatePlayerList();
+
+    UE_LOG(LogTemp, Log, TEXT("LobbyWidget Initialized and PlayerList Updated"));
+}
+
+void ULobbyWidget::UpdatePlayerList()
+{
+    if (!PlayerListWidget) return;
+
+    PlayerListWidget->ClearPlayers();
+
+    if (AGameStateBase* GS = GetWorld()->GetGameState())
+    {
+        for (APlayerState* PS : GS->PlayerArray)
         {
-            StartButton->SetVisibility(ESlateVisibility::Collapsed);
+            if (PS)
+            {
+                AMenuPlayerState* MPS = Cast<AMenuPlayerState>(PS);
+                bool bIsReady = MPS ? MPS->IsReady() : false;
+                PlayerListWidget->AddPlayer(PS->GetPlayerName(), bIsReady);
+            }
         }
     }
-
-    UE_LOG(LogTemp, Log, TEXT("LobbyWidget Initialized"));
-
-    if (PlayerListWidget)
-    {
-        PlayerListWidget->ClearPlayers();
-
-        PlayerListWidget->AddPlayer(TEXT("HostPlayer"));
-        PlayerListWidget->AddPlayer(TEXT("Client_1"));
-        PlayerListWidget->AddPlayer(TEXT("Client_2"));
-    }
-
 }
 
 void ULobbyWidget::OnClick_Leave()
@@ -58,13 +64,9 @@ void ULobbyWidget::OnClick_Leave()
 void ULobbyWidget::OnReadyButtonClicked()
 {
     AMenuPlayerController* MenuPC = Cast<AMenuPlayerController>(GetOwningPlayer());
-
     if (MenuPC && MenuPC->PlayerState)
     {
-        FString PlayerName = MenuPC->PlayerState->GetPlayerName();
-
-        UE_LOG(LogTemp, Log, TEXT("[%s] Ready Button Clicked!"), *PlayerName);
-
+        UE_LOG(LogTemp, Log, TEXT("[%s] Ready Button Clicked!"), *MenuPC->PlayerState->GetPlayerName());
         MenuPC->RequestToggleReady();
     }
 }
@@ -74,7 +76,6 @@ void ULobbyWidget::OnStartButtonClicked()
     AMenuPlayerController* MenuPC = Cast<AMenuPlayerController>(GetOwningPlayer());
     if (MenuPC)
     {
-        // 서버에게 게임 시작을 요청
         MenuPC->RequestStartGame();
     }
 }
@@ -85,19 +86,14 @@ void ULobbyWidget::NativeConstruct()
 
     if (StartButton)
     {
-        // GetOwningPlayer()가 서버 권한을 가졌는지 확인
         APlayerController* PC = GetOwningPlayer();
         if (PC && PC->HasAuthority())
         {
-            // 방장이라면 버튼을 보여줌
             StartButton->SetVisibility(ESlateVisibility::Visible);
-            UE_LOG(LogTemp, Log, TEXT("I am Host: Showing Start Button"));
         }
         else
         {
-            // 클라이언트라면 버튼을 완전히 숨김
             StartButton->SetVisibility(ESlateVisibility::Collapsed);
-            UE_LOG(LogTemp, Log, TEXT("I am Client: Hiding Start Button"));
         }
     }
 }

@@ -19,6 +19,7 @@ class UInputMappingContext;
 class UInputAction;
 class UAnimMontage;
 class UInGameUIWidget;
+class UWidgetComponent;
 
 UCLASS()
 class TEAM10_4PROJECT_API ACivilian : public ACharacter, public IAbilitySystemInterface
@@ -41,7 +42,6 @@ public:
 	virtual void OnRep_PlayerState() override;
 	virtual void GetLifetimeReplicatedProps(TArray<FLifetimeProperty>& OutLifetimeProps) const override;
 	virtual float PlayAnimMontage(class UAnimMontage* AnimMontage, float InPlayRate = 1.f, FName StartSectionName = NAME_None) override;
-	
 #pragma endregion
 	
 #pragma region Civilian Components
@@ -72,6 +72,9 @@ protected:
 	UPROPERTY()
 	TObjectPtr<UInGameUIWidget> InGameUIInstance;
 
+	UPROPERTY(VisibleAnywhere, BlueprintReadOnly, Category = "PlayerCharacter|Components", meta = (AllowPrivateAccess = "true"))
+	TObjectPtr<UWidgetComponent> VoteWidgetComponent;
+
 #pragma endregion
 	
 #pragma region Civilian GAS
@@ -90,7 +93,13 @@ public:
 	// 기본 효과 목록
 	UPROPERTY(EditDefaultsOnly, BlueprintReadOnly, Category = "GAS|Effects")
 	TArray<TSubclassOf<class UGameplayEffect>> DefaultEffects;
-
+	
+	UPROPERTY(EditDefaultsOnly, BlueprintReadOnly, Category = "GAS|Effects")
+	TSubclassOf<class UGameplayEffect> GrantCivilian;
+	
+	UPROPERTY(EditDefaultsOnly, BlueprintReadOnly, Category = "GAS|Effects")
+	TSubclassOf<class UGameplayEffect> GrantInfected;
+	
 protected:
 	// GAS 초기화 - ASC 초기화 로직 분리
 	void InitializeAbilitySystem();
@@ -351,6 +360,12 @@ protected:
 	UFUNCTION(Server, Reliable)
 	void Server_AddStackItem(FName ItemID, int32 Count);
 
+#pragma endregion
+
+#pragma region Vote
+public:
+	UFUNCTION()
+	void VoteWidgetActive(const FGameplayTag CallbackTag, int32 NewCount);
 #pragma endregion
 
 };

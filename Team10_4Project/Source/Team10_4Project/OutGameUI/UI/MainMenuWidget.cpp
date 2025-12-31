@@ -28,9 +28,15 @@ void UMainMenuWidget::NativeConstruct()
 
 void UMainMenuWidget::OnClick_Play()
 {
-    if (auto* PC = Cast<AMenuPlayerController>(GetOwningPlayer()))
+    /*if (auto* PC = Cast<AMenuPlayerController>(GetOwningPlayer()))
     {
         PC->ShowServerBrowser();
+    }*/ // 기존 showserverbroswer 로직
+
+    if (AMenuPlayerController* PC = Cast<AMenuPlayerController>(GetOwningPlayer()))
+    {
+        // 서버 브라우저 대신 호스트/게스트 선택창을 띄웁니다.
+        PC->ShowHostGuestMenu();
     }
 }
 

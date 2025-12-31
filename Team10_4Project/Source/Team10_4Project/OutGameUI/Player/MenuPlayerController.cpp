@@ -5,6 +5,7 @@
 #include "OutGameUI/UI/LobbyWidget.h"
 #include "MenuPlayerState.h"
 #include "OutGameUI/GameMode/MenuLobbyGameMode.h"
+#include "OutGameUI/UI/HostGuestWidget.h"
 
 void AMenuPlayerController::BeginPlay()
 {
@@ -110,5 +111,25 @@ void AMenuPlayerController::Server_StartGame_Implementation()
     if (AMenuLobbyGameMode* LobbyGM = Cast<AMenuLobbyGameMode>(GetWorld()->GetAuthGameMode()))
     {
         LobbyGM->StartGame();
+    }
+}
+
+void AMenuPlayerController::ShowHostGuestMenu()
+{
+    ClearCurrentWidget();
+
+    if (HostGuestWidgetClass)
+    {
+        UHostGuestWidget* HostGuestWidget = CreateWidget<UHostGuestWidget>(this, HostGuestWidgetClass);
+        if (HostGuestWidget)
+        {
+            CurrentWidget = HostGuestWidget;
+            CurrentWidget->AddToViewport();
+
+            FInputModeUIOnly InputMode;
+            InputMode.SetWidgetToFocus(CurrentWidget->TakeWidget());
+            SetInputMode(InputMode);
+            bShowMouseCursor = true;
+        }
     }
 }

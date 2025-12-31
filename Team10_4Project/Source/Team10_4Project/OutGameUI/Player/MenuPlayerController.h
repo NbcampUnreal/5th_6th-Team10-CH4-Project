@@ -36,6 +36,8 @@ public:
 
     UUserWidget* GetCurrentWidget() const { return CurrentWidget; }
 
+    void ShowHostGuestMenu();
+
 protected:
     UPROPERTY()
     UUserWidget* CurrentWidget;
@@ -48,6 +50,9 @@ protected:
 
     UPROPERTY(EditAnywhere, Category = "UI")
     TSubclassOf<ULobbyWidget> LobbyWidgetClass;
+
+    UPROPERTY(EditAnywhere, Category = "UI")
+    TSubclassOf<class UHostGuestWidget> HostGuestWidgetClass;
 
 private:
     void ClearCurrentWidget();

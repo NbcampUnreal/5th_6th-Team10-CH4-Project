@@ -1,75 +1,35 @@
 ﻿#include "OutGameUI/GameMode/MenuGameMode.h"
 #include "Blueprint/UserWidget.h"
-#include "Kismet/GameplayStatics.h"
+#include "OutGameUI/Player/MenuPlayerController.h"
+#include "InGameUI/JKH/EOSSubsystem.h"
 
-#include "GameFramework/GameStateBase.h"
-#include "GameFramework/PlayerState.h"
-#include "OutGameUI/Player/MenuPlayerState.h"
+AMenuGameMode::AMenuGameMode()
+{
+    PlayerControllerClass = AMenuPlayerController::StaticClass();
+}
 
 void AMenuGameMode::BeginPlay()
 {
     Super::BeginPlay();
 
-    if (!MainMenuWidgetClass)
+    // EOS 로그인 (DevAuthTool 사용)
+    if (UGameInstance* GI = GetGameInstance())
     {
-        UE_LOG(LogTemp, Warning, TEXT("MainMenuWidgetClass is not set"));
-        return;
-    }
-
-    UUserWidget* MainMenu = CreateWidget<UUserWidget>(GetWorld(), MainMenuWidgetClass);
-    if (MainMenu)
-    {
-        MainMenu->AddToViewport();
-    }
-}
-
-bool AMenuGameMode::AreAllPlayersReady() const
-{
-    const int32 MinPlayers = 1;
-
-    if (GameState == nullptr) return false;
-
-    const TArray<APlayerState*>& Players = GameState->PlayerArray;
-
-    if (Players.Num() < MinPlayers) return false;
-
-    for (APlayerState* PS : Players)
-    {
-        if (!PS) continue;
-
-        AMenuPlayerState* MenuPS = Cast<AMenuPlayerState>(PS);
-
-        if (MenuPS)
+        if (UEOSSubsystem* EOS = GI->GetSubsystem<UEOSSubsystem>())
         {
-            if (!MenuPS->IsReady())
-            {
-                return false;
-            }
-        }
-        else
-        {
-            return false;
+            EOS->LoginToEOS("localhost:8081", "dobal", "Developer");
         }
     }
 
-    UE_LOG(LogTemp, Log, TEXT("All players are READY!"));
-    return true;
-}
-
-void AMenuGameMode::StartGame()
-{
-    // 모든 플레이어가 준비되었는지 확인하는 로직을 여기에 넣을 수 있습니다.
-    // if (!AreAllPlayersReady()) return; 
-
-    UWorld* World = GetWorld();
-    if (World)
+    // 메인 메뉴 위젯 생성 (유지)
+    if (MainMenuWidgetClass)
     {
-        // bUseSeamlessTravel을 true로 설정하면 연결이 끊기지 않고 부드럽게 이동합니다.
-        bUseSeamlessTravel = true;
-
-        // 이동할 맵 경로 (예: /Game/Maps/MainGameMap)
-        // ?listen 옵션은 이동한 맵에서도 서버 역할을 유지하겠다는 뜻입니다.
-        FString MapPath = TEXT("/Game/team10/Level/InGame");
-        World->ServerTravel(MapPath);
+        UUserWidget* MainMenu = CreateWidget<UUserWidget>(GetWorld(), MainMenuWidgetClass);
+        if (MainMenu)
+        {
+            MainMenu->AddToViewport();
+        }
     }
 }
+// [중요] PostLogin 함수는 여기서 삭제되었습니다. 
+// 메인 메뉴 레벨에서는 자동으로 로비 UI를 띄우지 않기 위함입니다.

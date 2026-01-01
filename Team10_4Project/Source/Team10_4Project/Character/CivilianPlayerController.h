@@ -34,5 +34,6 @@ public:
 	void ClientRPC_Spectator(APawn* TargetPawn);
 
 private:
+	UPROPERTY()
 	ASpectatorCamera* SpectatorCamera;
 };

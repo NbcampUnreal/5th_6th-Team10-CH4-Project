@@ -59,15 +59,17 @@ void ATeam10GameMode::Logout(AController* Exiting)
 			 		return;
 			 	}
 			 	
-			 	// if (CivilianPlayerState->IsPlayerRole(GamePlayTags::PlayerRole::Civilian) && CivilianPlayerState->IsAlive)
-			 	// {
-			 	// 	Team10GameState->AliveCitizenCount--;
-			 	// }
-			 	// else if (CivilianPlayerState->IsPlayerRole(GamePlayTags::PlayerRole::Infected) && CivilianPlayerState->IsAlive)
-			 	// {
-			 	// 	Team10GameState->AliveInfectedCount--;
-			 	// }
-			 	// CheckWinCondition();
+			 	UAbilitySystemComponent* ASC = CivilianPlayerState->GetAbilitySystemComponent();
+			 	
+			 	if (CivilianPlayerState->IsPlayerRole(GamePlayTags::PlayerRole::Civilian) && !ASC->HasMatchingGameplayTag(GamePlayTags::CivilianState::Dead))
+			 	{
+			 		Team10GameState->AliveCitizenCount--;
+			 	}
+			 	else if (CivilianPlayerState->IsPlayerRole(GamePlayTags::PlayerRole::Infected) && !ASC->HasMatchingGameplayTag(GamePlayTags::InfectedState::Dead))
+			 	{
+			 		Team10GameState->AliveInfectedCount--;
+			 	}
+			 	CheckWinCondition();
 			 }
 		}
 	}

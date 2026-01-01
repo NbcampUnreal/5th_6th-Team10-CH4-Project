@@ -13,6 +13,7 @@
 #include "InGameUI/KSH/InventoryComponent.h" // 인벤토리컴포넌트
 #include "InGameUI/KSH/InGameUIWidget.h" // UI위젯
 #include "Blueprint/UserWidget.h"
+#include "Character/Civilian.h"
 
 ACivilianPlayerState::ACivilianPlayerState()
 {
@@ -106,7 +107,10 @@ void ACivilianPlayerState::UpdateVoteTimer()
 {
 	if (VoteTimer < 0)
 	{
-
+		// 캐릭터 리스폰
+		ACivilian* CivilianPawn = GetPawn<ACivilian>();
+		if (!IsValid(CivilianPawn)) return;
+		CivilianPawn->OnVoteEnded(true);
 	}
 	else
 	{
@@ -124,9 +128,15 @@ void ACivilianPlayerState::ServerRPCTryVote_Implementation(ACivilianPlayerState*
 	if (!IsValid(GameMode)) return;
 
 	GameMode->ProcessVote(this, TargetState);
-	/*FGameplayEventData Payload;
-	Payload.Instigator = this;
-	Payload.Target = TargetState;
+}
 
-	UAbilitySystemBlueprintLibrary::SendGameplayEventToActor(this, FGameplayTag::RequestGameplayTag("UI.Vote.Try.Event"), Payload);*/
+void ACivilianPlayerState::ServerRPCRespawn_Implementation()
+{
+	UWorld* World = GetWorld();
+	if (!IsValid(World)) return;
+
+	ATeam10GameMode* GameMode = World->GetAuthGameMode<ATeam10GameMode>();
+	if (!IsValid(GameMode)) return;
+
+	GameMode->RespawnDeath(GetPlayerController());
 }

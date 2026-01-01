@@ -366,6 +366,12 @@ protected:
 public:
 	UFUNCTION()
 	void VoteWidgetActive(const FGameplayTag CallbackTag, int32 NewCount);
+	void OnVoteEnded(bool bIsTimeOver);
+
+	UPROPERTY(EditAnywhere, BlueprintReadOnly, Category = "Input")
+	class UInputAction* IA_ChatCommit;
+	UFUNCTION()
+	void OnChatCommit();
 #pragma endregion
 
 };

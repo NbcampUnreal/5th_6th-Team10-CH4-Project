@@ -26,15 +26,10 @@ void UVoteWidgetComponent::NativeConstruct()
 void UVoteWidgetComponent::BindToWidget()
 {
 	if (!IsValid(OwnerPawn)) return;
-	if (OwnerPawn->GetPlayerState())
-	{
-		UE_LOG(LogTemp, Error, TEXT("PlayerState Enabled"));
-	}
 	ACivilianPlayerState* PlayerState = OwnerPawn->GetPlayerState<ACivilianPlayerState>();
 
 	if (IsValid(PlayerState))
 	{
-		UE_LOG(LogTemp, Error, TEXT("NativeConstruct VoteWidgetCompoents %s"), *PlayerState->GetPlayerName());
 		if (!PlayerState->InitializeWidget.IsAlreadyBound(this, &ThisClass::InitWidget))
 		{
 			PlayerState->InitializeWidget.AddDynamic(this, &ThisClass::InitWidget);
@@ -53,7 +48,7 @@ void UVoteWidgetComponent::BindToWidget()
 void UVoteWidgetComponent::NativeDestruct()
 {
 	VoteBoxWidgets.Empty();
-
+	VoteHorizontalBox->ClearChildren();
 
 	if (IsValid(OwnerPawn))
 	{
@@ -79,6 +74,9 @@ void UVoteWidgetComponent::NativeDestruct()
 void UVoteWidgetComponent::InitWidget()
 {
 	if (!IsValid(VoteBoxWidgetClass)) return;
+	
+	VoteBoxWidgets.Empty();
+	VoteHorizontalBox->ClearChildren();
 
 	UWorld* World = GetWorld();
 	if (!IsValid(World)) return;
@@ -104,21 +102,6 @@ void UVoteWidgetComponent::InitWidget()
 	}
 }
 
-void UVoteWidgetComponent::RefreshWidget()
-{
-	InitWidget();
-
-	UWorld* World = GetWorld();
-	if (!IsValid(World)) return;
-
-	ATeam10GameState* GameState = World->GetGameState<ATeam10GameState>();
-	if (!IsValid(GameState)) return;
-
-	if (!IsValid(OwnerPawn)) return;
-	APlayerState* PlayerState = OwnerPawn->GetPlayerState();
-	if (!PlayerState) return;
-}
-
 void UVoteWidgetComponent::UpdateWidget()
 {
 	UWorld* World = GetWorld();
@@ -131,8 +114,10 @@ void UVoteWidgetComponent::UpdateWidget()
 	ACivilianPlayerState* PlayerState = OwnerPawn->GetPlayerState<ACivilianPlayerState>();
 	if (!IsValid(PlayerState)) return;
 
+	int32 HighlightSize = FMath::Min(PlayerState->VoterList.Num(), VoteBoxWidgets.Num());
+
 	// 위젯 업데이트
-	for (int32 i = 0; i < VoteBoxWidgets.Num(); ++i)
+	for (int32 i = 0; i < HighlightSize; ++i)
 	{
 		ApplyVoteHighlight(i);
 	}
@@ -140,16 +125,11 @@ void UVoteWidgetComponent::UpdateWidget()
 
 void UVoteWidgetComponent::ApplyVoteHighlight(int32 Index)
 {
-	if (Index > 0)
-	{
-		// HorizontalBox에 간격을 위해 삽입한 Spacer들을 고려
-		Index *= 2;
-	}
-
 	UBorder* VoteBorder = Cast<UBorder>(VoteBoxWidgets[Index]->GetWidgetFromName(TEXT("VoteBorder")));
 	if (!IsValid(VoteBorder)) return;
 
-	VoteBorder->SetBrushColor(FLinearColor::Green);
+	VoteBorder->SetBrushColor(HighlightedBoxColor);
+	VoteBorder->SetRenderOpacity(HighlightedBoxOpacity);
 }
 
 void UVoteWidgetComponent::UpdateTimer(int32 NewTime)

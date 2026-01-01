@@ -21,7 +21,6 @@ public:
 
 	UFUNCTION()
 	void InitWidget();
-	void RefreshWidget();
 	UFUNCTION()
 	void UpdateWidget();
 	void ApplyVoteHighlight(int32 Index);

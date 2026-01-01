@@ -28,6 +28,7 @@
 #include "InGameUI/JKH/VoteWidgetComponent.h"
 #include "Kismet/GameplayStatics.h"
 #include "Components/WidgetComponent.h"
+#include "InGameUI/JKH/ChatSubsystem.h"
 
 ACivilian::ACivilian()
 {
@@ -145,16 +146,6 @@ void ACivilian::BeginPlay()
 		{
 			GetCharacterMovement()->MaxWalkSpeed = AttributeSet->GetMoveSpeed();
 		}
-		
-		ASC->RegisterGameplayTagEvent(
-			GamePlayTags::CivilianState::Stun, 
-			EGameplayTagEventType::NewOrRemoved
-		).AddUObject(this, &ACivilian::OnGameplayTagChanged);
-		
-		ASC->RegisterGameplayTagEvent(
-			GamePlayTags::InfectedState::Stun, 
-			EGameplayTagEventType::NewOrRemoved
-		).AddUObject(this, &ACivilian::OnGameplayTagChanged);
 	}
 	
 	// 3인칭 (Full Body) 백업
@@ -192,16 +183,12 @@ void ACivilian::BeginPlay()
 void ACivilian::PossessedBy(AController* NewController)
 {
 	Super::PossessedBy(NewController);
-	
+
 	// 서버에서만 실행
 	if (HasAuthority())
 	{
 		InitializeAbilitySystem();
 	}
-
-	FGameplayTag TargetTag = FGameplayTag::RequestGameplayTag(FName("CivilianState.Votabled"));
-	AbilitySystemComponent->RegisterGameplayTagEvent(TargetTag, EGameplayTagEventType::NewOrRemoved)
-		.AddUObject(this, &ThisClass::VoteWidgetActive);
 }
 
 void ACivilian::Tick(float DeltaTime)
@@ -314,6 +301,11 @@ void ACivilian::SetupPlayerInputComponent(class UInputComponent* PlayerInputComp
 			EnhancedInputComponent->BindAction(IA_Reload, ETriggerEvent::Started,
 				this, &ACivilian::OnInput_Reload);
 		}
+		if (IA_ChatCommit) // ChatInput
+		{
+			EnhancedInputComponent->BindAction(IA_ChatCommit, ETriggerEvent::Triggered,
+				this, &ACivilian::OnChatCommit);
+		}
 	}
 }
 
@@ -335,10 +327,6 @@ void ACivilian::OnRep_PlayerState()
 			UE_LOG(LogTemp, Warning, TEXT("Civilian: InitializeUI Called in OnRep_PlayerState"));
 		}
 	}
-	
-	FGameplayTag TargetTag = FGameplayTag::RequestGameplayTag(FName("CivilianState.Votabled"));
-	AbilitySystemComponent->RegisterGameplayTagEvent(TargetTag, EGameplayTagEventType::NewOrRemoved)
-		.AddUObject(this, &ThisClass::VoteWidgetActive);
 
 	if (UUserWidget* InWidget = VoteWidgetComponent->GetWidget())
 	{
@@ -405,6 +393,17 @@ void ACivilian::InitializeAbilitySystem()
 		GiveDefaultAbilities();
 		ApplyDefaultEffects();
 	}
+
+	AbilitySystemComponent->RegisterGameplayTagEvent(
+		GamePlayTags::CivilianState::Stun,
+		EGameplayTagEventType::NewOrRemoved
+	).AddUObject(this, &ACivilian::OnGameplayTagChanged);
+
+	AbilitySystemComponent->RegisterGameplayTagEvent(
+		GamePlayTags::InfectedState::Stun,
+		EGameplayTagEventType::NewOrRemoved
+	).AddUObject(this, &ACivilian::OnGameplayTagChanged);
+
 }
 
 void ACivilian::GiveDefaultAbilities()
@@ -1082,6 +1081,17 @@ void ACivilian::OnGameplayTagChanged(const FGameplayTag CallbackTag, int32 NewCo
 			GetCharacterMovement()->StopMovementImmediately();
 			GetCharacterMovement()->DisableMovement(); // 아예 이동 컴포넌트 비활성화
 		}
+
+		if (HasAuthority())
+		{
+			ACivilianPlayerState* CivilianPlayerState = GetPlayerState<ACivilianPlayerState>();
+			if (!IsValid(CivilianPlayerState)) return;
+
+			CivilianPlayerState->VoteTimer = CivilianPlayerState->MaxVoteTimer;
+			GetWorldTimerManager().ClearTimer(CivilianPlayerState->VoteTimerHandle);
+			GetWorldTimerManager().SetTimer(CivilianPlayerState->VoteTimerHandle, CivilianPlayerState, &ACivilianPlayerState::UpdateVoteTimer, 1.0f, true, 1.0f);
+		}
+		VoteWidgetComponent->SetVisibility(true);
 	}
 	// 스턴 태그가 사라졌다면 (NewCount == 0)
 	else
@@ -1091,6 +1101,15 @@ void ACivilian::OnGameplayTagChanged(const FGameplayTag CallbackTag, int32 NewCo
 		{
 			GetCharacterMovement()->SetMovementMode(MOVE_Walking);
 		}
+
+		if (HasAuthority())
+		{
+			ACivilianPlayerState* CivilianPlayerState = GetPlayerState<ACivilianPlayerState>();
+			if (!IsValid(CivilianPlayerState)) return;
+
+			GetWorldTimerManager().ClearTimer(CivilianPlayerState->VoteTimerHandle);
+		}
+		VoteWidgetComponent->SetVisibility(false);
 	}
 }
 
@@ -1215,24 +1234,29 @@ void ACivilian::Server_AddStackItem_Implementation(FName ItemID, int32 Count)
 
 void ACivilian::VoteWidgetActive(const FGameplayTag CallbackTag, int32 NewCount)
 {
+	
+}
+
+void ACivilian::OnVoteEnded(bool bIsTimeOver)
+{
+	AbilitySystemComponent->RemoveLooseGameplayTag(GamePlayTags::CivilianState::Stun);
 	ACivilianPlayerState* CivilianPlayerState = GetPlayerState<ACivilianPlayerState>();
+	GetWorldTimerManager().ClearTimer(CivilianPlayerState->VoteTimerHandle);
+	
 	if (!IsValid(CivilianPlayerState)) return;
-	if (NewCount > 0)	// 태그가 있다면 보이는 상태
+	if (bIsTimeOver)
 	{
-		if (HasAuthority())
-		{
-			CivilianPlayerState->VoteTimer = CivilianPlayerState->MaxVoteTimer;
-			GetWorldTimerManager().ClearTimer(CivilianPlayerState->VoteTimerHandle);
-			GetWorldTimerManager().SetTimer(CivilianPlayerState->VoteTimerHandle, CivilianPlayerState, &ACivilianPlayerState::UpdateVoteTimer, 1.0f, true, 1.0f);
-		}
-		VoteWidgetComponent->SetVisibility(true);
+		CivilianPlayerState->ServerRPCRespawn();
 	}
-	else
-	{	// 태그가 없다면, 보이지 않는 상태
-		if (HasAuthority())
-		{
-			GetWorldTimerManager().ClearTimer(CivilianPlayerState->VoteTimerHandle);
-		}
-		VoteWidgetComponent->SetVisibility(false);
-	}
+}
+
+void ACivilian::OnChatCommit()
+{
+	if (!IsPlayerControlled()) return;
+
+	UGameInstance* GameInstance = GetGameInstance();
+	if (!IsValid(GameInstance)) return;
+
+	UChatSubsystem* ChatSubsystem = GameInstance->GetSubsystem<UChatSubsystem>();
+	ChatSubsystem->OnChatCommit();
 }

@@ -78,7 +78,8 @@ void AMenuPlayerController::JoinLobbyLevel()
     if (HasAuthority())
     {
         // 1. 경로가 실제 Content 폴더 기준 경로와 일치하는지 확인하세요
-        FString LobbyPath = TEXT("/Game/Team10/OutGameUI/L_Lobby");
+        //FString LobbyPath = TEXT("/Game/Team10/OutGameUI/L_Lobby");
+        FString LobbyPath = TEXT("/Game/Team10/Level/InGame");
 
         UE_LOG(LogTemp, Warning, TEXT("Attempting ServerTravel to: %s"), *LobbyPath);
 

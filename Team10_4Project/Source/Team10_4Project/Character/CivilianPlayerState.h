@@ -70,7 +70,7 @@ public:
 	TArray<TObjectPtr<APlayerState>> VoterList;
 	UPROPERTY(ReplicatedUsing = OnRep_VoterTimer)
 	int32 VoteTimer;
-	int32 MaxVoteTimer = 10;
+	int32 MaxVoteTimer = 20;
 	FInitializeWidget InitializeWidget;
 	FOnVoterListChanged OnVoterListChanged;
 	FOnVoteTimerChanged OnVoteTimerChanged;
@@ -83,5 +83,7 @@ public:
 	void UpdateVoteTimer();
 	UFUNCTION(Server, Reliable)
 	void ServerRPCTryVote(ACivilianPlayerState* TargetState);
+	UFUNCTION(Server, Reliable)
+	void ServerRPCRespawn();
 #pragma endregion
 };

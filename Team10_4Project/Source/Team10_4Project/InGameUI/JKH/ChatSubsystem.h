@@ -87,6 +87,7 @@ protected:
 public:
 	void OpenWidget(APlayerController* InPlayerController);
 	void CloseWidget();
+	void OnChatCommit();
 protected:
 	UPROPERTY(EditDefaultsOnly, Category = "Widget|Chat")
 	TSubclassOf<UChatWidget> ChatWidgetClass;

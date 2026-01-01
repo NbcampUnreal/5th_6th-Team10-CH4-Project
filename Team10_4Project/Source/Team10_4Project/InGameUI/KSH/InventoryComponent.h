@@ -46,13 +46,15 @@ public:
 
     // 아이템 추가
     bool AddItem(const FInventoryItemData& NewItem, int32 Count = 1);
-    // =====테스트용=====
+    // 아이템 추가 ID
     void AddItemByID(FName ItemID, int32 Count = 1);
     // 에디터의 Details 패널에서 아이템 데이터 테이블을 선택
     UPROPERTY(EditDefaultsOnly, Category = "Inventory")
     TObjectPtr<UDataTable> ItemDataTable;
     // 특정 슬롯의 아이템 삭제
     void RemoveItem(int32 SlotIndex);
+    // 특정 아이템 삭제
+    void RemoveItemByID(FName ItemID, int32 Count = 1);
     // 특정 인덱스의 아이템 사용
     UFUNCTION(BlueprintCallable, Category = "Inventory")
     void UseItem(int32 SlotIndex);

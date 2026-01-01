@@ -68,7 +68,7 @@ void UEOSSubsystem::LoginToEOS(FString ID, FString Token, FString LoginType)
 
 	FOnlineAccountCredentials Credentials;
 	Credentials.Id = ID;					// 예: DevAuthTool의 주소 (localhost:8081)
-	Credentials.Token = "WeslySloan";			// 예: DevAuthTool의 Credential Name (User1)
+	Credentials.Token = "WeslySloan";				// DevAuthTool의 Credential Name
 	Credentials.Type = LoginType;		// 예: "Developer" 혹은 "AccountPortal"
 
 	UGameInstance* GI = GetGameInstance();
@@ -162,13 +162,17 @@ void UEOSSubsystem::OnCreateGameSessionComplete(FName SessionName, bool bWasSucc
 
 void UEOSSubsystem::CreateLobbySession(int32 MaxPlayers, bool bIsLan)
 {
-	UE_LOG(LogTemp, Log, TEXT("[EOSSubsystem] Creation LobbySession ..."));
-	if (IsRunningDedicatedServer()) 
+	UE_LOG(LogTemp, Warning, TEXT("[EOSSubsystem] CreateLobbySession called!"));
+	if (IsRunningDedicatedServer())
 	{
-		UE_LOG(LogTemp, Log, TEXT("[EOSSubsystem] Dedicated servers cannot create lobbies."));
+		UE_LOG(LogTemp, Error, TEXT("[EOSSubsystem] Dedicated servers cannot create lobbies."));
 		return;
 	}
-	if (!SessionInterface.IsValid()) return;
+	if (!SessionInterface.IsValid())
+	{
+		UE_LOG(LogTemp, Error, TEXT("[EOSSubsystem] SessionInterface is NOT valid! EOS not initialized?"));
+		return;
+	}
 
 	CreateLobbySessionCompleteDelegateHandle = SessionInterface->AddOnCreateSessionCompleteDelegate_Handle(
 		FOnCreateSessionCompleteDelegate::CreateUObject(this, &ThisClass::OnCreateLobbySessionComplete));
@@ -215,7 +219,21 @@ void UEOSSubsystem::OnCreateLobbySessionComplete(FName SessionName, bool bWasSuc
 
 	if (bWasSuccessful)
 	{
-		UE_LOG(LogTemp, Log, TEXT("[EOSSubsystem] Lobby created successfully automatically!"));
+		UE_LOG(LogTemp, Log, TEXT("[EOSSubsystem] Lobby created successfully! Opening Lobby Level as Listen Server..."));
+
+		// Listen Server로 로비 레벨 열기
+		UWorld* World = GetGameInstance()->GetWorld();
+		if (World)
+		{
+			const FString LobbyLevelPath = TEXT("/Game/Team10/OutGameUI/L_Lobby?listen");
+			UE_LOG(LogTemp, Warning, TEXT("[EOSSubsystem] ServerTravel to: %s"), *LobbyLevelPath);
+			bool bTravelSuccess = World->ServerTravel(LobbyLevelPath);
+			UE_LOG(LogTemp, Warning, TEXT("[EOSSubsystem] ServerTravel result: %s"), bTravelSuccess ? TEXT("Success") : TEXT("Failed"));
+		}
+		else
+		{
+			UE_LOG(LogTemp, Error, TEXT("[EOSSubsystem] World is null!"));
+		}
 	}
 	else
 	{

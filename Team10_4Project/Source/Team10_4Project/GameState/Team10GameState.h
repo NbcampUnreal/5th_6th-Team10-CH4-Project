@@ -31,6 +31,17 @@ public:
 	UPROPERTY(ReplicatedUsing = OnRep_ChangedArea, BlueprintReadOnly, Category = "GameState")
 	EGameArea CurrentArea;
 	
+protected:
+	UPROPERTY(EditDefaultsOnly, BlueprintReadOnly, Category = "Vote")
+	int32 Area1VoteCount = 4;
+
+	UPROPERTY(EditDefaultsOnly, BlueprintReadOnly, Category = "Vote")
+	int32 Area2VoteCount = 3;
+
+	UPROPERTY(EditDefaultsOnly, BlueprintReadOnly, Category = "Vote")
+	int32 Area3VoteCount = 2;
+
+public:
 	UFUNCTION()
 	void OnRep_ChangedArea();
 
@@ -39,7 +50,7 @@ public:
 	
 	// 플레이어를 투표로 죽이는데 필요한 최소 투표 수    
 	UPROPERTY(ReplicatedUsing = OnRep_KillPlayerVotesCount, BlueprintReadOnly, Category = "GameState")
-	int32 KillPlayerVotesCount;
+	int32 KillPlayerVotesCount = 2;
 
 	UFUNCTION()
 	void OnRep_KillPlayerVotesCount();

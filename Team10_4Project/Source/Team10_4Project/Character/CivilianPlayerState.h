@@ -19,6 +19,10 @@ enum class EPlayerRole : uint8
 	Infected UMETA(DisplayName = "Infected")
 };
 
+DECLARE_DYNAMIC_MULTICAST_DELEGATE(FOnVoterListChanged);
+DECLARE_DYNAMIC_MULTICAST_DELEGATE_OneParam(FOnVoteTimerChanged, int32, NewTimer);
+DECLARE_DYNAMIC_MULTICAST_DELEGATE(FInitializeWidget);
+
 UCLASS()
 class TEAM10_4PROJECT_API ACivilianPlayerState : public APlayerState, public IAbilitySystemInterface
 {
@@ -59,4 +63,27 @@ private:
 	
 	UPROPERTY(VisibleAnywhere, Category = "GAS")
 	TObjectPtr<UCivilianAttributeSet> AttributeSet;
+
+#pragma region Vote
+public:
+	UPROPERTY(ReplicatedUsing = OnRep_Voters)
+	TArray<TObjectPtr<APlayerState>> VoterList;
+	UPROPERTY(ReplicatedUsing = OnRep_VoterTimer)
+	int32 VoteTimer;
+	int32 MaxVoteTimer = 20;
+	FInitializeWidget InitializeWidget;
+	FOnVoterListChanged OnVoterListChanged;
+	FOnVoteTimerChanged OnVoteTimerChanged;
+	FTimerHandle VoteTimerHandle;
+
+	UFUNCTION()
+	void OnRep_Voters();
+	UFUNCTION()
+	void OnRep_VoterTimer();
+	void UpdateVoteTimer();
+	UFUNCTION(Server, Reliable)
+	void ServerRPCTryVote(ACivilianPlayerState* TargetState);
+	UFUNCTION(Server, Reliable)
+	void ServerRPCRespawn();
+#pragma endregion
 };

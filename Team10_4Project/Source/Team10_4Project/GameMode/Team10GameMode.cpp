@@ -98,7 +98,7 @@ void ATeam10GameMode::HandleStartingNewPlayer_Implementation(APlayerController* 
 	
 	LoadedPlayerCount++;
 	UE_LOG(LogTemp, Log, TEXT("Ready %d/%d"), LoadedPlayerCount,Team10GameState->PlayerArray.Num())
-	const int32 ExpectedPlayers = 2; // 크래시 나길래 추가한 크래시 방지용 임시 추가코드. - 금성
+	const int32 ExpectedPlayers = 3; // 크래시 나길래 추가한 크래시 방지용 임시 추가코드. - 금성
 		// 크래시 나길래 추가한 크래시 방지용 임시 추가 코드. - 금성
 	//if (LoadedPlayerCount >= Team10GameState->PlayerArray.Num())
 	if (LoadedPlayerCount >= ExpectedPlayers)

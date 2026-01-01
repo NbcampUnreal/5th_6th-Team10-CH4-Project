@@ -1,5 +1,4 @@
-#include "OutGameUI/UI/PlayerListWidget.h"
-
+﻿#include "OutGameUI/UI/PlayerListWidget.h"
 #include "Components/ScrollBox.h"
 #include "Components/TextBlock.h"
 #include "Blueprint/UserWidget.h"
@@ -17,25 +16,22 @@ void UPlayerListWidget::ClearPlayers()
     }
 }
 
-void UPlayerListWidget::AddPlayer(const FString& PlayerName)
+void UPlayerListWidget::AddPlayer(const FString& PlayerName, bool bIsReady)
 {
-    if (!PlayerListScrollBox || !PlayerEntryWidgetClass)
-        return;
+    if (!PlayerListScrollBox || !PlayerEntryWidgetClass) return;
 
-    UUserWidget* EntryWidget = CreateWidget<UUserWidget>(
-        GetWorld(),
-        PlayerEntryWidgetClass
-    );
+    UUserWidget* EntryWidget = CreateWidget<UUserWidget>(GetWorld(), PlayerEntryWidgetClass);
+    if (!EntryWidget) return;
 
-    if (!EntryWidget)
-        return;
-
-    UTextBlock* NameText =
-        Cast<UTextBlock>(EntryWidget->GetWidgetFromName(TEXT("PlayerNameText")));
-
-    if (NameText)
+    if (UTextBlock* NameText = Cast<UTextBlock>(EntryWidget->GetWidgetFromName(TEXT("PlayerNameText"))))
     {
         NameText->SetText(FText::FromString(PlayerName));
+    }
+
+    if (UTextBlock* ReadyText = Cast<UTextBlock>(EntryWidget->GetWidgetFromName(TEXT("ReadyText"))))
+    {
+        ReadyText->SetText(bIsReady ? FText::FromString(TEXT("READY")) : FText::FromString(TEXT("NOT READY")));
+        ReadyText->SetColorAndOpacity(bIsReady ? FLinearColor::Green : FLinearColor::White);
     }
 
     PlayerListScrollBox->AddChild(EntryWidget);

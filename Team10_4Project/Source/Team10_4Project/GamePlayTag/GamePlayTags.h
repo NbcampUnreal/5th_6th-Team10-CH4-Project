@@ -61,7 +61,8 @@ namespace GamePlayTags
 	
 	namespace Effect
 	{
-		TEAM10_4PROJECT_API UE_DECLARE_GAMEPLAY_TAG_EXTERN(Role);
+		TEAM10_4PROJECT_API UE_DECLARE_GAMEPLAY_TAG_EXTERN(Role_Civilian);
+		TEAM10_4PROJECT_API UE_DECLARE_GAMEPLAY_TAG_EXTERN(Role_Infected);
 	}
 	
 	namespace Ability

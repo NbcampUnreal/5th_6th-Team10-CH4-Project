@@ -23,10 +23,13 @@ protected:
 	// Called when the game starts or when spawned
 	virtual void BeginPlay() override;
 
+	bool bFuseActivate;
 public:	
 	// Called every frame
 	virtual void Tick(float DeltaTime) override;
 
+	UFUNCTION()
+	void SetFuseHiddenAtDayPhase(EGamePhase GamePhase); // 퓨즈가 밤 페이즈가 되면 보이게 설정 - 원준
 //--------------------------------------------------------------
 
 #pragma region Components - 컴포넌트

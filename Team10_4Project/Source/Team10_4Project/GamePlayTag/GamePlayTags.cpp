@@ -61,7 +61,8 @@ namespace GamePlayTags
 	
 	namespace Effect
 	{
-		UE_DEFINE_GAMEPLAY_TAG_COMMENT(Role, "Effect.Type.Role", "Tag for Effect Type");
+		UE_DEFINE_GAMEPLAY_TAG_COMMENT(Role_Civilian, "Effect.Type.Role_Civilian", "Tag for Effect Type");
+		UE_DEFINE_GAMEPLAY_TAG_COMMENT(Role_Infected, "Effect.Type.Role_Infected", "Tag for Effect Type");
 	}
 	
 	namespace Ability

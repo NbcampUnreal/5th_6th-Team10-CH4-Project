@@ -29,6 +29,8 @@
 #include "Kismet/GameplayStatics.h"
 #include "Components/WidgetComponent.h"
 #include "InGameUI/JKH/ChatSubsystem.h"
+#include "GameState/Team10GameState.h" 
+#include "GameMode/GameTypes/GameTypes.h"
 
 ACivilian::ACivilian()
 {
@@ -543,6 +545,16 @@ void ACivilian::OnMoveSpeedChanged(const FOnAttributeChangeData& Data)
 
 void ACivilian::Morph()
 {
+	ATeam10GameState* Team10GameState = GetWorld()->GetGameState<ATeam10GameState>();
+	if (Team10GameState)
+	{
+		if (Team10GameState->CurrentPhase != EGamePhase::NightPhase)
+		{
+			UE_LOG(LogTemp, Warning, TEXT("Cannot Morph: It is not Night Phase."));
+			return;
+		}
+	}
+	
 	ACivilianPlayerState* PS = GetPlayerState<ACivilianPlayerState>();
 	if (!PS) return;
 	

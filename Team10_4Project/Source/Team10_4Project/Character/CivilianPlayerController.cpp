@@ -72,18 +72,13 @@ void ACivilianPlayerController::ClientRPC_Spectator_Implementation(APawn* Target
 		UE_LOG(LogTemp, Error, TEXT("SpawnSpectatorPawn is valid"));
 	}
 	
-	SpectatorCamera = Cast<ASpectatorCamera>(GetSpectatorPawn());
+	ASpectatorCamera* SpectatorCamera = Cast<ASpectatorCamera>(GetSpectatorPawn());
 	
 	if (SpectatorCamera)
 	{
 		UE_LOG(LogTemp, Error, TEXT("Spectator Camera is valid"));
 		
 		SpectatorCamera->SetFollowTargetPawn(TargetPawn);
-		GetWorldTimerManager().SetTimerForNextTick([this]()
-		{
-			SetViewTarget(SpectatorCamera);
-		});
-	
+		SetViewTarget(SpectatorCamera);
 	}
-	
 }

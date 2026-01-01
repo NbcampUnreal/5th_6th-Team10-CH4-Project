@@ -8,7 +8,6 @@
 #include "GameplayEffect.h"
 #include "GameplayEffectExtension.h"
 #include "Net/UnrealNetwork.h"
-#include "Character/CivilianPlayerState.h"
 
 UCivilianAttributeSet::UCivilianAttributeSet()
 {
@@ -107,21 +106,6 @@ void UCivilianAttributeSet::PostGameplayEffectExecute(const FGameplayEffectModCa
 				if (ACivilian* TargetCharacter = Cast<ACivilian>(Data.Target.GetAvatarActor()))
 				{
 					// TargetCharacter->HandleTakeDamage(); // 피격 애니메이션 등
-				}
-
-				// 대상이 이미 체력이 0인데 공격 받은 경우
-				if (OldHealth <= 0.0f && NewHealth <= 0.0f)
-				{
-					UAbilitySystemComponent* TargetASC = &Data.Target;
-					// 공격받는 대상이 이미 무력화상태 인 경우 (투표가능 상태)
-					if (TargetASC->HasMatchingGameplayTag(GamePlayTags::CivilianState::Stun))
-					{
-						//ACivilian* TargetCharacter = Cast<ACivilian>(TargetASC->GetAvatarActor());
-						ACivilianPlayerState* TargetOwner = Cast<ACivilianPlayerState>(TargetASC->GetOwnerActor());
-						ACivilianPlayerState* SourceOwner = Cast<ACivilianPlayerState>(Data.EffectSpec.GetContext().GetInstigatorAbilitySystemComponent()->GetOwnerActor());
-						// 투표 ServerRPC 실행
-						TargetOwner->ServerRPCTryVote(SourceOwner);
-					}
 				}
 			}
 		}

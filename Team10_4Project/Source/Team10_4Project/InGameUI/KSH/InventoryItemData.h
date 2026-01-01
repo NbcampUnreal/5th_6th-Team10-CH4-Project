@@ -20,7 +20,7 @@ public:
         , ItemDescription(FText::GetEmpty())
         , ItemIcon(nullptr)
         , bIsStackable(true)
-        , MaxStackSize(100)
+        , MaxStackSize(99)
     {
     }
 

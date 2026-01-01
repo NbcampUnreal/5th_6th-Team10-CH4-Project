@@ -6,10 +6,7 @@
 #include "AbilitySystemComponent.h"
 #include "GamePlayTag/GamePlayTags.h"
 #include "Components/WidgetComponent.h"
-#include "GameState/Team10GameState.h"
 #include "Gimmick/UI/InteractionWidgetBase.h"
-#include "InGameUI/KSH/InventoryComponent.h"
-#include "Character/CivilianPlayerState.h"
 
 // Sets default values
 AFuseActor::AFuseActor()
@@ -40,14 +37,7 @@ AFuseActor::AFuseActor()
 void AFuseActor::BeginPlay()
 {
 	Super::BeginPlay();
-
-	ATeam10GameState* Team10GameState = GetWorld()->GetGameState<ATeam10GameState>();
-	if (!Team10GameState)
-	{
-		return;
-	}
-
-	Team10GameState->OnGamePhaseChanged.AddDynamic(this, &AFuseActor::SetFuseHiddenAtDayPhase);
+	
 }
 
 // Called every frame
@@ -55,11 +45,6 @@ void AFuseActor::Tick(float DeltaTime)
 {
 	Super::Tick(DeltaTime);
 
-}
-
-void AFuseActor::SetFuseHiddenAtDayPhase(EGamePhase GamePhase)
-{
-	SetActorHiddenInGame(GamePhase == EGamePhase::DayPhase); // 낮 페이즈 때만 퓨즈 숨김
 }
 
 // 상호작용
@@ -79,18 +64,6 @@ void AFuseActor::Interact_Implementation(AActor* _Instigator)
 				ASC->ApplyGameplayEffectSpecToSelf(*SpecHandle.Data.Get());
 			}
 			
-			// 인벤토리에 아이템 추가
-			APawn* InstigatorPawn = Cast<APawn>(_Instigator);
-			if (!InstigatorPawn) return;
-
-			if (ACivilianPlayerState* PS = InstigatorPawn->GetPlayerState<ACivilianPlayerState>())
-			{
-				if (PS->InventoryComponent)
-				{
-					PS->InventoryComponent->AddItemByID(FName("fuse"));
-				}
-			}
-
 			Destroy();
 		}
 	}

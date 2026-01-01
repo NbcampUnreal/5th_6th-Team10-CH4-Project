@@ -65,10 +65,6 @@ void UChatSubsystem::ClearChatHistory()
 	ChatHistory.Empty();
 }
 
-void UChatSubsystem::OnChatCommit()
-{
-	if (!IsValid(ChatWidgetInstance)) return;
-	ChatWidgetInstance->ChatInputReady();
-}
+
 
 

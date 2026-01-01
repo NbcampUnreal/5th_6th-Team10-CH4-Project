@@ -12,12 +12,9 @@ class TEAM10_4PROJECT_API ULobbyWidget : public UUserWidget
 {
     GENERATED_BODY()
 
-public:
-    // [추가] 외부(PlayerState 등)에서 호출할 수 있도록 public에 선언
-    void UpdatePlayerList();
-
 protected:
     virtual void NativeOnInitialized() override;
+
     virtual void NativeConstruct() override;
 
 protected:
@@ -37,7 +34,7 @@ protected:
     void OnReadyButtonClicked();
 
     UPROPERTY(meta = (BindWidget))
-    class UButton* StartButton;
+    class UButton* StartButton; // WBP_Lobby에 StartButton 이름으로 버튼 추가 필요
 
     UFUNCTION()
     void OnStartButtonClicked();

@@ -6,7 +6,6 @@
 #include "GameFramework/PlayerController.h"
 #include "CivilianPlayerController.generated.h"
 
-class ASpectatorCamera;
 /**
  * 
  */
@@ -32,8 +31,4 @@ public:
 	
 	UFUNCTION(Client, Reliable)
 	void ClientRPC_Spectator(APawn* TargetPawn);
-
-private:
-	UPROPERTY()
-	ASpectatorCamera* SpectatorCamera;
 };

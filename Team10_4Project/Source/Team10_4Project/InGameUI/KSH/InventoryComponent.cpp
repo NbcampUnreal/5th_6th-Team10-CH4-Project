@@ -52,8 +52,6 @@ bool UInventoryComponent::AddItem(const FInventoryItemData& NewItem, int32 Count
 void UInventoryComponent::AddItemByID(FName ItemID, int32 Count)
 {
     if (!ItemDataTable) return; // 데이터 테이블이 에디터에서 할당되어 있어야 함
-    
-    UE_LOG(LogTemp, Warning, TEXT("called AddItemByID"));
 
     // 1. ID를 가지고 데이터 테이블에서 구조체 정보를 찾음
     static const FString ContextString(TEXT("Item Search"));
@@ -76,23 +74,6 @@ void UInventoryComponent::RemoveItem(int32 SlotIndex)
     {
         InventorySlots[SlotIndex].Clear();
         OnInventoryChanged.Broadcast(); // UI에 알림
-    }
-}
-
-void UInventoryComponent::RemoveItemByID(FName ItemID, int32 Count)
-{
-    for (int32 i = 0; i < InventorySlots.Num(); ++i)
-    {
-        if (!InventorySlots[i].IsEmpty() && InventorySlots[i].ItemData.ItemID == ItemID)
-        {
-            InventorySlots[i].CurrentStack -= Count;
-            if (InventorySlots[i].CurrentStack <= 0)
-            {
-                InventorySlots[i].Clear();
-            }
-            OnInventoryChanged.Broadcast(); // UI 갱신
-            break;
-        }
     }
 }
 

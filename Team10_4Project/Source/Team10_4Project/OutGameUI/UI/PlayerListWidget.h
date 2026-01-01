@@ -1,4 +1,4 @@
-ï»¿#pragma once
+#pragma once
 
 #include "CoreMinimal.h"
 #include "Blueprint/UserWidget.h"
@@ -15,17 +15,18 @@ class TEAM10_4PROJECT_API UPlayerListWidget : public UUserWidget
 public:
     virtual void NativeOnInitialized() override;
 
-    void AddPlayer(const FString& PlayerName, bool bIsReady);
+    // ÇÃ·¹ÀÌ¾î ÀÌ¸§ Ãß°¡
+    void AddPlayer(const FString& PlayerName);
 
-    // ì „ì²´ ì´ˆê¸°í™”
+    // ÀüÃ¼ ÃÊ±âÈ­
     void ClearPlayers();
 
 protected:
-    // í”Œë ˆì´ì–´ ëª©ë¡ ìŠ¤í¬ë¡¤
+    // ÇÃ·¹ÀÌ¾î ¸ñ·Ï ½ºÅ©·Ñ
     UPROPERTY(meta = (BindWidget))
     UScrollBox* PlayerListScrollBox;
 
-    // í”Œë ˆì´ì–´ í•œ ì¤„ ìœ„ì ¯ (WBP_PlayerEntry)
+    // ÇÃ·¹ÀÌ¾î ÇÑ ÁÙ À§Á¬ (TextBlock ±â¹İ)
     UPROPERTY(EditAnywhere, Category = "UI")
     TSubclassOf<UUserWidget> PlayerEntryWidgetClass;
 };

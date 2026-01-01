@@ -6,7 +6,7 @@
 #include "Blueprint/UserWidget.h"
 #include "AbilitySystemComponent.h" // FOnAttributeChangeData, FDelegateHandle 사용을 위해 필요
 #include "Abilities/GameplayAbilityTypes.h"
-#include "GameplayTagContainer.h" // FGameplayTag 사용
+#include "GameplayTagContainer.h"
 #include "GameplayEffectTypes.h"
 #include "GameAttributeTypes.h"
 #include "SanityBarWidget.generated.h"
@@ -48,11 +48,4 @@ private:
 
     // 실제 ProgressBar UI 업데이트
     void UpdateSanityBar(float CurrentSanity);
-
-    // 태그가 변경될 때 호출될 함수
-    void OnRoleTagChanged(const FGameplayTag Tag, int32 NewCount);
-    // SanityBar 띄우기/숨기기
-    void UpdateVisibilityByInfectedCount(int32 Count);
-    // 태그 핸들 저장
-    FDelegateHandle RoleTagHandle;
 };

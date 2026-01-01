@@ -10,8 +10,7 @@
 #include "Components/WidgetComponent.h"
 #include "Gimmick/UI/InteractionWidgetBase.h"
 #include "AbilitySystemBlueprintLibrary.h"
-#include "InGameUI/KSH/InventoryComponent.h"
-#include "Character/CivilianPlayerState.h"
+
 
 
 
@@ -82,18 +81,6 @@ void AFuseBoxActor::Interact_Implementation(AActor* _Instigator)
 			if (ATeam10GameMode* GM = GetWorld()->GetAuthGameMode<ATeam10GameMode>())
 			{
 				GM->OnFuseBoxActivated();
-			}
-
-			// 인벤토리에서 아이템 제거
-			APawn* InstigatorPawn = Cast<APawn>(_Instigator);
-			if (!InstigatorPawn) return;
-
-			if (ACivilianPlayerState* PS = InstigatorPawn->GetPlayerState<ACivilianPlayerState>())
-			{
-				if (PS->InventoryComponent)
-				{
-					PS->InventoryComponent->RemoveItemByID(FName("fuse"));
-				}
 			}
 		}
 	}

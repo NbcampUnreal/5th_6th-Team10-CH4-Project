@@ -14,7 +14,6 @@
 #include "Manager/PlayerSpawnManager.h"
 #include "AbilitySystemComponent.h"
 #include "Character/CivilianAttributeSet.h"
-#include "Character/Civilian.h"
 
 ATeam10GameMode::ATeam10GameMode()
 {
@@ -59,17 +58,15 @@ void ATeam10GameMode::Logout(AController* Exiting)
 			 		return;
 			 	}
 			 	
-			 	UAbilitySystemComponent* ASC = CivilianPlayerState->GetAbilitySystemComponent();
-			 	
-			 	if (CivilianPlayerState->IsPlayerRole(GamePlayTags::PlayerRole::Civilian) && !ASC->HasMatchingGameplayTag(GamePlayTags::CivilianState::Dead))
-			 	{
-			 		Team10GameState->AliveCitizenCount--;
-			 	}
-			 	else if (CivilianPlayerState->IsPlayerRole(GamePlayTags::PlayerRole::Infected) && !ASC->HasMatchingGameplayTag(GamePlayTags::InfectedState::Dead))
-			 	{
-			 		Team10GameState->AliveInfectedCount--;
-			 	}
-			 	CheckWinCondition();
+			 	// if (CivilianPlayerState->IsPlayerRole(GamePlayTags::PlayerRole::Civilian) && CivilianPlayerState->IsAlive)
+			 	// {
+			 	// 	Team10GameState->AliveCitizenCount--;
+			 	// }
+			 	// else if (CivilianPlayerState->IsPlayerRole(GamePlayTags::PlayerRole::Infected) && CivilianPlayerState->IsAlive)
+			 	// {
+			 	// 	Team10GameState->AliveInfectedCount--;
+			 	// }
+			 	// CheckWinCondition();
 			 }
 		}
 	}
@@ -99,11 +96,9 @@ void ATeam10GameMode::HandleStartingNewPlayer_Implementation(APlayerController* 
 	}
 	
 	LoadedPlayerCount++;
-	UE_LOG(LogTemp, Log, TEXT("Ready %d/%d"), LoadedPlayerCount,Team10GameState->PlayerArray.Num())
 	const int32 ExpectedPlayers = 2; // 크래시 나길래 추가한 크래시 방지용 임시 추가코드. - 금성
-		// 크래시 나길래 추가한 크래시 방지용 임시 추가 코드. - 금성
-	//if (LoadedPlayerCount >= Team10GameState->PlayerArray.Num())
-	if (LoadedPlayerCount >= ExpectedPlayers)
+	if (LoadedPlayerCount >= ExpectedPlayers)	// 크래시 나길래 추가한 크래시 방지용 임시 추가 코드. - 금성
+	//if (LoadedPlayerCount == Team10GameState->PlayerArray.Num())
 	{
 		// 모든 플레이어의 로딩이 끝나면 로딩 UI를 해제한다.
 		UE_LOG(LogTemp, Log, TEXT("All Player Loaded"));
@@ -121,9 +116,9 @@ void ATeam10GameMode::HandleStartingNewPlayer_Implementation(APlayerController* 
 		// {
 		// 	EternalDeath(CivilianPlayerController);
 		// }), 10.f, false);
+	
 	}
 }
-
 void ATeam10GameMode::AssignInfectedPlayers()
 {
 	if (!Team10GameState)
@@ -147,29 +142,20 @@ void ATeam10GameMode::AssignInfectedPlayers()
 		//UE_LOG(LogTemp, Warning, TEXT("RandomInfectedIndex: %d"), j);
 		RandomInfectedArray.Swap(i, j);
 	}
-	
+
 	// 인덱스를 랜덤으로 섞고 랜덤한 인덱스 값에 해당하는 플레이어를 찾아 감염자로 설정한다.
-	//for (int i = 0; i < InfectedCount; i++)
+	
 	for (int i = 0; i < ActualInfectedCount; i++)	// 크래시 나길래 추가한 크래시 방지용 임시 추가 코드. - 금성
+		//for (int i = 0; i < InfectedCount; i++)
 	{
 		ACivilianPlayerState* CivilianPlayerState = Cast<ACivilianPlayerState>(Team10GameState->PlayerArray[RandomInfectedArray[i]]);
-
-		if (!CivilianPlayerState)
-		{
-			return;
-		}
-		
 		CivilianPlayerState->SetPlayerRoleTag(GamePlayTags::PlayerRole::Infected);
+		UE_LOG(LogTemp, Warning, TEXT("You're Infected"));
 	}
+	
 	for (int i = InfectedCount; i < PlayerCount; i++)
 	{
 		ACivilianPlayerState* CivilianPlayerState = Cast<ACivilianPlayerState>(Team10GameState->PlayerArray[RandomInfectedArray[i]]);
-		
-		if (!CivilianPlayerState)
-		{
-			return;
-		}
-		
 		CivilianPlayerState->SetPlayerRoleTag(GamePlayTags::PlayerRole::Civilian);
 	}
 
@@ -350,34 +336,41 @@ void ATeam10GameMode::EternalDeath(APlayerController* DeadPlayer)
 }
 
 
-void ATeam10GameMode::ProcessVote(ACivilianPlayerState* VoteTarget, ACivilianPlayerState* VotePlayer)
+void ATeam10GameMode::StartVote(ACivilianPlayerState* VoteTarget, ACivilianPlayerState* VotePlayer)
 {
-	// 쓰러진 사람(투표가능상태)을 공격(투표)하여
-	// 이 투표 공격이 중복된 것인지 체크하여 투표로 반영하는 함수 
-	if (!IsValid(VoteTarget) && !IsValid(VotePlayer)) return;
+	if (!VoteTarget)
+	{
+		return;
+	}
 
+	if (!VotePlayer)
+	{
+		return;
+	}
 	// 플레이어 투표 가능한 상태로 변경
-	bool IsAleadyVote = false;
-	int32 foundIndex = VoteTarget->VoterList.Find(Cast<APlayerState>(VotePlayer));
+	
+	// if (VoteTarget->IsPlayerRole(GamePlayTags::PlayerRole::Infected))
+	// {
+	// 	VoteTarget->SetCivilianStateTag(GamePlayTags::InfectedState::Stun);
+	// }
+	// else
+	// {
+	// 	VoteTarget->SetInfectedStateTag(GamePlayTags::CivilianState::Stun);
+	// }
 
-	if (foundIndex == -1)	// 투표 가능
+	
+	Vote(VoteTarget, VotePlayer);
+
+	// playerstate의 저장된 timerhandle을 사용해 독립적인 타이머 
+	//FTimerHandle VoteTimerHandle = VoteTarget->VoteTimerHandle;
+	FTimerHandle VoteTimerHandle;
+	GetWorldTimerManager().SetTimer(VoteTimerHandle, FTimerDelegate::CreateLambda([this, VoteTarget]()
 	{
-		VoteTarget->VoterList.Add(VotePlayer);
-		UE_LOG(LogTemp, Warning, TEXT("[Vote] %s : %d"), *VoteTarget->GetName(), VoteTarget->VoterList.Num());
-	}
-
-	// 필요 투표수를 만족하여 플레이어를 게임에서 배제
-	if (!IsValid(Team10GameState)) return;
-	if (VoteTarget->VoterList.Num() >= Team10GameState->KillPlayerVotesCount)
-	{
-		ACivilian* VoteTargetPawn = VoteTarget->GetPawn<ACivilian>();
-		if (!IsValid(VoteTargetPawn)) return;
-		APlayerController* VoteTargetPC = VoteTarget->GetPlayerController();
-		if (!IsValid(VoteTargetPC)) return;
-
-		VoteTargetPawn->OnVoteEnded(false);
-		EternalDeath(VoteTargetPC);
-	}
+		EndVote(VoteTarget);
+	}), 10.f, false);
+	
+	// 타이머로 일정 시간이 지나도 투표가 완료되지 않으면 캐릭터 리스폰
+	// 플레이어마다 개별적으로 타이머 적용?
 }
 
 void ATeam10GameMode::Vote(ACivilianPlayerState* VoteTarget, ACivilianPlayerState* VotePlayer)
@@ -432,10 +425,6 @@ void ATeam10GameMode::UpdateKillPlayerVotesCount()
 	
 	Team10GameState->KillPlayerVotesCount = AlivePlayerCount >= AreaVoteCount ? AreaVoteCount : AlivePlayerCount;
 	
-}
-
-void ATeam10GameMode::StartVote(ACivilianPlayerState* VoteTarget, ACivilianPlayerState* VotePlayer)
-{
 }
 
 
@@ -506,6 +495,7 @@ bool ATeam10GameMode::CanInfectedTransform(APlayerState* PlayerState)
 	// 감염자가 이미 변신 중이거나 변신에 필요한 혈액량이 부족할 경우 return false
 		
 	return true;
+	
 }
 // 그 외에 밤 페이즈가 되면 화면 어둡게 설정 델리게이트로 nightphase가 되면 맵에 있는 lightobject의 light를 비활성화 하는 방식 생각 중
 // 밤 페이즈가 끝나면 되면 변신이 풀려야 함

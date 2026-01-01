@@ -104,9 +104,8 @@ public:
 	UFUNCTION(BlueprintCallable, Category = "Vote")
 	void UpdateKillPlayerVotesCount();
 
-	//UFUNCTION(BlueprintCallable, Category = "Vote")
-
-	//void StartVote(ACivilianPlayerState* VoteTarget, ACivilianPlayerState* VotePlayer);
+	UFUNCTION(BlueprintCallable, Category = "Vote")
+	void StartVote(ACivilianPlayerState* VoteTarget, ACivilianPlayerState* VotePlayer);
 
 	UFUNCTION(BlueprintCallable, Category = "Vote")
 	void Vote(ACivilianPlayerState* VoteTarget, ACivilianPlayerState* VotePlayer);
